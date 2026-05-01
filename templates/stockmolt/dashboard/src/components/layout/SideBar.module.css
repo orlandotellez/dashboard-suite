@@ -1,0 +1,135 @@
+.sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 1000;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  transition: width 0.3s ease;
+  border-right: 1px solid var(--border-color);
+}
+
+.expanded {
+  width: 260px;
+  background-color: var(--primary-color);
+  display: flex;
+  align-items: center;
+}
+
+.collapsed {
+  width: 80px;
+  background-color: var(--primary-color);
+  display: flex;
+  align-items: center;
+}
+
+.logoContainer {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 20px;
+  width: 100%;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.logoIcon {
+  width: 40px;
+  height: 40px;
+  border-radius: 5px;
+  background: var(--secondary-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.logoText h1 {
+  font-size: 16px;
+  margin: 0;
+  color: var(--font-color-title);
+}
+
+.logoText p {
+  font-size: 14px;
+  margin: 2px 0 0;
+  color: var(--font-color-text);
+}
+
+.nav {
+  flex: 1;
+  width: 100%;
+  padding: 12px 8px;
+  overflow-y: auto;
+}
+
+.navItem {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  margin-bottom: 4px;
+  border-radius: 5px;
+  background: transparent;
+  border: none;
+  color: var(--font-color-text);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: left;
+}
+
+.navItem:hover {
+  background: var(--secondary-color);
+  color: #ffffff;
+}
+
+.active {
+  background: var(--secondary-color);
+  color: #ffffff;
+}
+
+.icon {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+.iconLarge {
+  width: 24px;
+  height: 24px;
+  color: white;
+}
+
+.collapseContainer {
+  padding: 12px;
+  border-top: 1px solid var(--border-color);
+  width: 100%;
+}
+
+.collapseButton {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px;
+  border-radius: 5px;
+  background: transparent;
+  border: none;
+  color: var(--font-color-text);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.collapseButton:hover {
+  background: #1e293b;
+  color: #ffffff;
+}
+
+.collapseText {
+  font-size: 14px;
+}
+
+.isCollapsedIcon {
+  justify-content: center;
+}

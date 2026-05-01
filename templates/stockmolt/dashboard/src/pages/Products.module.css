@@ -1,0 +1,172 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.headerTitle h1 {
+  color: var(--font-color-title);
+  font-size: 24px;
+}
+
+.headerTitle p {
+  color: var(--font-color-text);
+  font-size: 16px;
+  margin-top: 4px;
+}
+
+.card {
+  background: var(--card-color);
+  border: 1px solid var(--border-color);
+  border-radius: 5px;
+  padding: 16px;
+}
+
+.cardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+  color: var(--font-color-title);
+}
+
+.filters {
+  display: flex;
+  gap: 10px;
+}
+
+.search {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--border-color);
+  padding: 6px 10px;
+  border-radius: 5px;
+  flex: 1;
+}
+
+.search input {
+  border: none;
+  outline: none;
+  width: 100%;
+  background: none;
+  color: var(--font-color-title);
+}
+
+.select {
+  background: var(--card-color);
+  border: 1px solid var(--border-color);
+  border-radius: 5px;
+  padding: 5px 10px;
+  color: var(--font-color-title);
+}
+
+.primaryBtn {
+  background: var(--secondary-color);
+  color: var(--font-color-title);
+  border: none;
+  padding: 8px 14px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.outlineBtn {
+  border: 1px solid var(--border-color);
+  background: var(--secondary-color);
+  color: var(--font-color-title);
+  padding: 8px 14px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table th {
+  color: var(--font-color-title);
+}
+
+.table td {
+  color: var(--font-color-text);
+}
+
+.table th,
+.table td {
+  padding: 10px;
+  border-bottom: 1px solid var(--border-color);
+  text-align: left;
+}
+
+.actions button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  margin-left: 6px;
+}
+
+.badge {
+  padding: 4px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+}
+
+.in-stock {
+  background: rgba(34, 197, 94, 0.1);
+  color: var(--secondary-color);
+
+}
+
+.low-stock {
+  background: rgba(245, 158, 11, 0.1);
+  color: #f59e0b;
+}
+
+.out-of-stock {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+}
+
+.pagination {
+  margin-top: 10px;
+  display: flex;
+  gap: 6px;
+}
+
+.pageActive {
+  background: #2563eb;
+  color: white;
+}
+
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal {
+  background: var(--primary-color);
+  padding: 20px;
+  border-radius: 5px;
+  width: 400px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.modalActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}

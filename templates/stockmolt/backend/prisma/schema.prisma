@@ -1,0 +1,107 @@
+generator client { 
+  provider = "prisma-client-js"
+}
+
+datasource db { 
+  provider = "postgresql"
+  url      = env("DATABASE_URL") 
+}
+
+model User {
+  id          String              @id @default(uuid())
+  email       String              @unique
+  password    String
+  name        String
+  role        Role                @default(USER)
+  
+  // Un usuario puede tener MUCHOS movimientos, por eso lleva []
+  movements   InventoryMovement[] 
+  
+  created_at  DateTime            @default(now())
+  updated_at   DateTime?           @updatedAt
+  deleted_time DateTime?
+}
+
+model Category {
+  id          String    @id @default(uuid())
+  name        String    @unique
+  description String?
+  
+  // Una categoría tiene MUCHOS productos (campo virtual)
+  products    Product[] 
+  
+  created_at  DateTime  @default(now())
+  updated_at  DateTime? @updatedAt
+  deleted_at  DateTime?
+}
+
+model Supplier {
+  id           String    @id @default(cuid())
+  name         String    @unique
+  contact_info String?
+  email        String?
+  phone        String?
+  
+  // Un proveedor tiene MUCHOS productos (campo virtual)
+  products     Product[] 
+  
+  created_at   DateTime  @default(now())
+  updated_at   DateTime? @updatedAt
+  deleted_at   DateTime?
+}
+
+model Product {
+  id          String    @id @default(cuid())
+  name        String    @unique
+  sku         String    @unique
+  description String?
+  price       Decimal
+  stock       Int
+  
+  // Campos que guardan la llave foránea
+  category_id  String
+  supplier_id  String?
+  
+  // Aquí va el @relation, porque Product guarda las llaves foráneas
+  category    Category  @relation(fields: [category_id], references: [id])
+  supplier    Supplier? @relation(fields: [supplier_id], references: [id])
+  
+  // Un producto puede tener MUCHOS movimientos
+  movements   InventoryMovement[]
+  
+  created_at  DateTime  @default(now())
+  updated_at  DateTime? @updatedAt
+  deleted_at  DateTime?
+}
+
+model InventoryMovement {
+  id          String       @id @default(uuid())
+  
+  // Llaves foráneas
+  product_id   String
+  user_id      String
+  
+  type        MovementType
+  quantity    Int
+  notes       String?
+  
+  // Aquí van las relaciones porque esta tabla guarda quién lo hizo y qué producto es
+  product     Product      @relation(fields: [product_id], references: [id])
+  user        User         @relation(fields: [user_id], references: [id])
+  
+  created_at  DateTime     @default(now())
+  updated_at   DateTime?    @updatedAt
+  deleted_time DateTime?
+}
+
+enum Role {
+  ADMIN
+  MANAGER
+  USER
+}
+
+enum MovementType {
+  IN
+  OUT
+  ADJUSTMENT
+}

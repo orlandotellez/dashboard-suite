@@ -1,0 +1,104 @@
+.card {
+  background: var(--card-color);
+  border: 1px solid var(--border-color);
+  border-radius: 5px;
+  padding: 20px;
+}
+
+.title {
+  font-size: 18px;
+  margin-bottom: 16px;
+  color: var(--font-color-title);
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 5px;
+  background: rgba(148, 163, 184, 0.05);
+  border: 1px solid var(--border-color);
+  color: var(--font-color-title);
+}
+
+.item:hover {
+  background: rgba(148, 163, 184, 0.1);
+}
+
+.iconBox {
+  padding: 8px;
+  border-radius: 8px;
+}
+
+.iconEntrada {
+  background: rgba(34, 197, 94, 0.1);
+  color: var(--secondary-color);
+}
+
+.iconSalida {
+  background: rgba(245, 158, 11, 0.15);
+  color: #f59e0b;
+}
+
+.icon {
+  width: 16px;
+  height: 16px;
+}
+
+.info {
+  flex: 1;
+  min-width: 0;
+}
+
+.productRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.productIcon {
+  width: 14px;
+  height: 14px;
+  color: #94a3b8;
+}
+
+.productName {
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.meta {
+  font-size: 12px;
+  color: var(--font-color-text);
+}
+
+.quantity {
+  text-align: right;
+}
+
+.badge {
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.badgePositive {
+  background: rgba(34, 197, 94, 0.15);
+  color: var(--secondary-color);
+}
+
+.badgeNegative {
+  background: rgba(245, 158, 11, 0.15);
+  color: #f59e0b;
+}
