@@ -1,0 +1,231 @@
+### FARMACIA API ENDPOINTS ###
+
+@baseUrl = http://localhost:3000
+
+### AUTH ENDPOINTS ###
+
+# Registrarse (Solo admin puede crear usuarios, pero dejamos el endpoint para pruebas de servicios)
+POST {{baseUrl}}/api/auth/register
+Content-Type: application/json
+
+{
+    "name": "Admin User",
+    "email": "admin@farmacia.com",
+    "password": "admin123",
+    "role": "admin"
+}
+
+###
+
+# Iniciar sesión
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+    "email": "admin@farmacia.com",
+    "password": "admin123"
+}
+
+###
+
+# Refrescar token (necesita el refreshToken de la respuesta anterior)
+POST {{baseUrl}}/api/auth/refresh
+Content-Type: application/json
+
+{
+    "refreshToken": "tu-refresh-token-aquí"
+}
+
+###
+
+# Cerrar sesión (requiere Auth)
+POST {{baseUrl}}/api/auth/logout
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+###
+
+
+### USERS ENDPOINTS (Solo Admin) ###
+
+# Obtener todos los usuarios (paginado)
+GET {{baseUrl}}/api/users?page=1&limit=10
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+###
+
+# Obtener usuario por ID
+GET {{baseUrl}}/api/users/<user-id>
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+###
+
+# Crear nuevo usuario (Admin crea Staff)
+POST {{baseUrl}}/api/users
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+    "name": "Nuevo Staff",
+    "email": "staff2@farmacia.com",
+    "password": "staff123",
+    "role": "staff"
+}
+
+###
+
+# Actualizar usuario
+PUT {{baseUrl}}/api/users/<user-id>
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+    "name": "Staff Actualizado",
+    "email": "staff_actualizado@farmacia.com"
+}
+
+###
+
+# Eliminar usuario (Soft Delete)
+DELETE {{baseUrl}}/api/users/<user-id>
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+###
+
+
+### MEDICINES ENDPOINTS (Admin y Staff) ###
+
+# Obtener todos los medicamentos
+GET {{baseUrl}}/api/medicines?search=paracetamol
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+###
+
+# Obtener medicamento por ID
+GET {{baseUrl}}/api/medicines/<medicine-id>
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+###
+
+# Crear medicamento (Admin/Staff)
+POST {{baseUrl}}/api/medicines
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+    "tradeName": "Paracetamol 500mg",
+    "genericName": "Acetaminofén",
+    "description": "Analgésico y antipirético",
+    "price": 5.50,
+    "stock": 100,
+    "laboratoryId": "<lab-id>",
+    "categoryId": "<category-id>"
+}
+
+###
+
+# Actualizar medicamento
+PUT {{baseUrl}}/api/medicines/<medicine-id>
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+    "price": 6.00,
+    "stock": 150
+}
+
+###
+
+# Actualizar stock específico
+PATCH {{baseUrl}}/api/medicines/<medicine-id>/stock
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+    "quantity": 50,
+    "operation": "add"
+}
+
+###
+
+# Eliminar medicamento (Soft Delete)
+DELETE {{baseUrl}}/api/medicines/<medicine-id>
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+###
+
+
+### SALES ENDPOINTS (Admin y Staff) ###
+
+# Registrar una venta
+POST {{baseUrl}}/api/sales
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+    "clientId": "<client-id>",
+    "paymentMethod": "cash",
+    "items": [
+        {
+            "medicineId": "<medicine-id>",
+            "quantity": 2,
+            "unitPrice": 5.50
+        }
+    ]
+}
+
+###
+
+# Obtener historial de ventas
+GET {{baseUrl}}/api/sales?startDate=2026-05-01&endDate=2026-05-31
+Content-Type: application/json
+Authorization: Bearer {{baseToken}}
+
+###
+
+
+### CLIENTS ENDPOINTS (Admin y Staff) ###
+
+# Obtener clientes
+GET {{baseUrl}}/api/clients
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+###
+
+# Crear cliente
+POST {{baseUrl}}/api/clients
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+    "name": "Juan Pérez",
+    "documentNumber": "12345678",
+    "email": "juan@email.com",
+    "phone": "123456789"
+}
+
+###
+
+
+### REPORTS ENDPOINTS (Admin y Staff) ###
+
+# Reporte de ventas por fecha
+GET {{baseUrl}}/api/reports/sales?startDate=2026-05-01&endDate=2026-05-31
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+###
+
+# Top medicamentos más vendidos
+GET {{baseUrl}}/api/reports/top-medicines?startDate=2026-05-01&endDate=2026-05-31&limit=10
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+###

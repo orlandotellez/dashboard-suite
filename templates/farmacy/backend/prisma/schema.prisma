@@ -1,0 +1,122 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  admin
+  staff
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email      String   @unique
+  password   String
+  name       String
+  role       Role     @default(staff)
+  deletedAt  DateTime?
+  sales      Sale[]
+
+  @@index([email])
+  @@index([role])
+  @@map("users")
+}
+
+model Medicine {
+  id            String   @id @default(uuid())
+  tradeName     String
+  genericName   String
+  description   String?
+  price         Decimal
+  stock         Int      @default(0)
+  expiryDate    DateTime?
+  laboratoryId  String
+  categoryId    String
+  laboratory    Lab      @relation(fields: [laboratoryId], references: [id])
+  category      Category @relation(fields: [categoryId], references: [id])
+  saleItems     SaleItem[]
+  deletedAt     DateTime?
+
+  @@index([tradeName])
+  @@index([genericName])
+  @@index([laboratoryId])
+  @@index([categoryId])
+  @@map("medicines")
+}
+
+model Sale {
+  id           String     @id @default(uuid())
+  date         DateTime   @default(now())
+  total        Decimal
+  paymentMethod String
+  userId       String
+  clientId     String?
+  user         User       @relation(fields: [userId], references: [id])
+  client       Client?    @relation(fields: [clientId], references: [id])
+  items        SaleItem[]
+
+  @@index([date])
+  @@index([userId])
+  @@index([clientId])
+  @@map("sales")
+}
+
+model SaleItem {
+  id         String   @id @default(uuid())
+  saleId     String
+  medicineId String
+  quantity   Int
+  unitPrice  Decimal
+  sale       Sale     @relation(fields: [saleId], references: [id])
+  medicine   Medicine @relation(fields: [medicineId], references: [id])
+
+  @@index([saleId])
+  @@index([medicineId])
+  @@map("sale_items")
+}
+
+model Client {
+  id             String   @id @default(uuid())
+  name           String
+  documentNumber String   @unique
+  email          String?
+  phone          String?
+  address        String?
+  membership     String   @default("bronze")
+  deletedAt      DateTime?
+  sales          Sale[]
+
+  @@index([documentNumber])
+  @@index([email])
+  @@map("clients")
+}
+
+model Lab {
+  id        String     @id @default(uuid())
+  name      String
+  medicines Medicine[]
+  deletedAt DateTime?
+
+  @@map("labs")
+}
+
+model Supplier {
+  id        String   @id @default(uuid())
+  name      String
+  contact   String?
+  deletedAt DateTime?
+
+  @@map("suppliers")
+}
+
+model Category {
+  id        String     @id @default(uuid())
+  name      String
+  medicines Medicine[]
+
+  @@map("categories")
+}
