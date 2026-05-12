@@ -1,7 +1,7 @@
 import { medicineController } from './medicine.controller.js';
 import { requireRoles } from '../../../presentation/middlewares/rbac.js';
 
-const medicineRoutes = async (fastify: any, options: any) => {
+export default async function medicineRoutes(fastify: any, _options: any) {
     fastify.get('/', {
         preHandler: [fastify.authenticate],
         handler: medicineController.findAll,
@@ -31,6 +31,4 @@ const medicineRoutes = async (fastify: any, options: any) => {
         preHandler: [fastify.authenticate, requireRoles(['admin'])],
         handler: medicineController.delete,
     });
-};
-
-export default medicineRoutes;
+}

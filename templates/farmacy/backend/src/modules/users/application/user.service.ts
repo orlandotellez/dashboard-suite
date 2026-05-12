@@ -1,11 +1,12 @@
 import bcrypt from 'bcrypt';
 import { userRepository } from '../infrastructure/user.repository.js';
 import { ConflictError, NotFoundError, ForbiddenError } from '../../../core/errors/AppError.js';
+import { CreateUserDto, UpdateUserDto, PaginatedResponse, UserWithoutPassword } from '../../../types/index.js';
 
 const SALT_ROUNDS = 10;
 
 export const userService = {
-    findAll: async (page = 1, limit = 10) => {
+    findAll: async (page = 1, limit = 10): Promise<PaginatedResponse<UserWithoutPassword>> => {
         const skip = (page - 1) * limit;
         const users = await userRepository.findAllActive(skip, limit);
         const total = await userRepository.countActive();
@@ -22,7 +23,7 @@ export const userService = {
         };
     },
 
-    findById: async (id: string) => {
+    findById: async (id: string): Promise<UserWithoutPassword | null> => {
         const user = await userRepository.findById(id);
         if (!user) {
             throw new NotFoundError('User not found');
@@ -30,7 +31,7 @@ export const userService = {
         return user;
     },
 
-    create: async (data: any) => {
+    create: async (data: CreateUserDto): Promise<UserWithoutPassword> => {
         const existingUser = await userRepository.findByEmail(data.email);
         if (existingUser) {
             throw new ConflictError('Email already registered');
@@ -46,7 +47,7 @@ export const userService = {
         });
     },
 
-    update: async (id: string, data: any, currentUserId: string) => {
+    update: async (id: string, data: UpdateUserDto, currentUserId: string): Promise<UserWithoutPassword> => {
         const user = await userRepository.findById(id);
         if (!user) {
             throw new NotFoundError('User not found');
@@ -71,7 +72,7 @@ export const userService = {
         return await userRepository.update(id, updateData);
     },
 
-    delete: async (id: string, currentUserId: string) => {
+    delete: async (id: string, currentUserId: string): Promise<void> => {
         const user = await userRepository.findById(id);
         if (!user) {
             throw new NotFoundError('User not found');
@@ -81,6 +82,6 @@ export const userService = {
             throw new ForbiddenError('Cannot delete your own account');
         }
 
-        return await userRepository.softDelete(id);
+        await userRepository.softDelete(id);
     },
 };

@@ -1,6 +1,5 @@
 import Redis from 'ioredis';
 import { env } from './env.js';
-import { logger } from '../infrastructure/logger.js';
 
 const redisConfig = {
     host: env.REDIS_HOST,
@@ -11,9 +10,9 @@ const redisConfig = {
     reconnectOnError: () => false,
 };
 
-export const redis = new Redis(redisConfig);
+export const redis = new Redis.default(redisConfig);
 
-redis.on('error', (err) => {
+redis.on('error', (err: Error) => {
     // Silenciar errores - Redis es opcional
 });
 

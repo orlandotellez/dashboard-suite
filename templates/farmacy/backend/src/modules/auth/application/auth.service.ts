@@ -1,31 +1,46 @@
 import bcrypt from 'bcrypt';
-import jwt from 'jsonwebtoken';
+import jwt, { SignOptions } from 'jsonwebtoken';
 import { env } from '../../../config/env.js';
 import { prisma } from '../../../config/prisma.js';
 import { redis, isRedisConnected } from '../../../config/redis.js';
 import { UnauthorizedError, ConflictError } from '../../../core/errors/AppError.js';
+import { Role, UserWithoutPassword, AuthResponse } from '../../../types/index.js';
 
 const SALT_ROUNDS = 10;
 
-const hashPassword = async (password: string) => {
+const hashPassword = async (password: string): Promise<string> => {
     return await bcrypt.hash(password, SALT_ROUNDS);
 };
 
-const comparePassword = async (password: string, hash: string) => {
+const comparePassword = async (password: string, hash: string): Promise<boolean> => {
     return await bcrypt.compare(password, hash);
 };
 
-const generateTokens = (userId: string, email: string, role: string) => {
+interface TokenPayload {
+    userId: string;
+    email: string;
+    role: Role;
+}
+
+const generateTokens = (userId: string, email: string, role: Role) => {
+    const accessTokenOptions: SignOptions = {
+        expiresIn: 900 // 15 minutes in seconds
+    };
+    
+    const refreshTokenOptions: SignOptions = {
+        expiresIn: 604800 // 7 days in seconds
+    };
+
     const accessToken = jwt.sign(
-        { userId, email, role },
+        { userId, email, role } as TokenPayload,
         env.JWT_SECRET,
-        { expiresIn: env.JWT_EXPIRES_IN }
+        accessTokenOptions
     );
 
     const refreshToken = jwt.sign(
         { userId },
         env.JWT_REFRESH_SECRET,
-        { expiresIn: env.JWT_REFRESH_EXPIRES_IN }
+        refreshTokenOptions
     );
 
     return { accessToken, refreshToken };
@@ -35,16 +50,10 @@ interface RegisterData {
     name: string;
     email: string;
     password: string;
-    role?: string;
+    role?: Role;
 }
 
-interface AuthResult {
-    user: any;
-    accessToken: string;
-    refreshToken: string;
-}
-
-const register = async (data: RegisterData): Promise<AuthResult> => {
+const register = async (data: RegisterData): Promise<AuthResponse> => {
     const { name, email, password, role = 'staff' } = data;
 
     const existingUser = await prisma.user.findFirst({
@@ -64,16 +73,9 @@ const register = async (data: RegisterData): Promise<AuthResult> => {
             password: hashedPassword,
             role,
         },
-        select: {
-            id: true,
-            name: true,
-            email: true,
-            role: true,
-            createdAt: true,
-        },
     });
 
-    const { accessToken, refreshToken } = generateTokens(user.id, user.email, user.role);
+    const { accessToken, refreshToken } = generateTokens(user.id, user.email, user.role as Role);
 
     if (isRedisConnected()) {
         await redis.set(
@@ -85,13 +87,18 @@ const register = async (data: RegisterData): Promise<AuthResult> => {
     }
 
     return {
-        user,
+        user: {
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            role: user.role as Role,
+        },
         accessToken,
         refreshToken,
     };
 };
 
-const login = async (email: string, password: string): Promise<AuthResult> => {
+const login = async (email: string, password: string): Promise<AuthResponse> => {
     const user = await prisma.user.findFirst({
         where: { email, deletedAt: null },
     });
@@ -106,7 +113,7 @@ const login = async (email: string, password: string): Promise<AuthResult> => {
         throw new UnauthorizedError('Invalid credentials');
     }
 
-    const { accessToken, refreshToken } = generateTokens(user.id, user.email, user.role);
+    const { accessToken, refreshToken } = generateTokens(user.id, user.email, user.role as Role);
 
     if (isRedisConnected()) {
         await redis.set(
@@ -117,16 +124,24 @@ const login = async (email: string, password: string): Promise<AuthResult> => {
         );
     }
 
-    const { password: _, ...userWithoutPassword } = user;
-
     return {
-        user: userWithoutPassword,
+        user: {
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            role: user.role as Role,
+        },
         accessToken,
         refreshToken,
     };
 };
 
-const refresh = async (refreshToken: string) => {
+interface RefreshResponse {
+    accessToken: string;
+    refreshToken: string;
+}
+
+const refresh = async (refreshToken: string): Promise<RefreshResponse> => {
     if (!isRedisConnected()) {
         throw new UnauthorizedError('Token refresh unavailable');
     }
@@ -151,7 +166,7 @@ const refresh = async (refreshToken: string) => {
         const { accessToken, refreshToken: newRefreshToken } = generateTokens(
             user.id,
             user.email,
-            user.role
+            user.role as Role
         );
 
         await redis.set(
@@ -170,7 +185,7 @@ const refresh = async (refreshToken: string) => {
     }
 };
 
-const logout = async (userId: string) => {
+const logout = async (userId: string): Promise<void> => {
     if (isRedisConnected()) {
         await redis.del(`refresh_token:${userId}`);
     }

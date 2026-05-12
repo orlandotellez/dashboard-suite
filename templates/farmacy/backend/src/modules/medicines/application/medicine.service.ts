@@ -1,12 +1,13 @@
 import { medicineRepository } from '../infrastructure/medicine.repository.js';
 import { NotFoundError, ForbiddenError } from '../../../core/errors/AppError.js';
+import { CreateMedicineDto, UpdateMedicineDto, UpdateStockDto, MedicineFilters, PaginatedResponse, Medicine } from '../../../types/index.js';
 
 export const medicineService = {
-    findAll: async (queryParams: any) => {
+    findAll: async (queryParams: MedicineFilters & { q?: string; page?: number; limit?: number }): Promise<PaginatedResponse<Medicine>> => {
         const { q, laboratoryId, categoryId, stockStatus, page = 1, limit = 10 } = queryParams;
         const skip = (Number(page) - 1) * Number(limit);
 
-        const filters: any = {};
+        const filters: MedicineFilters = {};
         if (q) filters.search = q;
         if (laboratoryId) filters.laboratoryId = laboratoryId;
         if (categoryId) filters.categoryId = categoryId;
@@ -27,7 +28,7 @@ export const medicineService = {
         };
     },
 
-    findById: async (id: string) => {
+    findById: async (id: string): Promise<Medicine | null> => {
         const medicine = await medicineRepository.findById(id);
         if (!medicine) {
             throw new NotFoundError('Medicine not found');
@@ -35,7 +36,7 @@ export const medicineService = {
         return medicine;
     },
 
-    create: async (data: any) => {
+    create: async (data: CreateMedicineDto): Promise<Medicine> => {
         return await medicineRepository.create({
             tradeName: data.tradeName,
             genericName: data.genericName,
@@ -48,7 +49,7 @@ export const medicineService = {
         });
     },
 
-    update: async (id: string, data: any) => {
+    update: async (id: string, data: UpdateMedicineDto & { stock?: number }): Promise<Medicine> => {
         const medicine = await medicineRepository.findById(id);
         if (!medicine) {
             throw new NotFoundError('Medicine not found');
@@ -69,7 +70,7 @@ export const medicineService = {
         });
     },
 
-    updateStock: async (id: string, stockData: any) => {
+    updateStock: async (id: string, stockData: UpdateStockDto): Promise<Medicine> => {
         const medicine = await medicineRepository.findById(id);
         if (!medicine) {
             throw new NotFoundError('Medicine not found');
@@ -97,7 +98,7 @@ export const medicineService = {
         throw new ForbiddenError('No valid stock operation provided');
     },
 
-    delete: async (id: string) => {
+    delete: async (id: string): Promise<Medicine> => {
         const medicine = await medicineRepository.findById(id);
         if (!medicine) {
             throw new NotFoundError('Medicine not found');

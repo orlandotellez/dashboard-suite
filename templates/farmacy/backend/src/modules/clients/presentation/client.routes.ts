@@ -1,7 +1,7 @@
 import { clientController } from './client.controller.js';
-import { requireRoles } from '@/presentation/middlewares/rbac.js';
+import { requireRoles } from '../../../presentation/middlewares/rbac.js';
 
-const clientRoutes = async (fastify, options) => {
+const clientRoutes = async (fastify: any, _options: any) => {
     fastify.get('/', {
         preHandler: [fastify.authenticate],
         handler: clientController.findAll,

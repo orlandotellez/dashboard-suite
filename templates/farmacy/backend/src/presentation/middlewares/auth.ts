@@ -1,20 +1,19 @@
 import jwt from '@fastify/jwt';
+import { FastifyInstance } from 'fastify';
 import { env } from '../../config/env.js';
 
-const registerAuth = async (fastify: any, options: any) => {
+export async function registerAuth(app: FastifyInstance): Promise<void> {
     // Register JWT plugin
-    await fastify.register(jwt, {
+    await app.register(jwt, {
         secret: env.JWT_SECRET,
     });
 
-    // Decorate fastify with authenticate method
-    fastify.decorate('authenticate', async function(request: any, reply: any) {
+    // Decorate app with authenticate method
+    app.decorate('authenticate', async function(request: any, reply: any) {
         try {
             await request.jwtVerify();
         } catch (err) {
             reply.send(err);
         }
     });
-};
-
-export { registerAuth };
+}

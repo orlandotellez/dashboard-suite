@@ -1,9 +1,11 @@
-import { prisma } from '@/config/prisma.js';
-import { ForbiddenError } from '@/core/errors/AppError.js';
+import { FastifyRequest, FastifyReply } from 'fastify';
+import { prisma } from '../../../config/prisma.js';
+import { ForbiddenError } from '../../../core/errors/AppError.js';
 
 const reportController = {
-    salesReport: async (request, reply) => {
-        const { startDate, endDate } = request.query;
+    salesReport: async (request: FastifyRequest, reply: FastifyReply) => {
+        const query = request.query as { startDate?: string; endDate?: string };
+        const { startDate, endDate } = query;
 
         if (!startDate || !endDate) {
             throw new ForbiddenError('startDate and endDate are required');
@@ -17,7 +19,7 @@ const reportController = {
             throw new ForbiddenError('Invalid date range: end date must be after start date');
         }
 
-        const daysDiff = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
+        const daysDiff = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
         if (daysDiff > 90) {
             throw new ForbiddenError('Date range cannot exceed 90 days');
         }
@@ -38,12 +40,12 @@ const reportController = {
         const totalRevenue = sales.reduce((sum, sale) => sum + Number(sale.total), 0);
         const avgSaleValue = totalSales > 0 ? totalRevenue / totalSales : 0;
 
-        const byPaymentMethod = sales.reduce((acc, sale) => {
-            acc[sale.paymentMethod] = (acc[sale.paymentMethod] || 0) + 1;
-            return acc;
-        }, {});
+        const byPaymentMethod: Record<string, number> = {};
+        sales.forEach(sale => {
+            byPaymentMethod[sale.paymentMethod] = (byPaymentMethod[sale.paymentMethod] || 0) + 1;
+        });
 
-        const dailyBreakdown = {};
+        const dailyBreakdown: Record<string, { sales: number; revenue: number }> = {};
         sales.forEach(sale => {
             const date = sale.date.toISOString().split('T')[0];
             if (!dailyBreakdown[date]) {
@@ -65,8 +67,9 @@ const reportController = {
         });
     },
 
-    topMedicines: async (request, reply) => {
-        const { startDate, endDate, limit = 10 } = request.query;
+    topMedicines: async (request: FastifyRequest, reply: FastifyReply) => {
+        const query = request.query as { startDate?: string; endDate?: string; limit?: number };
+        const { startDate, endDate, limit = 10 } = query;
 
         if (!startDate || !endDate) {
             throw new ForbiddenError('startDate and endDate are required');
@@ -94,7 +97,14 @@ const reportController = {
             },
         });
 
-        const medicineStats = {};
+        interface MedicineStat {
+            medicine: { id: string; tradeName: string; genericName: string };
+            totalSold: number;
+            revenue: number;
+            transactions: Set<string>;
+        }
+
+        const medicineStats: Record<string, MedicineStat> = {};
         saleItems.forEach(item => {
             const medId = item.medicineId;
             if (!medicineStats[medId]) {
@@ -123,7 +133,7 @@ const reportController = {
         return reply.send(sortedMedicines);
     },
 
-    dashboard: async (request, reply) => {
+    dashboard: async (_request: FastifyRequest, reply: FastifyReply) => {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
 
@@ -158,10 +168,11 @@ const reportController = {
         });
     },
 
-    stockStatus: async (request, reply) => {
-        const { categoryId } = request.query;
+    stockStatus: async (request: FastifyRequest, reply: FastifyReply) => {
+        const query = request.query as { categoryId?: string };
+        const { categoryId } = query;
 
-        const where = { deletedAt: null };
+        const where: any = { deletedAt: null };
         if (categoryId) where.categoryId = categoryId;
 
         const medicines = await prisma.medicine.findMany({

@@ -1,12 +1,37 @@
 import { clientRepository } from '../infrastructure/client.repository.js';
-import { ConflictError, NotFoundError, ForbiddenError } from '@/core/errors/AppError.js';
+import { ConflictError, NotFoundError, ForbiddenError } from '../../../core/errors/AppError.js';
+import { CreateClientDto, UpdateClientDto, ClientFilters, PaginatedResponse, Client } from '../../../types/index.js';
+
+interface PurchaseHistory {
+    totalPurchases: number;
+    totalSpent: number;
+    lastPurchase: Date | null;
+    sales: Array<{
+        id: string;
+        date: Date;
+        total: number;
+        itemsCount: number;
+    }>;
+}
+
+interface ClientWithHistory extends Client {
+    totalPurchases: number;
+    totalSpent: number;
+    lastPurchase: Date | null;
+    sales: Array<{
+        id: string;
+        date: Date;
+        total: number;
+        itemsCount: number;
+    }>;
+}
 
 export const clientService = {
-    findAll: async (queryParams) => {
+    findAll: async (queryParams: ClientFilters & { page?: number; limit?: number; q?: string }): Promise<PaginatedResponse<Client>> => {
         const { q, membership, page = 1, limit = 10 } = queryParams;
         const skip = (Number(page) - 1) * Number(limit);
 
-        const filters = {};
+        const filters: ClientFilters = {};
         if (q) filters.search = q;
         if (membership) filters.membership = membership;
 
@@ -25,7 +50,7 @@ export const clientService = {
         };
     },
 
-    findById: async (id) => {
+    findById: async (id: string): Promise<ClientWithHistory> => {
         const client = await clientRepository.findById(id);
         if (!client) {
             throw new NotFoundError('Client not found');
@@ -39,7 +64,7 @@ export const clientService = {
         };
     },
 
-    create: async (data) => {
+    create: async (data: CreateClientDto): Promise<Client> => {
         const existingClient = await clientRepository.findByDocumentNumber(data.documentNumber);
         if (existingClient && !existingClient.deletedAt) {
             throw new ConflictError('Document number already registered');
@@ -55,7 +80,7 @@ export const clientService = {
         });
     },
 
-    update: async (id, data) => {
+    update: async (id: string, data: UpdateClientDto): Promise<Client> => {
         const client = await clientRepository.findById(id);
         if (!client) {
             throw new NotFoundError('Client not found');
@@ -81,12 +106,12 @@ export const clientService = {
         });
     },
 
-    delete: async (id) => {
+    delete: async (id: string): Promise<void> => {
         const client = await clientRepository.findById(id);
         if (!client) {
             throw new NotFoundError('Client not found');
         }
 
-        return await clientRepository.softDelete(id);
+        await clientRepository.softDelete(id);
     },
 };

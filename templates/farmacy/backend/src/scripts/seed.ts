@@ -36,9 +36,10 @@ const seed = async () => {
 
   // Create sample lab
   const lab = await prisma.lab.upsert({
-    where: { name: 'Lab Farma' },
+    where: { id: 'lab-farma' },
     update: {},
     create: {
+      id: 'lab-farma',
       name: 'Lab Farma',
     },
   });
@@ -46,9 +47,10 @@ const seed = async () => {
 
   // Create sample category
   const category = await prisma.category.upsert({
-    where: { name: 'Analgesics' },
+    where: { id: 'cat-analgesics' },
     update: {},
     create: {
+      id: 'cat-analgesics',
       name: 'Analgesics',
     },
   });
@@ -77,10 +79,14 @@ const seed = async () => {
   ];
 
   for (const med of medicines) {
+    const medId = med.tradeName.toLowerCase().replace(/\s+/g, '-').replace(/[0-9]+/g, '');
     const medicine = await prisma.medicine.upsert({
-      where: { id: med.tradeName },
+      where: { id: medId },
       update: {},
-      create: med,
+      create: {
+        id: medId,
+        ...med,
+      },
     });
     console.log('✅ Medicine created:', medicine.tradeName);
   }

@@ -1,7 +1,10 @@
+import { FastifyRequest, FastifyReply } from 'fastify';
 import { UnauthorizedError, ForbiddenError } from '../../core/errors/AppError.js';
+import { Role } from '../../types/index.js';
 
-const requireRoles = (roles: string[]) => {
-    return async (request: any, reply: any) => {
+const requireRoles = (roles: Role[]) => {
+    return async (_request: FastifyRequest, _reply: FastifyReply) => {
+        const request = _request as FastifyRequest & { user?: { role?: Role } };
         const user = request.user;
         if (!user || !user.role) {
             throw new UnauthorizedError('User not authenticated');

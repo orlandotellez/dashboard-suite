@@ -1,17 +1,70 @@
 import { prisma } from '../../../config/prisma.js';
+import { Medicine, MedicineFilters } from '../../../types/index.js';
+
+// Helper to convert Prisma Decimal to number
+const toNumber = (value: any): number => {
+    if (value === null || value === undefined) return 0;
+    if (typeof value === 'number') return value;
+    if (typeof value.toNumber === 'function') return value.toNumber();
+    return Number(value);
+};
+
+interface CreateMedicineData {
+    tradeName: string;
+    genericName: string;
+    description?: string | null;
+    price: number;
+    stock: number;
+    expiryDate?: Date | null;
+    laboratoryId: string;
+    categoryId: string;
+}
+
+interface UpdateMedicineData {
+    tradeName?: string;
+    genericName?: string;
+    description?: string | null;
+    price?: number;
+    expiryDate?: Date | undefined;
+    laboratoryId?: string;
+    categoryId?: string;
+}
+
+const mapPrismaToMedicine = (data: any): Medicine => ({
+    id: data.id,
+    tradeName: data.tradeName,
+    genericName: data.genericName,
+    description: data.description,
+    price: toNumber(data.price),
+    stock: data.stock,
+    expiryDate: data.expiryDate,
+    laboratoryId: data.laboratoryId,
+    categoryId: data.categoryId,
+    laboratory: data.laboratory ? {
+        id: data.laboratory.id,
+        name: data.laboratory.name,
+        deletedAt: data.laboratory.deletedAt,
+    } : undefined,
+    category: data.category ? {
+        id: data.category.id,
+        name: data.category.name,
+    } : undefined,
+    deletedAt: data.deletedAt,
+});
 
 export const medicineRepository = {
-    findById: async (id: string) => {
-        return await prisma.medicine.findFirst({
+    findById: async (id: string): Promise<Medicine | null> => {
+        const data = await prisma.medicine.findFirst({
             where: { id, deletedAt: null },
             include: {
                 laboratory: true,
                 category: true,
             },
         });
+        return data ? mapPrismaToMedicine(data) : null;
     },
 
-    findAllActive: async (filters: any = {}, skip = 0, take = 10) => {
+    findAllActive: async (filters: MedicineFilters = {}, skip = 0, take = 10): Promise<Medicine[]> => {
         const where: any = { deletedAt: null };
 
         if (filters.search) {
@@ -41,7 +94,7 @@ export const medicineRepository = {
             }
         }
 
-        return await prisma.medicine.findMany({
+        const results = await prisma.medicine.findMany({
             where,
             skip,
             take,
@@ -51,9 +104,10 @@ export const medicineRepository = {
             },
             orderBy: { tradeName: 'asc' },
         });
+        return results.map(mapPrismaToMedicine);
     },
 
-    countActive: async (filters: any = {}) => {
+    countActive: async (filters: MedicineFilters = {}): Promise<number> => {
         const where: any = { deletedAt: null };
 
         if (filters.search) {
@@ -86,52 +140,87 @@ export const medicineRepository = {
         return await prisma.medicine.count({ where });
     },
 
-    create: async (data: any) => {
-        return await prisma.medicine.create({
-            data,
+    create: async (data: CreateMedicineData): Promise<Medicine> => {
+        const result = await prisma.medicine.create({
+            data: {
+                tradeName: data.tradeName,
+                genericName: data.genericName,
+                description: data.description,
+                price: data.price,
+                stock: data.stock,
+                expiryDate: data.expiryDate,
+                laboratoryId: data.laboratoryId,
+                categoryId: data.categoryId,
+            },
             include: {
                 laboratory: true,
                 category: true,
             },
         });
+        return mapPrismaToMedicine(result);
     },
 
-    update: async (id: string, data: any) => {
-        return await prisma.medicine.update({
+    update: async (id: string, data: UpdateMedicineData): Promise<Medicine> => {
+        const result = await prisma.medicine.update({
             where: { id },
-            data,
+            data: {
+                tradeName: data.tradeName,
+                genericName: data.genericName,
+                description: data.description,
+                price: data.price,
+                expiryDate: data.expiryDate,
+                laboratoryId: data.laboratoryId,
+                categoryId: data.categoryId,
+            },
             include: {
                 laboratory: true,
                 category: true,
             },
         });
+        return mapPrismaToMedicine(result);
     },
 
-    updateStock: async (id: string, stock: number) => {
-        return await prisma.medicine.update({
+    updateStock: async (id: string, stock: number): Promise<Medicine> => {
+        const result = await prisma.medicine.update({
             where: { id },
             data: { stock },
+            include: {
+                laboratory: true,
+                category: true,
+            },
         });
+        return mapPrismaToMedicine(result);
     },
 
-    incrementStock: async (id: string, amount: number) => {
-        return await prisma.medicine.update({
+    incrementStock: async (id: string, amount: number): Promise<Medicine> => {
+        const result = await prisma.medicine.update({
             where: { id },
             data: { stock: { increment: amount } },
+            include: {
+                laboratory: true,
+                category: true,
+            },
         });
+        return mapPrismaToMedicine(result);
     },
 
-    decrementStock: async (id: string, amount: number) => {
-        return await prisma.medicine.update({
+    decrementStock: async (id: string, amount: number): Promise<Medicine> => {
+        const result = await prisma.medicine.update({
             where: { id },
             data: { stock: { decrement: amount } },
+            include: {
+                laboratory: true,
+                category: true,
+            },
         });
+        return mapPrismaToMedicine(result);
     },
 
-    softDelete: async (id: string) => {
-        return await prisma.medicine.update({
+    softDelete: async (id: string): Promise<Medicine> => {
+        const result = await prisma.medicine.update({
             where: { id },
             data: { deletedAt: new Date() },
         });
+        return mapPrismaToMedicine(result);
     },
 };

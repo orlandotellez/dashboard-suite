@@ -1,7 +1,7 @@
 import { reportController } from './report.controller.js';
-import { requireRoles } from '@/presentation/middlewares/rbac.js';
+import { requireRoles } from '../../../presentation/middlewares/rbac.js';
 
-const reportRoutes = async (fastify, options) => {
+const reportRoutes = async (fastify: any, _options: any) => {
     fastify.get('/sales', {
         preHandler: [fastify.authenticate, requireRoles(['admin', 'staff'])],
         handler: reportController.salesReport,

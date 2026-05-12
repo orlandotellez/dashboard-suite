@@ -1,11 +1,15 @@
-import { prisma } from '@/config/prisma';
-import { medicineRepository } from '@/modules/medicines/infrastructure/medicine.repository';
+import { prisma } from '../../../config/prisma.js';
+import { medicineRepository } from '../../medicines/infrastructure/medicine.repository.js';
 import { saleRepository } from '../infrastructure/sale.repository.js';
-import { NotFoundError, ForbiddenError } from '@/core/errors/AppError';
+import { NotFoundError, ForbiddenError } from '../../../core/errors/AppError.js';
+import { CreateSaleDto, SaleFilters, PaginatedResponse, Sale } from '../../../types/index.js';
 
-const saleService = {
-    register: async (data, userId) => {
-        const { clientId, items, paymentMethod, total } = data;
+export const saleService = {
+    register: async (data: CreateSaleDto, userId: string | undefined) => {
+        const { clientId, items } = data;
+
+        // Calculate total
+        const total = items.reduce((sum, item) => sum + (item.unitPrice * item.quantity), 0);
 
         // Verify medicines exist and have sufficient stock
         const medicineIds = items.map(item => item.medicineId);
@@ -25,7 +29,7 @@ const saleService = {
         // Check stock availability
         for (const item of items) {
             const medicine = medicines.find(m => m.id === item.medicineId);
-            if (medicine.stock < item.quantity) {
+            if (medicine && medicine.stock < item.quantity) {
                 throw new ForbiddenError(
                     `Insufficient stock for medicine: ${medicine.tradeName} (available: ${medicine.stock}, requested: ${item.quantity})`
                 );
@@ -38,8 +42,8 @@ const saleService = {
             const newSale = await tx.sale.create({
                 data: {
                     total,
-                    paymentMethod,
-                    userId,
+                    paymentMethod: data.paymentMethod,
+                    userId: userId!,
                     clientId,
                     items: {
                         create: items.map(item => ({
@@ -78,14 +82,15 @@ const saleService = {
         return sale;
     },
 
-    findAll: async (queryParams) => {
-        const { startDate, endDate, clientId, paymentMethod, page = 1, limit = 10 } = queryParams;
+    findAll: async (queryParams: SaleFilters & { page?: number; limit?: number; paymentMethod?: string }): Promise<PaginatedResponse<Sale>> => {
+        const { startDate, endDate, clientId, userId, paymentMethod, page = 1, limit = 10 } = queryParams;
         const skip = (Number(page) - 1) * Number(limit);
 
-        const filters = {};
+        const filters: SaleFilters & { paymentMethod?: string } = {};
         if (startDate) filters.startDate = startDate;
         if (endDate) filters.endDate = endDate;
         if (clientId) filters.clientId = clientId;
+        if (userId) filters.userId = userId;
         if (paymentMethod) filters.paymentMethod = paymentMethod;
 
         const sales = await saleRepository.findAll(filters, skip, Number(limit));
@@ -103,7 +108,7 @@ const saleService = {
         };
     },
 
-    findById: async (id) => {
+    findById: async (id: string): Promise<Sale | null> => {
         const sale = await saleRepository.findById(id);
         if (!sale) {
             throw new NotFoundError('Sale not found');
@@ -111,5 +116,3 @@ const saleService = {
         return sale;
     },
 };
-
-export { saleService };

@@ -1,8 +1,7 @@
 import { userController } from './user.controller.js';
 import { requireRoles } from '../../../presentation/middlewares/rbac.js';
-import { userService } from '../application/user.service.js';
 
-const userRoutes = async (fastify: any, options: any) => {
+const userRoutes = async (fastify: any, _options: any) => {
     fastify.get('/', {
         preHandler: [fastify.authenticate, requireRoles(['admin'])],
         handler: userController.findAll,
