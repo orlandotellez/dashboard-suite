@@ -1,4 +1,4 @@
-const { z } = require('zod');
+import { z } from 'zod';
 
 const SaleItemDtoSchema = z.object({
     medicineId: z.string().min(1, 'Medicine ID is required'),
@@ -13,4 +13,4 @@ const CreateSaleDtoSchema = z.object({
     total: z.number().positive('Total must be positive'),
 });
 
-module.exports = { CreateSaleDtoSchema, SaleItemDtoSchema };
+export { CreateSaleDtoSchema, SaleItemDtoSchema };

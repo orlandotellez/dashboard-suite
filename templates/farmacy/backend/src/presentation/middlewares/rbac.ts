@@ -1,7 +1,7 @@
-const { UnauthorizedError, ForbiddenError } = require('../../core/errors/AppError');
+import { UnauthorizedError, ForbiddenError } from '../../core/errors/AppError.js';
 
-const requireRoles = (roles) => {
-    return async (request, reply) => {
+const requireRoles = (roles: string[]) => {
+    return async (request: any, reply: any) => {
         const user = request.user;
         if (!user || !user.role) {
             throw new UnauthorizedError('User not authenticated');
@@ -13,4 +13,4 @@ const requireRoles = (roles) => {
     };
 };
 
-module.exports = { requireRoles };
+export { requireRoles };

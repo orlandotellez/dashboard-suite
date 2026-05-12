@@ -1,4 +1,4 @@
-const { prisma } = require('@/config/prisma');
+import { prisma } from '@/config/prisma';
 
 const saleRepository = {
     findById: async (id) => {
@@ -118,4 +118,4 @@ const saleRepository = {
     },
 };
 
-module.exports = { saleRepository };
+export { saleRepository };

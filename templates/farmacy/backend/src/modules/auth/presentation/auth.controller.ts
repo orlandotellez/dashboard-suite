@@ -1,13 +1,13 @@
-const { RegisterDtoSchema, LoginDtoSchema, RefreshTokenDtoSchema } = require('./auth.dto');
-const authService = require('../application/auth.service');
+import { RegisterDtoSchema, LoginDtoSchema, RefreshTokenDtoSchema } from './auth.dto.js';
+import * as authService from '../application/auth.service.js';
 
-const register = async (request, reply) => {
+const register = async (request: any, reply: any) => {
     const data = RegisterDtoSchema.parse(request.body);
     const result = await authService.register(data);
     return reply.status(201).send(result);
 };
 
-const login = async (request, reply) => {
+const login = async (request: any, reply: any) => {
     const data = LoginDtoSchema.parse(request.body);
     const result = await authService.login(data.email, data.password);
 
@@ -32,7 +32,7 @@ const login = async (request, reply) => {
     });
 };
 
-const refresh = async (request, reply) => {
+const refresh = async (request: any, reply: any) => {
     const data = RefreshTokenDtoSchema.parse(request.body);
     const result = await authService.refresh(data.refreshToken);
 
@@ -53,7 +53,7 @@ const refresh = async (request, reply) => {
     return reply.send(result);
 };
 
-const logout = async (request, reply) => {
+const logout = async (request: any, reply: any) => {
     await authService.logout(request.user.sub);
 
     reply.clearCookie('access_token');
@@ -62,4 +62,4 @@ const logout = async (request, reply) => {
     return reply.send({ message: 'Logged out successfully' });
 };
 
-module.exports = { register, login, refresh, logout };
+export { register, login, refresh, logout };

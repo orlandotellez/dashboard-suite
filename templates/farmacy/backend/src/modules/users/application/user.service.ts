@@ -1,10 +1,10 @@
-const bcrypt = require('bcrypt');
-const { userRepository } = require('../infrastructure/user.repository');
-const { ConflictError, NotFoundError, ForbiddenError } = require('@/core/errors/AppError');
+import bcrypt from 'bcrypt';
+import { userRepository } from '../infrastructure/user.repository.js';
+import { ConflictError, NotFoundError, ForbiddenError } from '../../../core/errors/AppError.js';
 
 const SALT_ROUNDS = 10;
 
-const userService = {
+export const userService = {
     findAll: async (page = 1, limit = 10) => {
         const skip = (page - 1) * limit;
         const users = await userRepository.findAllActive(skip, limit);
@@ -22,7 +22,7 @@ const userService = {
         };
     },
 
-    findById: async (id) => {
+    findById: async (id: string) => {
         const user = await userRepository.findById(id);
         if (!user) {
             throw new NotFoundError('User not found');
@@ -30,7 +30,7 @@ const userService = {
         return user;
     },
 
-    create: async (data) => {
+    create: async (data: any) => {
         const existingUser = await userRepository.findByEmail(data.email);
         if (existingUser) {
             throw new ConflictError('Email already registered');
@@ -46,7 +46,7 @@ const userService = {
         });
     },
 
-    update: async (id, data, currentUserId) => {
+    update: async (id: string, data: any, currentUserId: string) => {
         const user = await userRepository.findById(id);
         if (!user) {
             throw new NotFoundError('User not found');
@@ -71,7 +71,7 @@ const userService = {
         return await userRepository.update(id, updateData);
     },
 
-    delete: async (id, currentUserId) => {
+    delete: async (id: string, currentUserId: string) => {
         const user = await userRepository.findById(id);
         if (!user) {
             throw new NotFoundError('User not found');
@@ -84,5 +84,3 @@ const userService = {
         return await userRepository.softDelete(id);
     },
 };
-
-module.exports = { userService };

@@ -1,5 +1,5 @@
-const { CreateSaleDtoSchema } = require('./sale.dto');
-const { saleService } = require('../application/sale.service');
+import { CreateSaleDtoSchema } from './sale.dto.js';
+import { saleService } from '../application/sale.service.js';
 
 const saleController = {
     findAll: async (request, reply) => {
@@ -21,4 +21,4 @@ const saleController = {
     },
 };
 
-module.exports = { saleController };
+export { saleController };

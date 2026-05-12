@@ -1,15 +1,15 @@
-const fastify = require('fastify');
-const cors = require('@fastify/cors');
-const helmet = require('@fastify/helmet');
-const compress = require('@fastify/compress');
-const rateLimit = require('@fastify/rate-limit');
-const { env } = require('./config/env');
-const { errorHandler } = require('./presentation/middlewares/errorHandler');
-const { registerAuth } = require('./presentation/middlewares/auth');
-const { routes } = require('./presentation/routes');
+import Fastify from 'fastify';
+import cors from '@fastify/cors';
+import helmet from '@fastify/helmet';
+import compress from '@fastify/compress';
+import rateLimit from '@fastify/rate-limit';
+import { env } from './config/env.js';
+import { errorHandler } from './presentation/middlewares/errorHandler.js';
+import { registerAuth } from './presentation/middlewares/auth.js';
+import { routes } from './presentation/routes.js';
 
-const buildApp = async () => {
-    const app = fastify({
+export const buildApp = async () => {
+    const app = Fastify({
         logger: env.NODE_ENV === 'development'
             ? {
                 level: 'debug',
@@ -57,5 +57,3 @@ const buildApp = async () => {
 
     return app;
 };
-
-module.exports = { buildApp };

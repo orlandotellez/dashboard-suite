@@ -46,6 +46,29 @@ export const useAuthStore = create<AuthState>()(
           })
         }
       },
+
+      register: async (name, email, password, role = 'staff') => {
+        try {
+          const response = await api.post<AuthResponse>('/auth/register', {
+            name,
+            email,
+            password,
+            role,
+          })
+
+          set({
+            user: response.user,
+            isAuthenticated: true,
+            accessToken: response.accessToken,
+            refreshToken: response.refreshToken,
+          })
+
+          return true
+        } catch (error) {
+          console.error('Register failed:', error)
+          return false
+        }
+      },
     }),
     {
       name: 'auth-storage',

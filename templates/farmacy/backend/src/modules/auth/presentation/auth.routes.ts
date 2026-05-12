@@ -1,7 +1,6 @@
-const Fastify = require('fastify');
-const { register, login, refresh, logout } = require('./auth.controller');
+import { register, login, refresh, logout } from './auth.controller.js';
 
-const authRoutes = async (fastify, options) => {
+const authRoutes = async (fastify: any, options: any) => {
     fastify.post('/register', register);
 
     fastify.post('/login', login);
@@ -14,4 +13,4 @@ const authRoutes = async (fastify, options) => {
     });
 };
 
-module.exports = authRoutes;
+export default authRoutes;

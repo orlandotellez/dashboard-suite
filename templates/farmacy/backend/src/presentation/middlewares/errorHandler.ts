@@ -1,8 +1,8 @@
-const { ZodError } = require('zod');
-const { logger } = require('../../infrastructure/logger');
-const { AppError } = require('../../core/errors/AppError');
+import { ZodError } from 'zod';
+import { logger } from '../../infrastructure/logger.js';
+import { AppError } from '../../core/errors/AppError.js';
 
-const errorHandler = (error, request, reply) => {
+const errorHandler = (error: any, request: any, reply: any) => {
     if (error instanceof ZodError) {
         logger.warn({ err: error }, 'Validation error');
         return reply.status(400).send({
@@ -38,4 +38,4 @@ const errorHandler = (error, request, reply) => {
     });
 };
 
-module.exports = { errorHandler };
+export { errorHandler };

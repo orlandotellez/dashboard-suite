@@ -1,6 +1,6 @@
-const { Redis } = require('ioredis');
-const { env } = require('./env');
-const { logger } = require('../infrastructure/logger');
+import Redis from 'ioredis';
+import { env } from './env.js';
+import { logger } from '../infrastructure/logger.js';
 
 const redisConfig = {
     host: env.REDIS_HOST,
@@ -11,12 +11,10 @@ const redisConfig = {
     reconnectOnError: () => false,
 };
 
-const redis = new Redis(redisConfig);
+export const redis = new Redis(redisConfig);
 
 redis.on('error', (err) => {
     // Silenciar errores - Redis es opcional
 });
 
-const isRedisConnected = () => redis.status === 'ready';
-
-module.exports = { redis, isRedisConnected };
+export const isRedisConnected = () => redis.status === 'ready';

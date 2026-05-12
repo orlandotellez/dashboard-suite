@@ -1,21 +1,21 @@
-const bcrypt = require('bcrypt');
-const jwt = require('jsonwebtoken');
-const { env } = require('@/config/env');
-const { prisma } = require('@/config/prisma');
-const { redis, isRedisConnected } = require('@/config/redis');
-const { UnauthorizedError } = require('@/core/errors/AppError');
+import bcrypt from 'bcrypt';
+import jwt from 'jsonwebtoken';
+import { env } from '../../../config/env.js';
+import { prisma } from '../../../config/prisma.js';
+import { redis, isRedisConnected } from '../../../config/redis.js';
+import { UnauthorizedError, ConflictError } from '../../../core/errors/AppError.js';
 
 const SALT_ROUNDS = 10;
 
-const hashPassword = async (password) => {
+const hashPassword = async (password: string) => {
     return await bcrypt.hash(password, SALT_ROUNDS);
 };
 
-const comparePassword = async (password, hash) => {
+const comparePassword = async (password: string, hash: string) => {
     return await bcrypt.compare(password, hash);
 };
 
-const generateTokens = (userId, email, role) => {
+const generateTokens = (userId: string, email: string, role: string) => {
     const accessToken = jwt.sign(
         { userId, email, role },
         env.JWT_SECRET,
@@ -31,7 +31,20 @@ const generateTokens = (userId, email, role) => {
     return { accessToken, refreshToken };
 };
 
-const register = async (data) => {
+interface RegisterData {
+    name: string;
+    email: string;
+    password: string;
+    role?: string;
+}
+
+interface AuthResult {
+    user: any;
+    accessToken: string;
+    refreshToken: string;
+}
+
+const register = async (data: RegisterData): Promise<AuthResult> => {
     const { name, email, password, role = 'staff' } = data;
 
     const existingUser = await prisma.user.findFirst({
@@ -78,7 +91,7 @@ const register = async (data) => {
     };
 };
 
-const login = async (email, password) => {
+const login = async (email: string, password: string): Promise<AuthResult> => {
     const user = await prisma.user.findFirst({
         where: { email, deletedAt: null },
     });
@@ -113,13 +126,13 @@ const login = async (email, password) => {
     };
 };
 
-const refresh = async (refreshToken) => {
+const refresh = async (refreshToken: string) => {
     if (!isRedisConnected()) {
         throw new UnauthorizedError('Token refresh unavailable');
     }
 
     try {
-        const payload = jwt.verify(refreshToken, env.JWT_REFRESH_SECRET);
+        const payload = jwt.verify(refreshToken, env.JWT_REFRESH_SECRET) as { userId: string };
 
         const storedToken = await redis.get(`refresh_token:${payload.userId}`);
 
@@ -157,10 +170,10 @@ const refresh = async (refreshToken) => {
     }
 };
 
-const logout = async (userId) => {
+const logout = async (userId: string) => {
     if (isRedisConnected()) {
         await redis.del(`refresh_token:${userId}`);
     }
 };
 
-module.exports = { register, login, refresh, logout, generateTokens };
+export { register, login, refresh, logout, generateTokens };

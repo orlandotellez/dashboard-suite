@@ -1,5 +1,5 @@
-const { clientController } = require('./client.controller');
-const { requireRoles } = require('@/presentation/middlewares/rbac');
+import { clientController } from './client.controller.js';
+import { requireRoles } from '@/presentation/middlewares/rbac.js';
 
 const clientRoutes = async (fastify, options) => {
     fastify.get('/', {
@@ -28,4 +28,4 @@ const clientRoutes = async (fastify, options) => {
     });
 };
 
-module.exports = clientRoutes;
+export default clientRoutes;

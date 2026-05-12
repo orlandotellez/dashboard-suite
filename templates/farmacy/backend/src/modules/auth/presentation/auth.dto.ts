@@ -1,19 +1,17 @@
-const { z } = require('zod');
+import { z } from 'zod';
 
-const RegisterDtoSchema = z.object({
+export const RegisterDtoSchema = z.object({
     name: z.string().min(2, 'Name must be at least 2 characters'),
     email: z.string().email('Invalid email format'),
     password: z.string().min(8, 'Password must be at least 8 characters'),
     role: z.enum(['admin', 'staff']).optional(),
 });
 
-const LoginDtoSchema = z.object({
+export const LoginDtoSchema = z.object({
     email: z.string().email('Invalid email format'),
     password: z.string().min(1, 'Password is required'),
 });
 
-const RefreshTokenDtoSchema = z.object({
+export const RefreshTokenDtoSchema = z.object({
     refreshToken: z.string().min(1, 'Refresh token is required'),
 });
-
-module.exports = { RegisterDtoSchema, LoginDtoSchema, RefreshTokenDtoSchema };

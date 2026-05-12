@@ -1,6 +1,6 @@
-const { prisma } = require('@/config/prisma');
+import { prisma } from '@/config/prisma.js';
 
-const clientRepository = {
+export const clientRepository = {
     findById: async (id) => {
         return await prisma.client.findFirst({
             where: { id, deletedAt: null },
@@ -112,5 +112,3 @@ const clientRepository = {
         };
     },
 };
-
-module.exports = { clientRepository };

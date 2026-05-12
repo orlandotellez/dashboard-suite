@@ -1,6 +1,6 @@
-const { z } = require('zod');
+import { z } from 'zod';
 
-const CreateMedicineDtoSchema = z.object({
+export const CreateMedicineDtoSchema = z.object({
     tradeName: z.string().min(2, 'Trade name must be at least 2 characters'),
     genericName: z.string().min(2, 'Generic name must be at least 2 characters'),
     description: z.string().optional(),
@@ -11,7 +11,7 @@ const CreateMedicineDtoSchema = z.object({
     categoryId: z.string().min(1, 'Category is required'),
 });
 
-const UpdateMedicineDtoSchema = z.object({
+export const UpdateMedicineDtoSchema = z.object({
     tradeName: z.string().min(2, 'Trade name must be at least 2 characters').optional(),
     genericName: z.string().min(2, 'Generic name must be at least 2 characters').optional(),
     description: z.string().optional(),
@@ -21,7 +21,7 @@ const UpdateMedicineDtoSchema = z.object({
     categoryId: z.string().min(1, 'Category is required').optional(),
 });
 
-const UpdateStockDtoSchema = z.object({
+export const UpdateStockDtoSchema = z.object({
     stock: z.number().int().min(0).optional(),
     increment: z.number().int().positive().optional(),
     decrement: z.number().int().positive().optional(),
@@ -29,5 +29,3 @@ const UpdateStockDtoSchema = z.object({
     const count = [data.stock, data.increment, data.decrement].filter(v => v !== undefined).length;
     return count === 1;
 }, { message: 'Exactly one of stock, increment, or decrement must be provided' });
-
-module.exports = { CreateMedicineDtoSchema, UpdateMedicineDtoSchema, UpdateStockDtoSchema };

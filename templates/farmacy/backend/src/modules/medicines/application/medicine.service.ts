@@ -1,12 +1,12 @@
-const { medicineRepository } = require('../infrastructure/medicine.repository');
-const { NotFoundError, ConflictError, ForbiddenError } = require('@/core/errors/AppError');
+import { medicineRepository } from '../infrastructure/medicine.repository.js';
+import { NotFoundError, ForbiddenError } from '../../../core/errors/AppError.js';
 
-const medicineService = {
-    findAll: async (queryParams) => {
+export const medicineService = {
+    findAll: async (queryParams: any) => {
         const { q, laboratoryId, categoryId, stockStatus, page = 1, limit = 10 } = queryParams;
         const skip = (Number(page) - 1) * Number(limit);
 
-        const filters = {};
+        const filters: any = {};
         if (q) filters.search = q;
         if (laboratoryId) filters.laboratoryId = laboratoryId;
         if (categoryId) filters.categoryId = categoryId;
@@ -27,7 +27,7 @@ const medicineService = {
         };
     },
 
-    findById: async (id) => {
+    findById: async (id: string) => {
         const medicine = await medicineRepository.findById(id);
         if (!medicine) {
             throw new NotFoundError('Medicine not found');
@@ -35,7 +35,7 @@ const medicineService = {
         return medicine;
     },
 
-    create: async (data) => {
+    create: async (data: any) => {
         return await medicineRepository.create({
             tradeName: data.tradeName,
             genericName: data.genericName,
@@ -48,7 +48,7 @@ const medicineService = {
         });
     },
 
-    update: async (id, data) => {
+    update: async (id: string, data: any) => {
         const medicine = await medicineRepository.findById(id);
         if (!medicine) {
             throw new NotFoundError('Medicine not found');
@@ -69,7 +69,7 @@ const medicineService = {
         });
     },
 
-    updateStock: async (id, stockData) => {
+    updateStock: async (id: string, stockData: any) => {
         const medicine = await medicineRepository.findById(id);
         if (!medicine) {
             throw new NotFoundError('Medicine not found');
@@ -94,18 +94,10 @@ const medicineService = {
             return await medicineRepository.decrementStock(id, stockData.decrement);
         }
 
-        if (stockData.decrement !== undefined) {
-            const newStock = medicine.stock - stockData.decrement;
-            if (newStock < 0) {
-                throw new ForbiddenError('Stock cannot be negative');
-            }
-            return await medicineRepository.decrementStock(id, stockData.decrement);
-        }
-
         throw new ForbiddenError('No valid stock operation provided');
     },
 
-    delete: async (id) => {
+    delete: async (id: string) => {
         const medicine = await medicineRepository.findById(id);
         if (!medicine) {
             throw new NotFoundError('Medicine not found');
@@ -114,5 +106,3 @@ const medicineService = {
         return await medicineRepository.softDelete(id);
     },
 };
-
-module.exports = { medicineService };

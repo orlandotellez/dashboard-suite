@@ -1,7 +1,7 @@
-const { prisma } = require('@/config/prisma');
+import { prisma } from '../../../config/prisma.js';
 
-const medicineRepository = {
-    findById: async (id) => {
+export const medicineRepository = {
+    findById: async (id: string) => {
         return await prisma.medicine.findFirst({
             where: { id, deletedAt: null },
             include: {
@@ -11,8 +11,8 @@ const medicineRepository = {
         });
     },
 
-    findAllActive: async (filters = {}, skip = 0, take = 10) => {
-        const where = { deletedAt: null };
+    findAllActive: async (filters: any = {}, skip = 0, take = 10) => {
+        const where: any = { deletedAt: null };
 
         if (filters.search) {
             where.OR = [
@@ -53,8 +53,8 @@ const medicineRepository = {
         });
     },
 
-    countActive: async (filters = {}) => {
-        const where = { deletedAt: null };
+    countActive: async (filters: any = {}) => {
+        const where: any = { deletedAt: null };
 
         if (filters.search) {
             where.OR = [
@@ -86,7 +86,7 @@ const medicineRepository = {
         return await prisma.medicine.count({ where });
     },
 
-    create: async (data) => {
+    create: async (data: any) => {
         return await prisma.medicine.create({
             data,
             include: {
@@ -96,7 +96,7 @@ const medicineRepository = {
         });
     },
 
-    update: async (id, data) => {
+    update: async (id: string, data: any) => {
         return await prisma.medicine.update({
             where: { id },
             data,
@@ -107,33 +107,31 @@ const medicineRepository = {
         });
     },
 
-    updateStock: async (id, stock) => {
+    updateStock: async (id: string, stock: number) => {
         return await prisma.medicine.update({
             where: { id },
             data: { stock },
         });
     },
 
-    incrementStock: async (id, amount) => {
+    incrementStock: async (id: string, amount: number) => {
         return await prisma.medicine.update({
             where: { id },
             data: { stock: { increment: amount } },
         });
     },
 
-    decrementStock: async (id, amount) => {
+    decrementStock: async (id: string, amount: number) => {
         return await prisma.medicine.update({
             where: { id },
             data: { stock: { decrement: amount } },
         });
     },
 
-    softDelete: async (id) => {
+    softDelete: async (id: string) => {
         return await prisma.medicine.update({
             where: { id },
             data: { deletedAt: new Date() },
         });
     },
 };
-
-module.exports = { medicineRepository };

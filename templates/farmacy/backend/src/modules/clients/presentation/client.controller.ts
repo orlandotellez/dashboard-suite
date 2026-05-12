@@ -1,7 +1,7 @@
-const { CreateClientDtoSchema, UpdateClientDtoSchema } = require('./client.dto');
-const { clientService } = require('../application/client.service');
+import { CreateClientDtoSchema, UpdateClientDtoSchema } from './client.dto.js';
+import { clientService } from '../application/client.service.js';
 
-const clientController = {
+export const clientController = {
     findAll: async (request, reply) => {
         const result = await clientService.findAll(request.query);
         return reply.send(result);
@@ -32,5 +32,3 @@ const clientController = {
         return reply.send({ message: 'Client deleted successfully' });
     },
 };
-
-module.exports = { clientController };

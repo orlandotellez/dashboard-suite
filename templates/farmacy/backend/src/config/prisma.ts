@@ -1,9 +1,7 @@
-const { PrismaClient } = require('@prisma/client');
-const { env } = require('./env');
+import { PrismaClient } from '@prisma/client';
+import { env } from './env.js';
 
-const prisma = new PrismaClient({
+export const prisma = new PrismaClient({
     log: env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
     datasourceUrl: env.DATABASE_URL,
 });
-
-module.exports = { prisma };

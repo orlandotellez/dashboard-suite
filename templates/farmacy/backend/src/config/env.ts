@@ -1,5 +1,5 @@
-const { z } = require('zod');
-const dotenv = require('dotenv');
+import { z } from 'zod';
+import dotenv from 'dotenv';
 
 dotenv.config();
 
@@ -22,6 +22,4 @@ if (!_env.success) {
     process.exit(1);
 }
 
-const env = _env.data;
-
-module.exports = { env };
+export const env = _env.data;

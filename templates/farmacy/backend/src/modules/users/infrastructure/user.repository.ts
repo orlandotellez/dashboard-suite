@@ -1,13 +1,13 @@
-const { prisma } = require('@/config/prisma');
+import { prisma } from '../../../config/prisma.js';
 
-const userRepository = {
-    findByEmail: async (email) => {
+export const userRepository = {
+    findByEmail: async (email: string) => {
         return await prisma.user.findFirst({
             where: { email, deletedAt: null },
         });
     },
 
-    findById: async (id) => {
+    findById: async (id: string) => {
         return await prisma.user.findFirst({
             where: { id, deletedAt: null },
         });
@@ -34,7 +34,7 @@ const userRepository = {
         });
     },
 
-    create: async (data) => {
+    create: async (data: any) => {
         return await prisma.user.create({
             data,
             select: {
@@ -47,7 +47,7 @@ const userRepository = {
         });
     },
 
-    update: async (id, data) => {
+    update: async (id: string, data: any) => {
         return await prisma.user.update({
             where: { id },
             data,
@@ -61,12 +61,10 @@ const userRepository = {
         });
     },
 
-    softDelete: async (id) => {
+    softDelete: async (id: string) => {
         return await prisma.user.update({
             where: { id },
             data: { deletedAt: new Date() },
         });
     },
 };
-
-module.exports = { userRepository };

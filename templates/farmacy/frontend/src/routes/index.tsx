@@ -10,7 +10,7 @@ import { ReportesPage } from '../pages/ReportesPage'
 import { ProveedoresPage } from '../pages/ProveedoresPage'
 import { LaboratoriosPage } from '../pages/LaboratoriosPage'
 import { LoginPage } from '../pages/LoginPage'
-// RegisterPage removed - only admins can create users via /usuarios
+import { RegisterPage } from '../pages/RegisterPage'
 import { ProfilePage } from '../pages/ProfilePage'
 import { UserManagementPage } from '../pages/UserManagementPage'
 import { useAuthStore } from '../store/useAuthStore'
@@ -48,6 +48,11 @@ export const AppRoutes: React.FC = () => {
         <Route path="/login" element={
           <PublicRoute>
             <LoginPage />
+          </PublicRoute>
+        } />
+        <Route path="/register" element={
+          <PublicRoute>
+            <RegisterPage />
           </PublicRoute>
         } />
 

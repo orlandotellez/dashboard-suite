@@ -1,5 +1,5 @@
-const { prisma } = require('@/config/prisma');
-const { ForbiddenError } = require('@/core/errors/AppError');
+import { prisma } from '@/config/prisma.js';
+import { ForbiddenError } from '@/core/errors/AppError.js';
 
 const reportController = {
     salesReport: async (request, reply) => {
@@ -183,4 +183,4 @@ const reportController = {
     },
 };
 
-module.exports = { reportController };
+export { reportController };

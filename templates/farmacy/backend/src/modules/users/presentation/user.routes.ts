@@ -1,10 +1,8 @@
-const { userController } = require('./user.controller');
-const { requireRoles } = require('@/presentation/middlewares/rbac');
+import { userController } from './user.controller.js';
+import { requireRoles } from '../../../presentation/middlewares/rbac.js';
+import { userService } from '../application/user.service.js';
 
-const userRoutes = async (fastify, options) => {
-    const userServiceInstance = require('../application/user.service').userService;
-    const userRepositoryInstance = require('../infrastructure/user.repository').userRepository;
-
+const userRoutes = async (fastify: any, options: any) => {
     fastify.get('/', {
         preHandler: [fastify.authenticate, requireRoles(['admin'])],
         handler: userController.findAll,
@@ -31,4 +29,4 @@ const userRoutes = async (fastify, options) => {
     });
 };
 
-module.exports = userRoutes;
+export default userRoutes;

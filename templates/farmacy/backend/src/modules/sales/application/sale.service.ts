@@ -1,7 +1,7 @@
-const { prisma } = require('@/config/prisma');
-const { medicineRepository } = require('@/modules/medicines/infrastructure/medicine.repository');
-const { saleRepository } = require('../infrastructure/sale.repository');
-const { NotFoundError, ForbiddenError } = require('@/core/errors/AppError');
+import { prisma } from '@/config/prisma';
+import { medicineRepository } from '@/modules/medicines/infrastructure/medicine.repository';
+import { saleRepository } from '../infrastructure/sale.repository.js';
+import { NotFoundError, ForbiddenError } from '@/core/errors/AppError';
 
 const saleService = {
     register: async (data, userId) => {
@@ -112,4 +112,4 @@ const saleService = {
     },
 };
 
-module.exports = { saleService };
+export { saleService };

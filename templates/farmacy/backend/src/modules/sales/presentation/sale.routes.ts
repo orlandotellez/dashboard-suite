@@ -1,5 +1,5 @@
-const { saleController } = require('./sale.controller');
-const { requireRoles } = require('@/presentation/middlewares/rbac');
+import { saleController } from './sale.controller.js';
+import { requireRoles } from '@/presentation/middlewares/rbac';
 
 const saleRoutes = async (fastify, options) => {
     fastify.get('/', {
@@ -18,4 +18,4 @@ const saleRoutes = async (fastify, options) => {
     });
 };
 
-module.exports = saleRoutes;
+export default saleRoutes;

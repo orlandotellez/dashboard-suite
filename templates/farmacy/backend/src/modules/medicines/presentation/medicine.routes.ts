@@ -1,7 +1,7 @@
-const { medicineController } = require('./medicine.controller');
-const { requireRoles } = require('@/presentation/middlewares/rbac');
+import { medicineController } from './medicine.controller.js';
+import { requireRoles } from '../../../presentation/middlewares/rbac.js';
 
-const medicineRoutes = async (fastify, options) => {
+const medicineRoutes = async (fastify: any, options: any) => {
     fastify.get('/', {
         preHandler: [fastify.authenticate],
         handler: medicineController.findAll,
@@ -33,4 +33,4 @@ const medicineRoutes = async (fastify, options) => {
     });
 };
 
-module.exports = medicineRoutes;
+export default medicineRoutes;

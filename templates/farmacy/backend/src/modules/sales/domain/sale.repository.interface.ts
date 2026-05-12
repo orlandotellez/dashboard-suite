@@ -10,4 +10,4 @@ const ISaleRepository = {
     updateMedicinesStock: async (updates) => {},
 };
 
-module.exports = { ISaleRepository };
+export { ISaleRepository };

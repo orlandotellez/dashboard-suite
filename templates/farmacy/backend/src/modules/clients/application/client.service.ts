@@ -1,7 +1,7 @@
-const { clientRepository } = require('../infrastructure/client.repository');
-const { ConflictError, NotFoundError, ForbiddenError } = require('@/core/errors/AppError');
+import { clientRepository } from '../infrastructure/client.repository.js';
+import { ConflictError, NotFoundError, ForbiddenError } from '@/core/errors/AppError.js';
 
-const clientService = {
+export const clientService = {
     findAll: async (queryParams) => {
         const { q, membership, page = 1, limit = 10 } = queryParams;
         const skip = (Number(page) - 1) * Number(limit);
@@ -90,5 +90,3 @@ const clientService = {
         return await clientRepository.softDelete(id);
     },
 };
-
-module.exports = { clientService };

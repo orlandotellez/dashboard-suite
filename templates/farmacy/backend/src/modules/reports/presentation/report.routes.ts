@@ -1,5 +1,5 @@
-const { reportController } = require('./report.controller');
-const { requireRoles } = require('@/presentation/middlewares/rbac');
+import { reportController } from './report.controller.js';
+import { requireRoles } from '@/presentation/middlewares/rbac.js';
 
 const reportRoutes = async (fastify, options) => {
     fastify.get('/sales', {
@@ -23,4 +23,4 @@ const reportRoutes = async (fastify, options) => {
     });
 };
 
-module.exports = reportRoutes;
+export default reportRoutes;

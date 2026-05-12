@@ -38,7 +38,6 @@ export const Sidebar: React.FC = () => {
       case 'admin': return 'Administrador'
       case 'staff': return 'Personal'
       default: return role
-      default: return role
     }
   }
 

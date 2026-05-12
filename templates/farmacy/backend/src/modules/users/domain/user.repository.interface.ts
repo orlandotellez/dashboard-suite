@@ -1,13 +1,11 @@
 // IUserRepository interface
 // This defines the contract for user data access
 
-const IUserRepository = {
-    findByEmail: async (email) => {},
-    findById: async (id) => {},
+export const IUserRepository = {
+    findByEmail: async (email: string) => {},
+    findById: async (id: string) => {},
     findAllActive: async () => {},
-    create: async (data) => {},
-    update: async (id, data) => {},
-    softDelete: async (id) => {},
+    create: async (data: any) => {},
+    update: async (id: string, data: any) => {},
+    softDelete: async (id: string) => {},
 };
-
-module.exports = { IUserRepository };
