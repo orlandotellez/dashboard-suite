@@ -1,0 +1,6 @@
+.notFound { display: flex; align-items: center; justify-content: center; min-height: calc(100vh - 104px); }
+.content { text-align: center; }
+.content h1 { font-size: 72px; font-weight: 700; color: var(--text-tertiary); margin: 0; }
+.content p { font-size: 18px; color: var(--text-secondary); margin: 16px 0 24px; }
+.homeBtn { display: inline-flex; align-items: center; gap: 8px; padding: 12px 24px; font-size: 14px; font-weight: 500; color: white; background: var(--accent); border-radius: 8px; text-decoration: none; }
+.homeBtn:hover { background: var(--accent-hover); }

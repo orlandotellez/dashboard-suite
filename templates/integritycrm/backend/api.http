@@ -1,0 +1,812 @@
+### 
+
+# IntegrityCRM API - Endpoints Reference
+# Use with VS Code REST Client extension or similar
+
+# @host http://localhost:3000
+
+
+### 
+
+@baseUrl = {{host}}/api/v1
+@host = http://localhost:3000
+
+# Login
+
+POST {{baseUrl}}/auth/login HTTP/1.1
+Content-Type: application/json
+
+{
+  "email": "newuser@agenciapro.com",
+  "password": "password123"
+}
+
+
+### 
+
+# Register
+
+POST {{baseUrl}}/auth/register HTTP/1.1
+Content-Type: application/json
+
+{
+  "email": "newuser@agenciapro.com",
+  "name": "Nuevo Usuario",
+  "password": "password123",
+  "role": "VENDEDOR"
+}
+
+
+### 
+
+# Refresh Token
+
+POST {{baseUrl}}/auth/refresh-token HTTP/1.1
+Content-Type: application/json
+
+{
+  "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI3NWE2ZDYwNy1kZDc0LTQ1NDctYjU2NS00MTE4MWY5YjlmZjYiLCJlbWFpbCI6Im5ld3VzZXJAYWdlbmNpYXByby5jb20iLCJuYW1lIjoiTnVldm8gVXN1YXJpbyIsInJvbGUiOiJBRE1JTiIsImlhdCI6MTc3ODk1NDY5NCwiZXhwIjoxNzc5NTU5NDk0fQ.tdMhg0soCrcvW1heeRkNehFbJu2LwFMDPH6m_PnJpSQ"
+}
+
+
+### 
+
+# Get Current User (requires auth)
+
+GET {{baseUrl}}/auth/me HTTP/1.1
+Authorization: Bearer "{{auth_token}}"
+
+
+### 
+
+# Change Password
+
+POST {{baseUrl}}/auth/change-password HTTP/1.1
+Authorization: Bearer "{{auth_token}}"
+Content-Type: application/json
+
+{
+  "currentPassword": "password123",
+  "newPassword": "newpassword456"
+}
+
+
+### 
+
+# List Contacts
+
+GET {{baseUrl}}/contacts?page=1&limit=20 HTTP/1.1
+Authorization: Bearer "{{auth_token}}"
+
+
+### 
+
+# List Contacts with search
+
+GET {{baseUrl}}/contacts?page=1&limit=20&search=TechCorp HTTP/1.1
+Authorization: Bearer "{{auth_token}}"
+
+
+### 
+
+# List Contacts by assignee
+
+GET {{baseUrl}}/contacts?page=1&limit=20&assigneeId=uuid HTTP/1.1
+Authorization: Bearer "{{auth_token}}"
+
+
+### 
+
+# Get Single Contact
+
+GET {{baseUrl}}/contacts/"{{contact_id}}" HTTP/1.1
+Authorization: Bearer "{{auth_token}}"
+
+
+### 
+
+# Create Contact
+
+POST {{baseUrl}}/contacts HTTP/1.1
+Authorization: Bearer "{{auth_token}}"
+Content-Type: application/json
+
+{
+  "city": "Ciudad de México",
+  "company": "TechCorp Solutions",
+  "country": "México",
+  "email": "roberto@techcorp.com",
+  "name": "Roberto García",
+  "phone": "+52 55 1234 5678",
+  "role": "Director de TI",
+  "source": "referral"
+}
+
+
+### 
+
+# Update Contact
+
+PUT {{baseUrl}}/contacts/"{{contact_id}}" HTTP/1.1
+Authorization: Bearer "{{auth_token}}"
+Content-Type: application/json
+
+{
+  "name": "Roberto García Actualizado",
+  "phone": "+52 55 9999 9999",
+  "tags": [
+    "enterprise",
+    "priority"
+  ]
+}
+
+
+### 
+
+# Delete Contact
+
+DELETE "{{baseUrl}}"/contacts/"{{contact_id}}" HTTP/1.1
+Authorization: Bearer "{{auth_token}}"
+
+
+### 
+
+# List Deals
+
+GET "{{baseUrl}}"/deals?page=1&limit=20 HTTP/1.1
+Authorization: Bearer "{{auth_token}}"
+
+
+### 
+
+# List Deals with filters
+
+GET "{{baseUrl}}"/deals?page=1&limit=20&stage=PROPUESTA&assigneeId=uuid HTTP/1.1
+Authorization: Bearer "{{auth_token}}"
+
+
+### 
+
+# Get Single Deal
+
+GET "{{baseUrl}}"/deals/"{{deal_id}}" HTTP/1.1
+Authorization: Bearer "{{auth_token}}"
+
+
+### 
+
+# Create Deal
+
+POST "{{baseUrl}}"/deals HTTP/1.1
+Authorization: Bearer "{{auth_token}}"
+Content-Type: application/json
+
+{
+  "assigneeId": "{{user_id}}",
+  "company": "TechCorp Solutions",
+  "contactId": "{{contact_id}}",
+  "currency": "USD",
+  "expectedCloseDate": "2025-08-15",
+  "probability": 20,
+  "source": "web",
+  "stage": "PROSPECTO",
+  "tags": [
+    "enterprise"
+  ],
+  "title": "TechCorp - Upgrade",
+  "value": 85000
+}
+
+
+### 
+
+# Update Deal
+
+PUT "{{baseUrl}}"/deals/"{{deal_id}}" HTTP/1.1
+Authorization: Bearer "{{auth_token}}"
+Content-Type: application/json
+
+{
+  "probability": 60,
+  "stage": "PROPUESTA",
+  "title": "TechCorp - Full Suite Upgrade",
+  "value": 95000
+}
+
+
+### 
+
+# Move Deal to Stage
+
+PATCH "{{baseUrl}}"/deals/"{{deal_id}}"/stage HTTP/1.1
+Authorization: Bearer "{{auth_token}}"
+Content-Type: application/json
+
+{
+  "stage": "CONTACTADO"
+}
+
+
+### 
+
+# Delete Deal
+
+DELETE "{{baseUrl}}"/deals/"{{deal_id}}" HTTP/1.1
+Authorization: Bearer "{{auth_token}}"
+
+
+### 
+
+# List Tasks
+
+GET "{{baseUrl}}"/tasks?page=1&limit=20 HTTP/1.1
+Authorization: Bearer "{{auth_token}}"
+
+
+### 
+
+# List Tasks with filters
+
+GET "{{baseUrl}}"/tasks?page=1&limit=20&status=PENDIENTE&priority=ALTA HTTP/1.1
+Authorization: Bearer "{{auth_token}}"
+
+
+### 
+
+# Get Single Task
+
+GET "{{baseUrl}}"/tasks/"{{task_id}}" HTTP/1.1
+Authorization: Bearer "{{auth_token}}"
+
+
+### 
+
+# Create Task
+
+POST "{{baseUrl}}"/tasks HTTP/1.1
+Authorization: Bearer "{{auth_token}}"
+Content-Type: application/json
+
+{
+  "assigneeId": "{{user_id}}",
+  "description": "Seguimiento de propuesta enviada",
+  "dueDate": "2025-07-15",
+  "dueTime": "10:00",
+  "priority": "ALTA",
+  "relatedId": "{{deal_id}}",
+  "relatedType": "deal",
+  "status": "PENDIENTE",
+  "title": "Llamada de seguimiento",
+  "type": "LLAMADA"
+}
+
+
+### 
+
+# Update Task
+
+PUT "{{baseUrl}}"/tasks/"{{task_id}}" HTTP/1.1
+Authorization: Bearer "{{auth_token}}"
+Content-Type: application/json
+
+{
+  "description": "Nueva descripción",
+  "priority": "MEDIA",
+  "title": "Llamada de seguimiento actualizada"
+}
+
+
+### 
+
+# Update Task Status
+
+PATCH "{{baseUrl}}"/tasks/"{{task_id}}"/status HTTP/1.1
+Authorization: Bearer "{{auth_token}}"
+Content-Type: application/json
+
+{
+  "status": "COMPLETADA"
+}
+
+
+### 
+
+# Delete Task
+
+DELETE "{{baseUrl}}"/tasks/"{{task_id}}" HTTP/1.1
+Authorization: Bearer "{{auth_token}}"
+
+
+### 
+
+# List Emails
+
+GET "{{baseUrl}}"/emails?page=1&limit=20&folder=INBOX HTTP/1.1
+Authorization: Bearer "{{auth_token}}"
+
+
+### 
+
+# Get Single Email
+
+GET "{{baseUrl}}"/emails/"{{email_id}}" HTTP/1.1
+Authorization: Bearer "{{auth_token}}"
+
+
+### 
+
+# Create Email (draft)
+
+POST "{{baseUrl}}"/emails HTTP/1.1
+Authorization: Bearer "{{auth_token}}"
+Content-Type: application/json
+
+{
+  "body": "Gracias por la propuesta...",
+  "folder": "DRAFT",
+  "fromEmail": "admin@agenciapro.com",
+  "fromName": "Ana García",
+  "subject": "Re: Reunión de seguimiento",
+  "toEmail": "roberto@techcorp.com"
+}
+
+
+### 
+
+# Update Email
+
+PUT "{{baseUrl}}"/emails/"{{email_id}}" HTTP/1.1
+Authorization: Bearer "{{auth_token}}"
+Content-Type: application/json
+
+{
+  "read": true,
+  "starred": true
+}
+
+
+### 
+
+# Delete Email
+
+DELETE "{{baseUrl}}"/emails/"{{email_id}}" HTTP/1.1
+Authorization: Bearer "{{auth_token}}"
+
+
+### 
+
+# CALENDAR (Events)
+# List Events
+
+GET "{{baseUrl}}"/calendar?startDate=2025-07-01&endDate=2025-07-31 HTTP/1.1
+Authorization: Bearer "{{auth_token}}"
+
+
+### 
+
+# Get Single Event
+
+GET "{{baseUrl}}"/calendar/"{{event_id}}" HTTP/1.1
+Authorization: Bearer "{{auth_token}}"
+
+
+### 
+
+# Create Event
+
+POST "{{baseUrl}}"/calendar HTTP/1.1
+Authorization: Bearer "{{auth_token}}"
+Content-Type: application/json
+
+{
+  "attendees": [
+    "{{user_id}}",
+    "{{contact_id}}"
+  ],
+  "description": "Demo del sistema CRM",
+  "endTime": "11:00",
+  "startDate": "2025-07-15",
+  "startTime": "10:00",
+  "title": "Demo con TechCorp",
+  "type": "REUNION"
+}
+
+
+### 
+
+# Update Event
+
+PUT "{{baseUrl}}"/calendar/"{{event_id}}" HTTP/1.1
+Authorization: Bearer "{{auth_token}}"
+Content-Type: application/json
+
+{
+  "endTime": "12:00",
+  "title": "Demo actualizada"
+}
+
+
+### 
+
+# Delete Event
+
+DELETE "{{baseUrl}}"/calendar/"{{event_id}}" HTTP/1.1
+Authorization: Bearer "{{auth_token}}"
+
+
+### 
+
+# List Products
+
+GET "{{baseUrl}}"/products?page=1&limit=20 HTTP/1.1
+Authorization: Bearer "{{auth_token}}"
+
+
+### 
+
+# List Products with filters
+
+GET "{{baseUrl}}"/products?page=1&limit=20&category=Software&status=ACTIVE HTTP/1.1
+Authorization: Bearer "{{auth_token}}"
+
+
+### 
+
+# Get Single Product
+
+GET "{{baseUrl}}"/products/"{{product_id}}" HTTP/1.1
+Authorization: Bearer "{{auth_token}}"
+
+
+### 
+
+# Create Product
+
+POST "{{baseUrl}}"/products HTTP/1.1
+Authorization: Bearer "{{auth_token}}"
+Content-Type: application/json
+
+{
+  "billingPeriod": "mensual",
+  "category": "Software",
+  "currency": "USD",
+  "description": "Sistema CRM completo para empresas",
+  "name": "CRM Enterprise",
+  "price": 15000,
+  "sku": "CRM-ENT-001",
+  "status": "ACTIVE",
+  "tags": [
+    "enterprise",
+    "crm"
+  ],
+  "type": "SUSCRIPCION"
+}
+
+
+### 
+
+# Update Product
+
+PUT "{{baseUrl}}"/products/"{{product_id}}" HTTP/1.1
+Authorization: Bearer "{{auth_token}}"
+Content-Type: application/json
+
+{
+  "discount": 10,
+  "price": 18000
+}
+
+
+### 
+
+# Delete Product
+
+DELETE "{{baseUrl}}"/products/"{{product_id}}" HTTP/1.1
+Authorization: Bearer "{{auth_token}}"
+
+
+### 
+
+# List Documents
+
+GET "{{baseUrl}}"/documents?page=1&limit=20 HTTP/1.1
+Authorization: Bearer "{{auth_token}}"
+
+
+### 
+
+# Get Single Document
+
+GET "{{baseUrl}}"/documents/"{{document_id}}" HTTP/1.1
+Authorization: Bearer "{{auth_token}}"
+
+
+### 
+
+# Create Document
+
+POST "{{baseUrl}}"/documents HTTP/1.1
+Authorization: Bearer "{{auth_token}}"
+Content-Type: application/json
+
+{
+  "clientId": "{{contact_id}}",
+  "content": {},
+  "dealId": "{{deal_id}}",
+  "name": "Propuesta TechCorp",
+  "status": "BORRADOR",
+  "type": "PROPUESTA",
+  "value": 85000
+}
+
+
+### 
+
+# Update Document
+
+PUT "{{baseUrl}}"/documents/"{{document_id}}" HTTP/1.1
+Authorization: Bearer "{{auth_token}}"
+Content-Type: application/json
+
+{
+  "sentAt": "2025-07-10T14:00:00Z",
+  "status": "ENVIADO"
+}
+
+
+### 
+
+# Send Document
+
+POST "{{baseUrl}}"/documents/"{{document_id}}"/send HTTP/1.1
+Authorization: Bearer "{{auth_token}}"
+Content-Type: application/json
+
+{
+  "subject": "Propuesta comercial",
+  "to": "roberto@techcorp.com"
+}
+
+
+### 
+
+# Delete Document
+
+DELETE "{{baseUrl}}"/documents/"{{document_id}}" HTTP/1.1
+Authorization: Bearer "{{auth_token}}"
+
+
+### 
+
+# List Automations
+
+GET "{{baseUrl}}"/automations HTTP/1.1
+Authorization: Bearer "{{auth_token}}"
+
+
+### 
+
+# Get Single Automation
+
+GET "{{baseUrl}}"/automations/"{{automation_id}}" HTTP/1.1
+Authorization: Bearer "{{auth_token}}"
+
+
+### 
+
+# Create Automation
+
+POST "{{baseUrl}}"/automations HTTP/1.1
+Authorization: Bearer "{{auth_token}}"
+Content-Type: application/json
+
+{
+  "actions": [
+    {
+      "params": {
+        "template": "welcome",
+        "to": "{{contact.email}}"
+      },
+      "type": "send_email"
+    }
+  ],
+  "active": true,
+  "conditions": {},
+  "description": "Enviar email de bienvenida cuando se crea un nuevo contacto",
+  "name": "Bienvenida a nuevos leads",
+  "triggerParams": {},
+  "triggerType": "new_contact"
+}
+
+
+### 
+
+# Update Automation
+
+PUT "{{baseUrl}}"/automations/"{{automation_id}}" HTTP/1.1
+Authorization: Bearer "{{auth_token}}"
+Content-Type: application/json
+
+{
+  "active": false,
+  "name": "Bienvenida actualizada"
+}
+
+
+### 
+
+# Toggle Automation
+
+POST "{{baseUrl}}"/automations/"{{automation_id}}"/toggle HTTP/1.1
+Authorization: Bearer "{{auth_token}}"
+
+
+### 
+
+# Delete Automation
+
+DELETE "{{baseUrl}}"/automations/"{{automation_id}}" HTTP/1.1
+Authorization: Bearer "{{auth_token}}"
+
+
+### 
+
+# Pipeline Report
+
+GET "{{baseUrl}}"/reports/pipeline?startDate=2025-01-01&endDate=2025-06-30 HTTP/1.1
+Authorization: Bearer "{{auth_token}}"
+
+
+### 
+
+# Sales Report
+
+GET "{{baseUrl}}"/reports/sales?period=month&year=2025 HTTP/1.1
+Authorization: Bearer "{{auth_token}}"
+
+
+### 
+
+# Team Performance Report
+
+GET "{{baseUrl}}"/reports/team?startDate=2025-01-01&endDate=2025-06-30 HTTP/1.1
+Authorization: Bearer "{{auth_token}}"
+
+
+### 
+
+# Activities Report
+
+GET "{{baseUrl}}"/reports/activities?startDate=2025-01-01&endDate=2025-06-30 HTTP/1.1
+Authorization: Bearer "{{auth_token}}"
+
+
+### 
+
+# List Team Members
+
+GET "{{baseUrl}}"/team?page=1&limit=20 HTTP/1.1
+Authorization: Bearer "{{auth_token}}"
+
+
+### 
+
+# Get Single Member
+
+GET "{{baseUrl}}"/team/"{{member_id}}" HTTP/1.1
+Authorization: Bearer "{{auth_token}}"
+
+
+### 
+
+# Invite Member
+
+POST "{{baseUrl}}"/team/invite HTTP/1.1
+Authorization: Bearer "{{auth_token}}"
+Content-Type: application/json
+
+{
+  "email": "newuser@agenciapro.com",
+  "role": "VENDEDOR",
+  "team": "Ventas"
+}
+
+
+### 
+
+# Update Member
+
+PUT "{{baseUrl}}"/team/"{{member_id}}" HTTP/1.1
+Authorization: Bearer "{{auth_token}}"
+Content-Type: application/json
+
+{
+  "name": "Usuario Actualizado",
+  "role": "MANAGER"
+}
+
+
+### 
+
+# Delete Member
+
+DELETE "{{baseUrl}}"/team/"{{member_id}}" HTTP/1.1
+Authorization: Bearer "{{auth_token}}"
+
+
+### 
+
+# List Users (admin only)
+
+GET "{{baseUrl}}"/users?page=1&limit=20 HTTP/1.1
+Authorization: Bearer "{{auth_token}}"
+
+
+### 
+
+# Get Single User
+
+GET "{{baseUrl}}"/users/"{{user_id}}" HTTP/1.1
+Authorization: Bearer "{{auth_token}}"
+
+
+### 
+
+# Create User (admin only)
+
+POST "{{baseUrl}}"/users HTTP/1.1
+Authorization: Bearer "{{auth_token}}"
+Content-Type: application/json
+
+{
+  "email": "manager@agenciapro.com",
+  "name": "Manager Usuario",
+  "password": "password123",
+  "role": "MANAGER"
+}
+
+
+### 
+
+# Update User
+
+PUT "{{baseUrl}}"/users/"{{user_id}}" HTTP/1.1
+Authorization: Bearer "{{auth_token}}"
+Content-Type: application/json
+
+{
+  "name": "Usuario Editado",
+  "role": "VENDEDOR"
+}
+
+
+### 
+
+# Delete User
+
+DELETE "{{baseUrl}}"/users/"{{user_id}}" HTTP/1.1
+Authorization: Bearer "{{auth_token}}"
+
+
+### 
+
+# HEALTH CHECK
+# API Health
+
+GET "{{host}}"/health HTTP/1.1
+
+
+### 
+
+# VARIABLES FOR TESTING
+
+# @auth_token your-jwt-token-here
+# @automation_id uuid-of-automation
+# @contact_id uuid-of-contact
+# @deal_id uuid-of-deal
+# @document_id uuid-of-document
+# @email_id uuid-of-email
+# @member_id uuid-of-team-member
+# @product_id uuid-of-product
+# @task_id uuid-of-task
+# @user_id uuid-of-user

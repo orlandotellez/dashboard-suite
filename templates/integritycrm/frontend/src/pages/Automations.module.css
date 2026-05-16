@@ -1,0 +1,21 @@
+.automations { display: flex; flex-direction: column; }
+.header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; }
+.header h1 { font-size: 18px; font-weight: 600; margin: 0; }
+.subtitle { font-size: 13px; color: var(--text-secondary); margin: 4px 0 0; }
+.newBtn { display: flex; align-items: center; gap: 6px; padding: 8px 16px; font-size: 13px; font-weight: 500; color: white; background: var(--accent); border: none; border-radius: 6px; cursor: pointer; }
+.grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+.card { background: var(--bg-surface); border: 1px solid var(--border-default); border-radius: 8px; padding: 20px; }
+.cardHeader { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; }
+.cardIcon { width: 36px; height: 36px; background: var(--accent-light); color: var(--accent); border-radius: 8px; display: flex; align-items: center; justify-content: center; }
+.cardTitle { display: flex; align-items: center; gap: 12px; font-size: 14px; font-weight: 600; }
+.toggle { width: 40px; height: 22px; background: var(--bg-secondary); border: none; border-radius: 11px; cursor: pointer; position: relative; }
+.toggle.active { background: var(--accent); }
+.toggleSlider { position: absolute; top: 2px; left: 2px; width: 18px; height: 18px; background: white; border-radius: 50%; transition: transform 0.2s; }
+.toggle.active .toggleSlider { transform: translateX(18px); }
+.cardBody { font-size: 13px; color: var(--text-secondary); }
+.cardBody p { margin: 4px 0; }
+.cardBody strong { color: var(--text-primary); }
+.cardFooter { display: flex; justify-content: space-between; align-items: center; margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border-default); font-size: 11px; color: var(--text-tertiary); }
+.cardActions { display: flex; gap: 4px; }
+.cardActions button { width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; background: transparent; border: none; border-radius: 4px; color: var(--text-tertiary); cursor: pointer; }
+.cardActions button:hover { background: var(--bg-secondary); color: var(--text-secondary); }

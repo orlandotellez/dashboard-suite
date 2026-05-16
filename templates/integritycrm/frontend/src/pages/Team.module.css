@@ -1,0 +1,18 @@
+.team { display: flex; flex-direction: column; }
+.header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+.header h1 { font-size: 18px; font-weight: 600; margin: 0; }
+.count { font-size: 13px; color: var(--text-secondary); margin-left: 8px; }
+.newBtn { display: flex; align-items: center; gap: 6px; padding: 8px 16px; font-size: 13px; font-weight: 500; color: white; background: var(--accent); border: none; border-radius: 6px; cursor: pointer; }
+.grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.card { background: var(--bg-surface); border: 1px solid var(--border-default); border-radius: 8px; padding: 20px; }
+.cardHeader { display: flex; gap: 12px; margin-bottom: 12px; }
+.avatar { width: 56px; height: 56px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 600; color: white; }
+.info h3 { font-size: 15px; font-weight: 600; margin: 0 0 4px; }
+.role { display: inline-block; font-size: 10px; font-weight: 500; padding: 2px 8px; border-radius: 4px; text-transform: uppercase; }
+.email { font-size: 13px; color: var(--text-secondary); margin: 0 0 12px; }
+.stats { display: flex; gap: 16px; font-size: 12px; color: var(--text-tertiary); margin-bottom: 12px; }
+.status { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-secondary); margin-bottom: 12px; }
+.statusDot { width: 8px; height: 8px; border-radius: 50%; background: var(--success); }
+.actions { display: flex; gap: 8px; padding-top: 12px; border-top: 1px solid var(--border-default); }
+.actions button { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; background: transparent; border: 1px solid var(--border-default); border-radius: 6px; color: var(--text-tertiary); cursor: pointer; }
+.actions button:hover { background: var(--bg-secondary); color: var(--text-secondary); }

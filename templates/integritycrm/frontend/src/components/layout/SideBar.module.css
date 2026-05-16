@@ -1,0 +1,166 @@
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background-color: var(--bg-sidebar);
+  border-right: 1px solid var(--border-default);
+  transition: width 0.2s ease;
+}
+
+.logoContainer {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  border-bottom: 1px solid var(--border-default);
+  min-height: 56px;
+}
+
+.logoIcon {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--accent);
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+
+.iconLarge {
+  width: 20px;
+  height: 20px;
+  color: white;
+}
+
+.logoText h1 {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.logoText p {
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.navGroup {
+  padding: 12px 8px;
+}
+
+.groupLabel {
+  display: block;
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 0 12px;
+  margin-bottom: 8px;
+}
+
+.nav {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.navItem {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  border: none;
+  background: transparent;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  color: var(--text-secondary);
+  text-align: left;
+  transition: all 0.15s ease;
+  width: 100%;
+}
+
+.navItem:hover {
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+.navItem.active {
+  background-color: var(--accent-light);
+  color: var(--accent);
+  font-weight: 500;
+  position: relative;
+}
+
+.navItem.active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 2px;
+  height: 24px;
+  background-color: var(--accent);
+  border-radius: 0 2px 2px 0;
+}
+
+.isCollapsedIcon {
+  justify-content: center;
+}
+
+.isCollapsedIcon span {
+  display: none;
+}
+
+.collapseContainer {
+  margin-top: auto;
+  padding: 12px;
+  border-top: 1px solid var(--border-default);
+}
+
+.collapseButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px;
+  border: none;
+  background: transparent;
+  border-radius: 6px;
+  cursor: pointer;
+  color: var(--text-tertiary);
+  font-size: 13px;
+  transition: all 0.15s ease;
+}
+
+.collapseButton:hover {
+  background-color: var(--bg-secondary);
+  color: var(--text-secondary);
+}
+
+.collapseText {
+  display: none;
+}
+
+.sidebar:not(.collapsed) .collapseText {
+  display: block;
+}
+
+.icon {
+  width: 16px;
+  height: 16px;
+}
+
+.sidebar.collapsed {
+  width: 64px;
+}
+
+.sidebar.collapsed .logoText,
+.sidebar.collapsed .groupLabel,
+.sidebar.collapsed .collapseText {
+  display: none;
+}

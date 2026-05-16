@@ -1,0 +1,37 @@
+.tasks { display: flex; flex-direction: column; }
+.header { display: flex; align-items: center; gap: 16px; margin-bottom: 24px; }
+.header h1 { font-size: 18px; font-weight: 600; margin: 0; }
+.badges { display: flex; gap: 8px; }
+.badge { font-size: 12px; padding: 4px 10px; background: var(--accent-light); color: var(--accent); border-radius: 12px; }
+.badgeDanger { font-size: 12px; padding: 4px 10px; background: var(--danger-light); color: var(--danger); border-radius: 12px; }
+.actions { display: flex; gap: 12px; margin-left: auto; }
+.viewToggle { display: flex; gap: 4px; padding: 4px; background: var(--bg-secondary); border-radius: 6px; }
+.viewBtn { display: flex; align-items: center; justify-content: center; width: 32px; height: 28px; background: transparent; border: none; border-radius: 4px; color: var(--text-tertiary); cursor: pointer; }
+.viewBtn.active { background: var(--bg-surface); color: var(--accent); box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05); }
+.primaryBtn { display: flex; align-items: center; gap: 6px; padding: 8px 16px; font-size: 13px; font-weight: 500; color: white; background: var(--accent); border: none; border-radius: 6px; cursor: pointer; }
+
+/* List View */
+.listView { display: flex; flex-direction: column; gap: 24px; }
+.group { background: var(--bg-surface); border: 1px solid var(--border-default); border-radius: 8px; overflow: hidden; }
+.groupHeader { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; font-size: 13px; font-weight: 600; background: var(--bg-secondary); border-bottom: 1px solid var(--border-default); }
+.groupCount { font-size: 11px; font-weight: 500; padding: 2px 8px; background: var(--bg-surface); color: var(--text-secondary); border-radius: 10px; }
+.taskRow { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-bottom: 1px solid var(--border-default); }
+.taskRow:last-child { border-bottom: none; }
+.checkbox { width: 18px; height: 18px; border: 2px solid var(--border-strong); border-radius: 50%; background: transparent; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 10px; color: white; }
+.checkbox.checked { background: var(--accent); border-color: var(--accent); }
+.taskTitle { flex: 1; font-size: 14px; }
+.taskTitle.completed { text-decoration: line-through; color: var(--text-tertiary); }
+.priority { font-size: 10px; font-weight: 500; padding: 2px 8px; border-radius: 4px; text-transform: uppercase; }
+.priority.alta { background: var(--danger-light); color: var(--danger); }
+.priority.media { background: var(--warning-light); color: var(--warning); }
+.priority.baja { background: var(--bg-secondary); color: var(--text-tertiary); }
+.time { font-size: 12px; color: var(--text-tertiary); }
+
+/* Kanban */
+.kanbanBoard { display: flex; gap: 16px; overflow-x: auto; }
+.kanbanCol { flex-shrink: 0; width: 280px; background: var(--bg-secondary); border-radius: 8px; padding: 12px; }
+.kanbanHeader { display: flex; justify-content: space-between; align-items: center; padding-bottom: 12px; border-bottom: 1px solid var(--border-default); margin-bottom: 12px; font-size: 13px; font-weight: 600; text-transform: capitalize; }
+.colCount { font-size: 11px; font-weight: 500; padding: 2px 8px; background: var(--bg-surface); color: var(--text-secondary); border-radius: 10px; }
+.kanbanContent { display: flex; flex-direction: column; gap: 8px; }
+.kanbanCard { background: var(--bg-surface); border: 1px solid var(--border-default); border-radius: 8px; padding: 12px; }
+.cardMeta { margin-top: 8px; display: flex; gap: 8px; }

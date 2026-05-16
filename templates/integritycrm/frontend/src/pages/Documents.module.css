@@ -1,0 +1,16 @@
+.documents { display: flex; flex-direction: column; }
+.header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+.header h1 { font-size: 18px; font-weight: 600; margin: 0; }
+.newBtn { display: flex; align-items: center; gap: 6px; padding: 8px 16px; font-size: 13px; font-weight: 500; color: white; background: var(--accent); border: none; border-radius: 6px; cursor: pointer; }
+.tableView { background: var(--bg-surface); border: 1px solid var(--border-default); border-radius: 8px; overflow: hidden; }
+.table { width: 100%; border-collapse: collapse; }
+.table th { text-align: left; padding: 12px 16px; font-size: 12px; font-weight: 500; color: var(--text-secondary); background: var(--bg-secondary); border-bottom: 1px solid var(--border-default); }
+.table td { padding: 12px 16px; font-size: 13px; border-bottom: 1px solid var(--border-default); }
+.nameCell { display: flex; align-items: center; gap: 8px; font-weight: 500; }
+.nameCell svg { color: var(--text-tertiary); }
+.typeBadge, .statusBadge { display: inline-block; font-size: 10px; font-weight: 500; padding: 2px 8px; border-radius: 4px; text-transform: uppercase; }
+.value { font-weight: 600; font-variant-numeric: tabular-nums; }
+.actions { display: flex; gap: 4px; opacity: 0; }
+.table tr:hover .actions { opacity: 1; }
+.actions button { width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; background: transparent; border: none; border-radius: 4px; color: var(--text-tertiary); cursor: pointer; }
+.actions button:hover { background: var(--bg-secondary); color: var(--text-secondary); }

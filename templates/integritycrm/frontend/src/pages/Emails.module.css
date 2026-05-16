@@ -1,0 +1,41 @@
+.emails { display: flex; height: calc(100vh - 104px); gap: 0; }
+.foldersPanel { width: 200px; background: var(--bg-surface); border-right: 1px solid var(--border-default); padding: 16px; display: flex; flex-direction: column; gap: 16px; }
+.composeBtn { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; padding: 12px; font-size: 14px; font-weight: 500; color: white; background: var(--accent); border: none; border-radius: 8px; cursor: pointer; }
+.foldersList { display: flex; flex-direction: column; gap: 4px; }
+.folderBtn { display: flex; align-items: center; gap: 10px; padding: 10px 12px; font-size: 13px; color: var(--text-secondary); background: transparent; border: none; border-radius: 6px; cursor: pointer; text-align: left; }
+.folderBtn:hover { background: var(--bg-secondary); }
+.folderBtn.active { background: var(--accent-light); color: var(--accent); font-weight: 500; }
+.folderBtn span:first-of-type { flex: 1; }
+.folderCount { font-size: 11px; padding: 2px 6px; background: var(--bg-secondary); border-radius: 10px; }
+.labelsSection h4 { font-size: 11px; font-weight: 500; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.05em; margin: 16px 0 8px; }
+.labelBtn { display: flex; align-items: center; gap: 8px; width: 100%; padding: 6px 0; font-size: 13px; color: var(--text-secondary); background: transparent; border: none; cursor: pointer; }
+.labelDot { width: 8px; height: 8px; border-radius: 50%; }
+.emailList { width: 340px; background: var(--bg-surface); border-right: 1px solid var(--border-default); display: flex; flex-direction: column; }
+.listHeader { padding: 12px; border-bottom: 1px solid var(--border-default); }
+.searchInput { width: 100%; padding: 8px 12px; font-size: 13px; border: 1px solid var(--border-default); border-radius: 6px; background: var(--bg-secondary); }
+.listContent { flex: 1; overflow-y: auto; }
+.emailItem { display: flex; gap: 12px; padding: 12px; border-bottom: 1px solid var(--border-default); cursor: pointer; }
+.emailItem:hover { background: var(--bg-primary); }
+.emailItem.selected { background: var(--accent-light); border-left: 3px solid var(--accent); }
+.emailItem.unread { background: var(--bg-surface); }
+.emailItem.unread .emailFrom { font-weight: 600; }
+.emailAvatar { width: 36px; height: 36px; border-radius: 50%; background: var(--accent); color: white; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; flex-shrink: 0; }
+.emailInfo { flex: 1; min-width: 0; }
+.emailFrom { font-size: 13px; color: var(--text-primary); }
+.emailSubject { font-size: 13px; font-weight: 500; color: var(--text-primary); margin-top: 2px; }
+.emailPreview { font-size: 12px; color: var(--text-tertiary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; }
+.emailMeta { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; font-size: 11px; color: var(--text-tertiary); }
+.starred { color: var(--warning); fill: var(--warning); }
+.emailContent { flex: 1; display: flex; flex-direction: column; background: var(--bg-surface); }
+.toolbar { display: flex; gap: 8px; padding: 12px 16px; border-bottom: 1px solid var(--border-default); }
+.toolbar button { padding: 6px 12px; font-size: 12px; color: var(--text-secondary); background: transparent; border: 1px solid var(--border-default); border-radius: 6px; cursor: pointer; }
+.toolbar button:hover { background: var(--bg-secondary); }
+.emailHeader { padding: 16px; border-bottom: 1px solid var(--border-default); }
+.emailHeader h2 { font-size: 18px; font-weight: 600; margin: 0 0 12px; }
+.fromLine { display: flex; align-items: center; gap: 12px; }
+.fromAvatar { width: 40px; height: 40px; border-radius: 50%; background: var(--accent); color: white; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 600; }
+.fromLine div { display: flex; flex-direction: column; }
+.fromLine strong { font-size: 14px; }
+.fromLine span { font-size: 12px; color: var(--text-secondary); }
+.emailDate { margin-left: auto; font-size: 12px; color: var(--text-tertiary); }
+.emailBody { padding: 24px 16px; flex: 1; overflow-y: auto; font-size: 15px; line-height: 1.7; color: var(--text-primary); }

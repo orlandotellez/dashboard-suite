@@ -1,0 +1,24 @@
+.calendar { display: flex; flex-direction: column; height: calc(100vh - 104px); }
+.header { display: flex; align-items: center; gap: 16px; margin-bottom: 24px; }
+.nav { display: flex; align-items: center; gap: 8px; }
+.nav button { display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; background: transparent; border: none; border-radius: 6px; color: var(--text-secondary); cursor: pointer; }
+.nav button:hover { background: var(--bg-secondary); }
+.nav h1 { font-size: 18px; font-weight: 600; margin: 0 8px; }
+.todayBtn { padding: 6px 12px; font-size: 13px; color: var(--text-secondary); background: transparent; border: 1px solid var(--border-default); border-radius: 6px; cursor: pointer; }
+.viewToggle { display: flex; gap: 4px; padding: 4px; background: var(--bg-secondary); border-radius: 6px; margin-left: auto; }
+.viewBtn { padding: 6px 12px; font-size: 12px; color: var(--text-tertiary); background: transparent; border: none; border-radius: 4px; cursor: pointer; }
+.viewBtn.active { background: var(--bg-surface); color: var(--accent); }
+.newBtn { padding: 8px 16px; font-size: 13px; font-weight: 500; color: white; background: var(--accent); border: none; border-radius: 6px; cursor: pointer; }
+.monthView { flex: 1; background: var(--bg-surface); border: 1px solid var(--border-default); border-radius: 8px; overflow: hidden; }
+.weekDays { display: grid; grid-template-columns: repeat(7, 1fr); background: var(--bg-secondary); border-bottom: 1px solid var(--border-default); }
+.weekDay { padding: 12px; font-size: 12px; font-weight: 500; color: var(--text-secondary); text-align: center; text-transform: uppercase; }
+.daysGrid { display: grid; grid-template-columns: repeat(7, 1fr); }
+.dayCell { min-height: 100px; padding: 8px; border-right: 1px solid var(--border-default); border-bottom: 1px solid var(--border-default); }
+.dayCell:nth-child(7n) { border-right: none; }
+.otherMonth { background: var(--bg-primary); }
+.otherMonth .dayNumber { color: var(--text-tertiary); }
+.today .dayNumber { width: 28px; height: 28px; background: var(--accent); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+.dayNumber { font-size: 13px; font-weight: 500; margin-bottom: 4px; }
+.eventsList { display: flex; flex-direction: column; gap: 2px; }
+.eventPill { font-size: 10px; font-weight: 500; color: white; padding: 2px 6px; border-radius: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.moreEvents { font-size: 10px; color: var(--text-tertiary); }
