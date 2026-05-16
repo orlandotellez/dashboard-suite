@@ -1,0 +1,121 @@
+---
+import { techStack } from '../data/dashboards.js';
+import ReactIcon from '../assets/icons/react.svg'
+import NextJsIcon from '../assets/icons/nextjs.svg'
+import TypeScriptIcon from '../assets/icons/typescript.svg'
+import NodeJsIcon from '../assets/icons/nodejs.svg'
+import PostgresIcon from '../assets/icons/postgres.svg'
+import AstroIcon from '../assets/icons/astro.svg'
+---
+
+<section id="stack" class="stack section-alt">
+  <div class="container">
+    <div class="stack-header reveal">
+      <span class="stack-label mono">STACK</span>
+      <h2 class="stack-title">Mi stack.</h2>
+    </div>
+
+    <div class="stack-grid">
+      {techStack.map((tech, index) => (
+        <div class="tech-card reveal" style={`--delay: ${index * 0.05}s`}>
+          <div class="tech-icon">
+            {tech.name === 'React' && <img src={ReactIcon.src} />}
+            {tech.name === 'Next.js' && <img src={NextJsIcon.src} />}
+            {tech.name === 'TypeScript' && <img src={TypeScriptIcon.src} />}
+            {tech.name === 'Node' && <img src={NodeJsIcon.src} />}
+            {tech.name === 'PostgreSQL' && <img src={PostgresIcon.src}>}
+            {tech.name === 'Astro' && <img src={AstroIcon.src} />}
+          </div>
+          <span class="tech-name">{tech.name}</span>
+        </div>
+      ))}
+    </div>
+  </div>
+</section>
+
+<style>
+  .stack {
+    background-color: var(--bg-nav);
+    padding: 80px 0px;
+  }
+
+  .stack-header {
+    margin-bottom: 64px;
+  }
+
+  .stack-label {
+    font-size: 10px;
+    color: var(--text-muted);
+    letter-spacing: 0.15em;
+    display: block;
+    margin-bottom: 12px;
+  }
+
+  .stack-title {
+    font-size: 52px;
+    color: var(--text-primary);
+  }
+
+  .stack-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--gutter);
+  }
+
+  .tech-card {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 20px 24px;
+    background-color: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    cursor: default;
+    transition: border-color 0.15s ease;
+  }
+
+  .tech-card:hover {
+    border-color: var(--accent-blue);
+  }
+
+  .tech-icon {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .tech-icon svg {
+    width: 32px;
+    height: 32px;
+    color: var(--text-secondary);
+  }
+
+  .tech-name {
+    font-family: var(--font-heading);
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  @media (max-width: 1024px) {
+    .stack-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  @media (max-width: 768px) {
+    .stack-title {
+      font-size: 36px;
+    }
+
+    .stack-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .tech-card {
+      padding: 16px 20px;
+    }
+  }
+</style>

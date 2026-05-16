@@ -1,0 +1,106 @@
+---
+const principles = [
+  { number: '01', title: 'Arquitectura limpia' },
+  { number: '02', title: 'Código reutilizable' },
+  { number: '03', title: 'Documentación clara' }
+];
+---
+
+<section id="opensource" class="opensource section">
+  <div class="container">
+    <div class="opensource-grid">
+      <div class="opensource-statement reveal">
+        <span class="statement-label mono">OPEN SOURCE PHILOSOPHY</span>
+        <h2 class="statement-text">
+          Construyo herramientas que cualquiera puede estudiar, modificar y escalar.
+        </h2>
+      </div>
+
+      <div class="opensource-principles reveal">
+        {principles.map((principle, index) => (
+          <div class="principle-item">
+            <span class="principle-number mono">{principle.number}</span>
+            <h3 class="principle-title">{principle.title}</h3>
+          </div>
+        ))}
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .opensource {
+    background-color: var(--bg-primary);
+  }
+
+  .opensource-grid {
+    display: grid;
+    grid-template-columns: 1.2fr 1fr;
+    gap: 64px;
+    align-items: center;
+  }
+
+  .opensource-statement {
+    max-width: 600px;
+  }
+
+  .statement-label {
+    font-size: 10px;
+    color: var(--text-muted);
+    letter-spacing: 0.15em;
+    display: block;
+    margin-bottom: 24px;
+  }
+
+  .statement-text {
+    font-family: var(--font-heading);
+    font-size: 42px;
+    font-weight: 700;
+    color: var(--text-primary);
+    line-height: 1.2;
+  }
+
+  .opensource-principles {
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+  }
+
+  .principle-item {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    padding: 24px;
+    background-color: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+  }
+
+  .principle-number {
+    font-size: 14px;
+    color: var(--accent-blue);
+    min-width: 32px;
+  }
+
+  .principle-title {
+    font-family: var(--font-heading);
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  @media (max-width: 768px) {
+    .opensource-grid {
+      grid-template-columns: 1fr;
+      gap: 48px;
+    }
+
+    .statement-text {
+      font-size: 32px;
+    }
+
+    .principle-item {
+      padding: 20px;
+    }
+  }
+</style>

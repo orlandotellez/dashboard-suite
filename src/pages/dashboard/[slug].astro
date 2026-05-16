@@ -1,0 +1,506 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Navigation from '../../components/Navigation.astro';
+import Footer from '../../components/Footer.astro';
+import { dashboards } from '../../data/dashboards.js';
+
+export function getStaticPaths() {
+  return dashboards.map(dashboard => ({
+    params: { slug: dashboard.slug },
+    props: { dashboard }
+  }));
+}
+
+const { dashboard } = Astro.props;
+
+const codeSnippet = `// ${dashboard.name} - Componente Principal
+import React, { useState, useEffect } from 'react';
+import { useDashboard } from '${dashboard.stack[0].toLowerCase()}-hooks';
+
+export const ${dashboard.name.replace(/\s/g, '')} = () => {
+  const [data, setData] = useState(null);
+  const { fetchData, loading, error } = useDashboard();
+
+  useEffect(() => {
+    fetchData('/api/${dashboard.slug}').then(setData);
+  }, []);
+
+  if (loading) return <DashboardSkeleton />;
+  if (error) return <ErrorFallback error={error} />;
+
+  return (
+    <DashboardLayout>
+      <Header title="${dashboard.name}" />
+      <MetricsGrid data={data.metrics} />
+      <ChartsSection charts={data.charts} />
+      <DataTable rows={data.rows} />
+    </DashboardLayout>
+  );
+};`;
+---
+
+<Layout title={`${dashboard.name} | Orlando Tellez`}>
+  <Navigation />
+
+  <main class="dashboard-detail">
+    <section class="dashboard-hero">
+      <div class="container">
+        <div class="hero-preview-large reveal">
+          <div class="preview-frame-large">
+            <div class="preview-placeholder-large">
+              <div class="preview-ui-full">
+                <div class="ui-header-full"></div>
+                <div class="ui-body-full">
+                  <div class="ui-sidebar-full"></div>
+                  <div class="ui-main-full">
+                    <div class="ui-hero-chart"></div>
+                    <div class="ui-hero-stats">
+                      <div class="ui-hero-stat"></div>
+                      <div class="ui-hero-stat"></div>
+                      <div class="ui-hero-stat"></div>
+                      <div class="ui-hero-stat"></div>
+                    </div>
+                    <div class="ui-hero-table"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="dashboard-info">
+      <div class="container">
+        <div class="info-grid">
+          <div class="info-main reveal">
+            <span class="info-id mono">{dashboard.id}</span>
+            <h1 class="info-title">{dashboard.name}</h1>
+            <p class="info-description">{dashboard.description}</p>
+
+            <div class="info-stack">
+              <span class="stack-label mono">TECH STACK</span>
+              <div class="stack-tags">
+                {dashboard.stack.map(tech => (
+                  <span class="tag">{tech}</span>
+                ))}
+              </div>
+            </div>
+
+            <div class="info-features">
+              <span class="features-label mono">FEATURES</span>
+              <div class="features-grid">
+                {dashboard.features.map(feature => (
+                  <div class="feature-item">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="var(--success)">
+                      <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/>
+                    </svg>
+                    <span>{feature}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div class="info-actions">
+              <a href={dashboard.liveUrl} target="_blank" rel="noopener" class="btn btn-primary">
+                ABRIR DEMO
+              </a>
+              <a href={dashboard.githubUrl} target="_blank" rel="noopener" class="btn btn-outline">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
+                </svg>
+                VER CÓDIGO
+              </a>
+            </div>
+          </div>
+
+          <div class="info-meta reveal">
+            <span class="meta-label mono">PROJECT INFO</span>
+            <div class="meta-list">
+              <div class="meta-item">
+                <span class="meta-key mono">REPOSITORY</span>
+                <span class="meta-value">{dashboard.githubUrl.split('/').pop()}</span>
+              </div>
+              <div class="meta-item">
+                <span class="meta-key mono">LICENSE</span>
+                <span class="meta-value">{dashboard.license}</span>
+              </div>
+              <div class="meta-item">
+                <span class="meta-key mono">FRAMEWORK</span>
+                <span class="meta-value">{dashboard.stack[0]}</span>
+              </div>
+              <div class="meta-item">
+                <span class="meta-key mono">VERSION</span>
+                <span class="meta-value">v{dashboard.version}</span>
+              </div>
+              <div class="meta-item">
+                <span class="meta-key mono">LAST UPDATE</span>
+                <span class="meta-value">{new Date(dashboard.updatedAt).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' })}</span>
+              </div>
+              <div class="meta-item">
+                <span class="meta-key mono">CATEGORY</span>
+                <span class="meta-value">{dashboard.category.toUpperCase()}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="dashboard-code">
+      <div class="container">
+        <div class="code-section reveal">
+          <span class="code-label mono">CODE SNIPPET</span>
+          <div class="code-block">
+            <pre><code>{codeSnippet}</code></pre>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="dashboard-nav section-alt">
+      <div class="container">
+        <div class="nav-back reveal">
+          <a href="/#dashboards" class="back-link">
+            ← VOLVER A DASHBOARDS
+          </a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <Footer />
+</Layout>
+
+<style>
+  .dashboard-detail {
+    padding-top: var(--nav-height);
+  }
+
+  .dashboard-hero {
+    padding: 64px 0;
+    background-color: var(--bg-primary);
+  }
+
+  .hero-preview-large {
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    overflow: hidden;
+  }
+
+  .preview-placeholder-large {
+    aspect-ratio: 21/9;
+    background-color: var(--bg-secondary);
+  }
+
+  .preview-ui-full {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .ui-header-full {
+    height: 48px;
+    background-color: var(--bg-nav);
+    border-bottom: 1px solid var(--border-color);
+  }
+
+  .ui-body-full {
+    flex: 1;
+    display: flex;
+  }
+
+  .ui-sidebar-full {
+    width: 200px;
+    border-right: 1px solid var(--border-color);
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .ui-sidebar-full::before {
+    content: '';
+    display: block;
+    height: 24px;
+    background-color: var(--bg-elevated);
+    border-radius: 2px;
+  }
+
+  .ui-sidebar-full::after {
+    content: '';
+    display: block;
+    flex: 1;
+    background: repeating-linear-gradient(
+      0deg,
+      var(--bg-elevated) 0px,
+      var(--bg-elevated) 24px,
+      transparent 24px,
+      transparent 32px
+    );
+    border-radius: 2px;
+  }
+
+  .ui-main-full {
+    flex: 1;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  .ui-hero-chart {
+    height: 180px;
+    background: linear-gradient(180deg, var(--bg-elevated) 0%, transparent 100%);
+    border-radius: 2px;
+    position: relative;
+  }
+
+  .ui-hero-chart::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 60%;
+    background: linear-gradient(90deg, var(--accent-blue) 0%, #3B82F6 50%, transparent 100%);
+    opacity: 0.4;
+  }
+
+  .ui-hero-stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+  }
+
+  .ui-hero-stat {
+    height: 80px;
+    background-color: var(--bg-elevated);
+    border-radius: 2px;
+  }
+
+  .ui-hero-table {
+    flex: 1;
+    background-color: var(--bg-elevated);
+    border-radius: 2px;
+  }
+
+  .dashboard-info {
+    padding: 80px 0;
+    background-color: var(--bg-primary);
+  }
+
+  .info-grid {
+    display: grid;
+    grid-template-columns: 1.5fr 1fr;
+    gap: 64px;
+  }
+
+  .info-id {
+    font-size: 12px;
+    color: var(--accent-blue);
+    display: block;
+    margin-bottom: 12px;
+  }
+
+  .info-title {
+    font-family: var(--font-heading);
+    font-size: 48px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 16px;
+  }
+
+  .info-description {
+    font-size: 18px;
+    color: var(--text-secondary);
+    line-height: 1.7;
+    margin-bottom: 40px;
+  }
+
+  .info-stack {
+    margin-bottom: 40px;
+  }
+
+  .stack-label {
+    font-size: 10px;
+    color: var(--text-muted);
+    letter-spacing: 0.15em;
+    display: block;
+    margin-bottom: 12px;
+  }
+
+  .stack-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .info-features {
+    margin-bottom: 40px;
+  }
+
+  .features-label {
+    font-size: 10px;
+    color: var(--text-muted);
+    letter-spacing: 0.15em;
+    display: block;
+    margin-bottom: 16px;
+  }
+
+  .features-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+
+  .feature-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    color: var(--text-secondary);
+  }
+
+  .info-actions {
+    display: flex;
+    gap: 16px;
+  }
+
+  .info-meta {
+    background-color: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    padding: 32px;
+  }
+
+  .meta-label {
+    font-size: 10px;
+    color: var(--text-muted);
+    letter-spacing: 0.15em;
+    display: block;
+    margin-bottom: 24px;
+  }
+
+  .meta-list {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .meta-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--border-color);
+  }
+
+  .meta-item:last-child {
+    padding-bottom: 0;
+    border-bottom: none;
+  }
+
+  .meta-key {
+    font-size: 11px;
+    color: var(--text-muted);
+  }
+
+  .meta-value {
+    font-size: 14px;
+    color: var(--text-primary);
+  }
+
+  .dashboard-code {
+    padding: 80px 0;
+    background-color: var(--bg-nav);
+  }
+
+  .code-section {
+    max-width: 800px;
+  }
+
+  .code-label {
+    font-size: 10px;
+    color: var(--text-muted);
+    letter-spacing: 0.15em;
+    display: block;
+    margin-bottom: 16px;
+  }
+
+  .code-block {
+    background-color: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    padding: 24px;
+    overflow-x: auto;
+  }
+
+  .code-block pre {
+    margin: 0;
+  }
+
+  .code-block code {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--text-secondary);
+    line-height: 1.6;
+    white-space: pre;
+  }
+
+  .dashboard-nav {
+    padding: 48px 0;
+    background-color: var(--bg-nav);
+  }
+
+  .nav-back {
+    text-align: center;
+  }
+
+  .back-link {
+    font-size: 14px;
+    color: var(--text-secondary);
+    transition: color 0.15s ease;
+  }
+
+  .back-link:hover {
+    color: var(--accent-blue);
+  }
+
+  @media (max-width: 1024px) {
+    .info-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .info-meta {
+      order: -1;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .preview-placeholder-large {
+      aspect-ratio: 16/9;
+    }
+
+    .ui-sidebar-full {
+      display: none;
+    }
+
+    .ui-hero-stats {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    .features-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .info-title {
+      font-size: 36px;
+    }
+
+    .info-actions {
+      flex-direction: column;
+    }
+  }
+</style>
