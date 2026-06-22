@@ -27,6 +27,11 @@ export interface MessageResponse {
   message: string;
 }
 
+export interface RefreshResponse {
+  message: string;
+  user: AuthUser;
+}
+
 export interface ForgotPasswordResponse {
   message: string;
   expires_at: string;
@@ -95,7 +100,7 @@ export const authApi = {
     api.post<MessageResponse>("/auth/logout"),
 
   refresh: () =>
-    api.post<MessageResponse>("/auth/refresh"),
+    api.post<RefreshResponse>("/auth/refresh"),
 
   verifyEmail: (data: VerifyEmailPayload) =>
     api.post<MessageResponse>("/auth/verify-email", data),

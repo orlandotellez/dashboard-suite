@@ -181,6 +181,7 @@ export const createAuthService = (repository: IAuthRepository) => ({
 
     return {
       message: "Token refreshed successfully",
+      user: mapUserToResponse(user),
       accessToken,
       refreshToken: newRefreshToken
     }

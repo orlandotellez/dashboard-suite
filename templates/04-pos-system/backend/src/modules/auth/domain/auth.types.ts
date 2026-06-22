@@ -48,6 +48,7 @@ export interface IAuthResponse {
 
 export interface IRefreshResponse {
   message: string
+  user: IUserResponse
   accessToken: string
   refreshToken: string
 }

@@ -99,7 +99,10 @@ export const authController = {
 
     setAuthCookies(reply, result.accessToken, result.refreshToken, env.NODE_ENV === "production")
 
-    return reply.status(200).send({ message: result.message })
+    return reply.status(200).send({
+      message: result.message,
+      user: result.user
+    })
   },
 
   verifyEmail: async (request: FastifyRequest, reply: FastifyReply) => {

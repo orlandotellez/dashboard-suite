@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from "react";
+import { createContext, useContext, useState, useCallback, useEffect, useRef, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { authApi, type AuthUser } from "@/api/auth";
 
@@ -16,7 +16,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
+  const refreshAttempted = useRef(false);
+
   useEffect(() => {
+    // StrictMode monta/desmonta/monta los efectos en dev.
+    // Sin este guard el refresh se ejecuta dos veces y la
+    // segunda llamada falla porque la primera ya roto el token.
+    if (refreshAttempted.current) return;
+    refreshAttempted.current = true;
+
     const stored = localStorage.getItem("auth-user");
     if (stored) {
       try {
@@ -27,7 +35,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     authApi.refresh()
-      .then(() => {})
+      .then((res) => {
+        // Actualizamos user con data fresca del servidor
+        setUser(res.user);
+        localStorage.setItem("auth-user", JSON.stringify(res.user));
+      })
       .catch(() => {
         setUser(null);
         localStorage.removeItem("auth-user");

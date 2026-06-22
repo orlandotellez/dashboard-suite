@@ -6,18 +6,20 @@ export const setAuthCookies = (
   refreshToken: string,
   isProduction: boolean
 ) => {
+  const sameSite = isProduction ? 'strict' : 'lax'
+
   reply.setCookie('accessToken', accessToken, {
     path: '/',
     httpOnly: true,
     secure: isProduction,
-    sameSite: 'strict',
+    sameSite,
     maxAge: 900
   })
   reply.setCookie('refreshToken', refreshToken, {
     path: '/',
     httpOnly: true,
     secure: isProduction,
-    sameSite: 'strict',
+    sameSite,
     maxAge: 604800
   })
 }
