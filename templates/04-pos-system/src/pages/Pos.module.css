@@ -1,0 +1,369 @@
+.grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  height: 100vh;
+}
+
+@media (min-width: 768px) {
+  .grid {
+    grid-template-columns: 1fr 380px;
+  }
+}
+
+/* ─── Left panel ─── */
+.leftPanel {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-right: 1px solid var(--border);
+}
+
+.searchBar {
+  border-bottom: 1px solid var(--border);
+  padding: 16px;
+}
+
+.searchInput {
+  width: 100%;
+  height: 48px;
+  padding: 8px 12px;
+  border: 1px solid var(--input);
+  border-radius: 6px;
+  background: var(--background);
+  color: var(--foreground);
+  font-size: 16px;
+  outline: none;
+}
+
+.searchInput:focus {
+  border-color: var(--ring);
+}
+
+.searchInput::placeholder {
+  color: var(--muted-foreground);
+}
+
+.cartArea {
+  flex: 1;
+  overflow: auto;
+}
+
+.emptyCart {
+  display: flex;
+  height: 100%;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  color: var(--muted-foreground);
+}
+
+.cartTable {
+  width: 100%;
+  font-size: 14px;
+  border-collapse: collapse;
+}
+
+.tableHead {
+  position: sticky;
+  top: 0;
+  background: var(--background);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted-foreground);
+}
+
+.thLeft {
+  padding: 12px 16px;
+  text-align: left;
+  font-weight: 500;
+}
+
+.thCenter {
+  padding: 12px 8px;
+  text-align: center;
+  font-weight: 500;
+}
+
+.thRight {
+  padding: 12px 16px;
+  text-align: right;
+  font-weight: 500;
+}
+
+.thAction {
+  width: 40px;
+}
+
+.tableBody tr {
+  border-bottom: 1px solid var(--border);
+}
+
+.tdProduct {
+  padding: 12px 16px;
+}
+
+.productName {
+  font-weight: 500;
+  color: var(--foreground);
+}
+
+.productBarcode {
+  font-size: 12px;
+  color: var(--muted-foreground);
+  margin-top: 2px;
+}
+
+.tdQty {
+  padding: 12px 8px;
+}
+
+.qtyControls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+.qtyBtn {
+  padding: 6px;
+  border-radius: 6px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  color: var(--foreground);
+}
+
+.qtyBtn:hover {
+  background: var(--accent);
+}
+
+.qtyValue {
+  width: 32px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  color: var(--foreground);
+}
+
+.tdRight {
+  padding: 12px 16px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: var(--foreground);
+}
+
+.tdRightBold {
+  padding: 12px 16px;
+  text-align: right;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  color: var(--foreground);
+}
+
+.tdAction {
+  padding: 12px 8px;
+}
+
+.deleteBtn {
+  padding: 6px;
+  border-radius: 6px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  color: var(--muted-foreground);
+}
+
+.deleteBtn:hover {
+  background: var(--accent);
+  color: var(--destructive);
+}
+
+/* ─── Right panel ─── */
+.rightPanel {
+  display: flex;
+  flex-direction: column;
+  overflow: auto;
+  background: var(--card);
+  padding: 24px;
+}
+
+.totalsSection {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 14px;
+}
+
+.row {
+  display: flex;
+  justify-content: space-between;
+}
+
+.rowLabel {
+  color: var(--muted-foreground);
+}
+
+.rowValue {
+  font-variant-numeric: tabular-nums;
+  color: var(--foreground);
+}
+
+.discountRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.discountLabel {
+  font-size: 14px;
+  color: var(--muted-foreground);
+}
+
+.discountInput {
+  width: 80px;
+  height: 32px;
+  padding: 4px 8px;
+  border: 1px solid var(--input);
+  border-radius: 6px;
+  background: var(--background);
+  color: var(--foreground);
+  font-size: 14px;
+  text-align: right;
+  outline: none;
+}
+
+.discountInput:focus {
+  border-color: var(--ring);
+}
+
+.divider {
+  margin: 24px 0;
+  border-top: 1px solid var(--border);
+}
+
+.totalRow {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+}
+
+.totalLabel {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted-foreground);
+}
+
+.totalValue {
+  font-size: 36px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--foreground);
+}
+
+.paymentSection {
+  margin-top: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.fieldLabel {
+  font-size: 14px;
+  color: var(--muted-foreground);
+}
+
+.select {
+  height: 40px;
+  padding: 8px 12px;
+  border: 1px solid var(--input);
+  border-radius: 6px;
+  background: var(--background);
+  color: var(--foreground);
+  font-size: 14px;
+  outline: none;
+}
+
+.select:focus {
+  border-color: var(--ring);
+}
+
+.input {
+  height: 40px;
+  padding: 8px 12px;
+  border: 1px solid var(--input);
+  border-radius: 6px;
+  background: var(--background);
+  color: var(--foreground);
+  font-size: 14px;
+  outline: none;
+}
+
+.input:focus {
+  border-color: var(--ring);
+}
+
+.inputRight {
+  text-align: right;
+}
+
+.changeRow {
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+}
+
+.changeLabel {
+  color: var(--muted-foreground);
+}
+
+.changeValue {
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  color: var(--foreground);
+}
+
+.checkoutBtn {
+  margin-top: 24px;
+  width: 100%;
+  height: 56px;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  background: var(--foreground);
+  color: var(--background);
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.checkoutBtn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.clearCart {
+  margin-top: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  width: 100%;
+  padding: 8px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--muted-foreground);
+}
+
+.clearCart:hover {
+  color: var(--foreground);
+}
