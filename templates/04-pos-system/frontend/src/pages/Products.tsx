@@ -1,38 +1,84 @@
-import { useMemo, useState } from "react";
-import { Plus, Search, Pencil, Trash2, X } from "lucide-react";
-import { getDemoStore, type DemoProduct } from "@/lib/demo-store";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Plus, Search, Pencil, Trash2, X, ChevronLeft, ChevronRight } from "lucide-react";
+import { productsApi, type Product } from "@/api/products";
+import { categoriesApi, type Category } from "@/api/categories";
 import { money } from "@/lib/format";
 import styles from "./Products.module.css";
 
-const emptyForm = { name: "", barcode: "", category: "", price: 0, cost: 0, tax_rate: 16, stock: 0, low_stock_threshold: 5 };
+const LIMIT = 10;
+
+const emptyForm = {
+  name: "", barcode: "", unit_type: "", unit_quantity: 0,
+  category_id: "", price: 0, cost: 0, tax_rate: 16,
+  stock: 0, low_stock_threshold: 5,
+};
 
 export default function Products() {
-  const store = useMemo(() => getDemoStore(), []);
-  const [products, setProducts] = useState(store.products);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
   const [q, setQ] = useState("");
-  const [editing, setEditing] = useState<DemoProduct | null | "new">(null);
+  const [loading, setLoading] = useState(true);
+  const [editing, setEditing] = useState<Product | null | "new">(null);
   const [form, setForm] = useState(emptyForm);
 
-  const filtered = useMemo(() =>
-    products.filter((p) =>
-      !q ||
-      p.name.toLowerCase().includes(q.toLowerCase()) ||
-      (p.barcode ?? "").includes(q) ||
-      (p.category ?? "").toLowerCase().includes(q.toLowerCase())
-    ),
-    [products, q],
-  );
+  const catMap = useMemo(() => {
+    const m = new Map<string, Category>();
+    for (const c of categories) m.set(c.id, c);
+    return m;
+  }, [categories]);
+
+  const totalPages = Math.max(1, Math.ceil(total / LIMIT));
+
+  useEffect(() => {
+    categoriesApi.list().then(setCategories).catch(() => {});
+  }, []);
+
+  const searchRef = useRef(q);
+  searchRef.current = q;
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setLoading(true);
+      productsApi.list({
+        page,
+        limit: LIMIT,
+        search: searchRef.current || undefined,
+      })
+        .then((res) => {
+          setProducts(res.products);
+          setTotal(res.total);
+        })
+        .catch(() => {})
+        .finally(() => setLoading(false));
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [page, q]);
+
+  function handleSearch(value: string) {
+    setQ(value);
+    setPage(1);
+  }
 
   function openNew() {
     setForm(emptyForm);
     setEditing("new");
   }
 
-  function openEdit(p: DemoProduct) {
+  function openEdit(p: Product) {
     setForm({
-      name: p.name, barcode: p.barcode ?? "", category: p.category ?? "",
-      price: p.price, cost: p.cost, tax_rate: p.tax_rate,
-      stock: p.stock, low_stock_threshold: p.low_stock_threshold,
+      name: p.name,
+      barcode: p.barcode ?? "",
+      unit_type: p.unit_type ?? "",
+      unit_quantity: p.unit_quantity ?? 0,
+      category_id: p.category?.id ?? "",
+      price: p.price,
+      cost: p.cost,
+      tax_rate: p.tax_rate,
+      stock: p.stock,
+      low_stock_threshold: p.low_stock_threshold,
     });
     setEditing(p);
   }
@@ -41,29 +87,47 @@ export default function Products() {
     setEditing(null);
   }
 
-  function save() {
-    const now = new Date().toISOString();
-    if (editing && editing !== "new") {
-      setProducts(products.map((p) =>
-        p.id === editing.id
-          ? { ...p, name: form.name, barcode: form.barcode || null, category: form.category || null, price: form.price, cost: form.cost, tax_rate: form.tax_rate, stock: form.stock, low_stock_threshold: form.low_stock_threshold, updated_at: now }
-          : p,
-      ));
-    } else if (editing === "new") {
-      const np: DemoProduct = {
-        id: `demo-${Date.now()}`, name: form.name, barcode: form.barcode || null,
-        category: form.category || null, price: form.price, cost: form.cost,
-        tax_rate: form.tax_rate, stock: form.stock, low_stock_threshold: form.low_stock_threshold,
-        active: true, created_at: now, updated_at: now,
+  async function save() {
+    if (!editing) return;
+    try {
+      const payload = {
+        name: form.name,
+        barcode: form.barcode || undefined,
+        unit_type: form.unit_type || undefined,
+        unit_quantity: form.unit_quantity || undefined,
+        category_id: form.category_id || undefined,
+        price: form.price,
+        cost: form.cost || undefined,
+        tax_rate: form.tax_rate,
+        stock: form.stock,
+        low_stock_threshold: form.low_stock_threshold,
       };
-      setProducts([np, ...products]);
+
+      if (editing === "new") {
+        await productsApi.create(payload);
+      } else {
+        await productsApi.update(editing.id, payload);
+      }
+
+      close();
+      const res = await productsApi.list({ page, limit: LIMIT, search: q || undefined });
+      setProducts(res.products);
+      setTotal(res.total);
+    } catch {
+      alert("Error al guardar producto");
     }
-    close();
   }
 
-  function remove(id: string) {
+  async function remove(id: string) {
     if (!confirm("¿Eliminar producto?")) return;
-    setProducts(products.filter((p) => p.id !== id));
+    try {
+      await productsApi.delete(id);
+      const res = await productsApi.list({ page, limit: LIMIT, search: q || undefined });
+      setProducts(res.products);
+      setTotal(res.total);
+    } catch {
+      alert("Error al eliminar producto");
+    }
   }
 
   const isOpen = editing !== null;
@@ -73,7 +137,7 @@ export default function Products() {
       <header className={styles.header}>
         <div>
           <h1 className={styles.h1}>Productos</h1>
-          <p className={styles.subtitle}>{products.length} productos en catálogo</p>
+          <p className={styles.subtitle}>{total} productos en catálogo</p>
         </div>
         <button onClick={openNew} className={styles.primaryBtn}>
           <Plus size={16} /> Nuevo
@@ -84,7 +148,7 @@ export default function Products() {
         <Search size={16} className={styles.searchIcon} />
         <input
           value={q}
-          onChange={(e) => setQ(e.target.value)}
+          onChange={(e) => handleSearch(e.target.value)}
           placeholder="Buscar por nombre, código o categoría"
           className={styles.searchInput}
         />
@@ -102,37 +166,70 @@ export default function Products() {
             </tr>
           </thead>
           <tbody>
-            {filtered.map((p) => (
-              <tr key={p.id} className={styles.tr}>
-                <td className={styles.tdProduct}>
-                  <div className={styles.productName}>{p.name}</div>
-                  {p.category && <div className={styles.productCat}>{p.category}</div>}
-                </td>
-                <td className={styles.tdBarcode}>{p.barcode ?? "—"}</td>
-                <td className={styles.tdRight}>{money(p.price)}</td>
-                <td className={styles.tdRight}>
-                  <span className={p.stock <= p.low_stock_threshold ? styles.stockWarning : styles.stockNormal}>
-                    {p.stock}
-                  </span>
-                </td>
-                <td className={styles.tdActions}>
-                  <button onClick={() => openEdit(p)} className={styles.iconBtn} title="Editar">
-                    <Pencil size={14} />
-                  </button>
-                  <button onClick={() => remove(p.id!)} className={`${styles.iconBtn} ${styles.iconDanger}`} title="Eliminar">
-                    <Trash2 size={14} />
-                  </button>
-                </td>
-              </tr>
-            ))}
-            {filtered.length === 0 && (
+            {loading ? (
+              <tr><td colSpan={5} className={styles.empty}>Cargando…</td></tr>
+            ) : products.length === 0 ? (
               <tr><td colSpan={5} className={styles.empty}>Sin productos</td></tr>
+            ) : (
+              products.map((p) => (
+                <tr key={p.id} className={styles.tr}>
+                  <td className={styles.tdProduct}>
+                    <div className={styles.productName}>{p.name}</div>
+                    <div className={styles.productCat}>
+                      {p.category && <span>{p.category.name}</span>}
+                      {p.unit_type && <span> · {p.unit_type}{p.unit_quantity ? ` ${p.unit_quantity}` : ""}</span>}
+                    </div>
+                  </td>
+                  <td className={styles.tdBarcode}>{p.barcode ?? "—"}</td>
+                  <td className={styles.tdRight}>{money(p.price)}</td>
+                  <td className={styles.tdRight}>
+                    <span className={p.stock <= p.low_stock_threshold ? styles.stockWarning : styles.stockNormal}>
+                      {p.stock}
+                    </span>
+                  </td>
+                  <td className={styles.tdActions}>
+                    <button onClick={() => openEdit(p)} className={styles.iconBtn} title="Editar">
+                      <Pencil size={14} />
+                    </button>
+                    <button onClick={() => remove(p.id)} className={`${styles.iconBtn} ${styles.iconDanger}`} title="Eliminar">
+                      <Trash2 size={14} />
+                    </button>
+                  </td>
+                </tr>
+              ))
             )}
           </tbody>
         </table>
+
+        {totalPages > 1 && (
+          <div className={styles.pagination}>
+            <button
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={page <= 1}
+              className={styles.pageBtn}
+            >
+              <ChevronLeft size={16} />
+            </button>
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((n) => (
+              <button
+                key={n}
+                onClick={() => setPage(n)}
+                className={`${styles.pageBtn} ${n === page ? styles.pageActive : ""}`}
+              >
+                {n}
+              </button>
+            ))}
+            <button
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              disabled={page >= totalPages}
+              className={styles.pageBtn}
+            >
+              <ChevronRight size={16} />
+            </button>
+          </div>
+        )}
       </div>
 
-      {/* Modal */}
       {isOpen && (
         <div className={styles.overlay} onClick={close}>
           <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
@@ -163,12 +260,34 @@ export default function Products() {
                   className={styles.input}
                 />
               </div>
+              <div className={styles.fieldGrid}>
+                <div className={styles.field}>
+                  <label className={styles.fieldLabel}>Tipo de empaque</label>
+                  <input
+                    value={form.unit_type} onChange={(e) => setForm({ ...form, unit_type: e.target.value })}
+                    className={styles.input} placeholder="Ej: Ristra, Paquete, Bolsa, Caja"
+                  />
+                </div>
+                <div className={styles.field}>
+                  <label className={styles.fieldLabel}>Cantidad x empaque</label>
+                  <input type="number" min="0" value={form.unit_quantity}
+                    onChange={(e) => setForm({ ...form, unit_quantity: Number(e.target.value) })}
+                    className={styles.input} placeholder="Ej: 12, 24, 100"
+                  />
+                </div>
+              </div>
               <div className={styles.field}>
                 <label className={styles.fieldLabel}>Categoría</label>
-                <input
-                  value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })}
+                <select
+                  value={form.category_id}
+                  onChange={(e) => setForm({ ...form, category_id: e.target.value })}
                   className={styles.input}
-                />
+                >
+                  <option value="">Sin categoría</option>
+                  {categories.map((c) => (
+                    <option key={c.id} value={c.id}>{c.name}</option>
+                  ))}
+                </select>
               </div>
               <div className={styles.fieldGrid}>
                 <div className={styles.field}>

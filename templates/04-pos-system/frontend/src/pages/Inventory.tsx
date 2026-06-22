@@ -1,40 +1,65 @@
-import { useMemo, useState } from "react";
-import { AlertTriangle, X } from "lucide-react";
-import { getDemoStore } from "@/lib/demo-store";
+import { useEffect, useState } from "react";
+import { AlertTriangle, X, ChevronLeft, ChevronRight } from "lucide-react";
+import { productsApi, type Product } from "@/api/products";
+import { inventoryApi, type LowStockProduct } from "@/api/inventory";
 import styles from "./Inventory.module.css";
+
+const LIMIT = 10;
 
 type AdjustState = { id: string; name: string; stock: number } | null;
 
 export default function Inventory() {
-  const store = useMemo(() => getDemoStore(), []);
-  const [products, setProducts] = useState(store.products);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const [loading, setLoading] = useState(true);
+  const [lowStockProducts, setLowStockProducts] = useState<LowStockProduct[]>([]);
   const [adjust, setAdjust] = useState<AdjustState>(null);
   const [type, setType] = useState<"entrada" | "salida" | "ajuste">("entrada");
   const [qty, setQty] = useState(0);
   const [note, setNote] = useState("");
 
-  const lowStock = products.filter((p) => p.stock <= p.low_stock_threshold && p.active);
+  const totalPages = Math.max(1, Math.ceil(total / LIMIT));
 
-  function apply() {
+  const fetchData = async (p: number) => {
+    setLoading(true);
+    try {
+      const [productRes, lowStockRes] = await Promise.all([
+        productsApi.list({ page: p, limit: LIMIT, active: true }),
+        inventoryApi.lowStock(),
+      ]);
+      setProducts(productRes.products);
+      setTotal(productRes.total);
+      setLowStockProducts(lowStockRes.products);
+    } catch {
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchData(page);
+  }, [page]);
+
+  async function apply() {
     if (!adjust) return;
-    const now = new Date().toISOString();
-    let newStock = adjust.stock;
-    let movementQty = qty;
-    if (type === "entrada") { newStock += qty; }
-    else if (type === "salida") { newStock -= qty; movementQty = -qty; }
-    else { newStock = qty; movementQty = qty - adjust.stock; }
+    try {
+      await inventoryApi.create({
+        product_id: adjust.id,
+        movement_type: type,
+        quantity: type === "ajuste" ? qty - adjust.stock : qty,
+        note: note || undefined,
+      });
 
-    setProducts(products.map((p) =>
-      p.id === adjust.id ? { ...p, stock: newStock, updated_at: now } : p,
-    ));
+      setAdjust(null);
+      setQty(0);
+      setNote("");
+      setType("entrada");
 
-    store.movements.push({
-      id: `mov-${Date.now()}`, product_id: adjust.id,
-      movement_type: type, quantity: movementQty,
-      note: note || null, user_id: store.user.id, created_at: now,
-    });
-
-    setAdjust(null); setQty(0); setNote(""); setType("entrada");
+      fetchData(page);
+    } catch {
+      alert("Error al ajustar inventario");
+    }
   }
 
   return (
@@ -46,13 +71,14 @@ export default function Inventory() {
         </div>
       </header>
 
-      {lowStock.length > 0 && (
+      {lowStockProducts.length > 0 && (
         <div className={styles.alert}>
           <AlertTriangle size={16} className={styles.alertIcon} />
           <div>
-            <div className={styles.alertTitle}>{lowStock.length} producto(s) con stock bajo</div>
+            <div className={styles.alertTitle}>{lowStockProducts.length} producto(s) con stock bajo</div>
             <div className={styles.alertDesc}>
-              {lowStock.slice(0, 5).map((p) => p.name).join(", ")}{lowStock.length > 5 ? "…" : ""}
+              {lowStockProducts.slice(0, 5).map((p) => p.product_name).join(", ")}
+              {lowStockProducts.length > 5 ? "…" : ""}
             </div>
           </div>
         </div>
@@ -69,33 +95,66 @@ export default function Inventory() {
             </tr>
           </thead>
           <tbody>
-            {products.filter((p) => p.active).map((p) => (
-              <tr key={p.id}>
-                <td className={styles.tdProduct}>
-                  <div className={styles.productName}>{p.name}</div>
-                  {p.barcode && <div className={styles.productBarcode}>{p.barcode}</div>}
-                </td>
-                <td className={styles.tdRight}>
-                  <span className={p.stock <= p.low_stock_threshold ? styles.stockWarning : ""}>
-                    {p.stock}
-                  </span>
-                </td>
-                <td className={styles.tdRightMuted}>{p.low_stock_threshold}</td>
-                <td className={styles.tdActions}>
-                  <button
-                    onClick={() => setAdjust({ id: p.id, name: p.name, stock: p.stock })}
-                    className={styles.outlineBtn}
-                  >
-                    Ajustar
-                  </button>
-                </td>
-              </tr>
-            ))}
+            {loading ? (
+              <tr><td colSpan={4} className={styles.empty}>Cargando…</td></tr>
+            ) : products.length === 0 ? (
+              <tr><td colSpan={4} className={styles.empty}>Sin productos</td></tr>
+            ) : (
+              products.map((p) => (
+                <tr key={p.id}>
+                  <td className={styles.tdProduct}>
+                    <div className={styles.productName}>{p.name}</div>
+                    {p.barcode && <div className={styles.productBarcode}>{p.barcode}</div>}
+                  </td>
+                  <td className={styles.tdRight}>
+                    <span className={p.stock <= p.low_stock_threshold ? styles.stockWarning : ""}>
+                      {p.stock}
+                    </span>
+                  </td>
+                  <td className={styles.tdRightMuted}>{p.low_stock_threshold}</td>
+                  <td className={styles.tdActions}>
+                    <button
+                      onClick={() => setAdjust({ id: p.id, name: p.name, stock: p.stock })}
+                      className={styles.outlineBtn}
+                    >
+                      Ajustar
+                    </button>
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
+
+        {totalPages > 1 && (
+          <div className={styles.pagination}>
+            <button
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={page <= 1}
+              className={styles.pageBtn}
+            >
+              <ChevronLeft size={16} />
+            </button>
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((n) => (
+              <button
+                key={n}
+                onClick={() => setPage(n)}
+                className={`${styles.pageBtn} ${n === page ? styles.pageActive : ""}`}
+              >
+                {n}
+              </button>
+            ))}
+            <button
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              disabled={page >= totalPages}
+              className={styles.pageBtn}
+            >
+              <ChevronRight size={16} />
+            </button>
+          </div>
+        )}
       </div>
 
-      {/* Modal */}
       {adjust && (
         <div className={styles.overlay} onClick={() => setAdjust(null)}>
           <div className={styles.modal} onClick={(e) => e.stopPropagation()}>

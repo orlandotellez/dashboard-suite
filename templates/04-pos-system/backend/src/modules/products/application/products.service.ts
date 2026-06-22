@@ -29,7 +29,9 @@ export const createProductService = (repository: IProductRepository) => ({
     const result = await repository.findAll(params)
     return {
       products: result.products.map(mapProductToResponse),
-      total: result.total
+      total: result.total,
+      page: result.page,
+      limit: result.limit,
     }
   },
 

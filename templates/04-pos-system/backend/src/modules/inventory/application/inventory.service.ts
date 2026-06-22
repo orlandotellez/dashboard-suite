@@ -53,6 +53,8 @@ export const createInventoryService = (
     return {
       movements: movements.map(m => mapMovementToResponse(m, product.name)),
       total: movements.length,
+      page: 1,
+      limit: movements.length,
     }
   },
 
@@ -61,6 +63,8 @@ export const createInventoryService = (
     return {
       movements: result.movements.map(m => mapMovementToResponse(m)),
       total: result.total,
+      page: result.page,
+      limit: result.limit,
     }
   },
 

@@ -2,6 +2,7 @@ import { Link, useLocation } from "react-router-dom";
 import type { ReactNode } from "react";
 import { ScanBarcode, Package, BarChart3, Settings, Boxes, LogOut, Moon, Sun } from "lucide-react";
 import { useTheme } from "@/context/ThemeContext";
+import { useAuth } from "@/context/AuthContext";
 import styles from "./AppShell.module.css";
 
 const navItems = [
@@ -14,6 +15,7 @@ const navItems = [
 
 export function AppShell({ children }: { children: ReactNode }) {
   const { theme, toggle } = useTheme();
+  const { user, logout } = useAuth();
   const location = useLocation();
   const pathname = location.pathname;
 
@@ -42,8 +44,8 @@ export function AppShell({ children }: { children: ReactNode }) {
           })}
         </nav>
         <div className={styles.sidebarFooter}>
-          <div className={styles.footerUser}>admin@smart-miscelanea.com</div>
-          <button className={styles.signOut}>
+          <div className={styles.footerUser}>{user?.email ?? "Sin sesión"}</div>
+          <button onClick={logout} className={styles.signOut}>
             <LogOut className={styles.navIcon} />
             Salir
           </button>

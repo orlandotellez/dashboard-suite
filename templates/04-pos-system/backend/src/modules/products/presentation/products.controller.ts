@@ -1,6 +1,7 @@
 import type { FastifyReply, FastifyRequest } from "fastify"
 import { createProductService } from "../application/products.service"
 import { ProductRepository } from "../infrastructure/products.prisma.repository"
+import type { UpdateProductData } from "../domain/products.entities"
 import { CreateProductDtoSchema, UpdateProductDtoSchema, ProductQuerySchema } from "./products.dto"
 import { BadRequestError } from "@/core/errors/AppError"
 
@@ -37,7 +38,7 @@ export const productsController = {
   update: async (request: FastifyRequest, reply: FastifyReply) => {
     const { id } = request.params as { id: string }
     const data = UpdateProductDtoSchema.parse(request.body)
-    const result = await productService.update(id, data)
+    const result = await productService.update(id, data as UpdateProductData)
     return reply.status(200).send(result)
   },
 

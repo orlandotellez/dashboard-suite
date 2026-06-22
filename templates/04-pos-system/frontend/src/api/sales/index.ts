@@ -1,0 +1,94 @@
+import { api } from "../client";
+
+// ---------------------------------------------------------------------------
+// Tipos
+// ---------------------------------------------------------------------------
+
+export interface SaleItem {
+  id: string;
+  product_id: string;
+  product_name: string;
+  quantity: number;
+  unit_price: number;
+  tax_rate: number;
+  line_total: number;
+}
+
+export interface Sale {
+  id: string;
+  subtotal: number;
+  tax_total: number;
+  discount: number;
+  total: number;
+  payment_method: string;
+  amount_received?: number;
+  change_given?: number;
+  user_id: string;
+  created_at: string;
+  items?: SaleItem[];
+}
+
+export interface SaleListResponse {
+  sales: Sale[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
+export interface SaleReport {
+  total_sales: number;
+  total_revenue: number;
+  total_tax: number;
+  total_discount: number;
+  average_ticket: number;
+  sales_by_payment_method: Record<string, number>;
+  top_products: { product_name: string; quantity: number; revenue: number }[];
+}
+
+// ---------------------------------------------------------------------------
+// Payloads
+// ---------------------------------------------------------------------------
+
+export interface CreateSaleItemPayload {
+  product_id: string;
+  product_name: string;
+  quantity: number;
+  unit_price: number;
+  tax_rate: number;
+  line_total: number;
+}
+
+export interface CreateSalePayload {
+  subtotal: number;
+  tax_total: number;
+  discount: number;
+  total: number;
+  payment_method: "efectivo" | "tarjeta" | "transferencia";
+  amount_received?: number;
+  change_given?: number;
+  items: CreateSaleItemPayload[];
+}
+
+// ---------------------------------------------------------------------------
+// Endpoints
+// ---------------------------------------------------------------------------
+
+export const salesApi = {
+  list: (params?: {
+    start_date?: string;
+    end_date?: string;
+    user_id?: string;
+    payment_method?: string;
+    page?: number;
+    limit?: number;
+  }) => api.get<SaleListResponse>("/sales", params as Record<string, string | number | boolean | undefined>),
+
+  getById: (id: string) =>
+    api.get<Sale>(`/sales/${id}`),
+
+  create: (data: CreateSalePayload) =>
+    api.post<Sale>("/sales", data),
+
+  report: (params?: { start_date?: string; end_date?: string }) =>
+    api.get<SaleReport>("/sales/report", params as Record<string, string | number | boolean | undefined>),
+};

@@ -23,6 +23,8 @@ export interface IProductResponse {
 export interface IProductListResponse {
   products: IProductResponse[]
   total: number
+  page: number
+  limit: number
 }
 
 export interface IProductQueryParams {

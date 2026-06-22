@@ -12,6 +12,8 @@ export interface IInventoryMovementResponse {
 export interface IInventoryMovementListResponse {
   movements: IInventoryMovementResponse[]
   total: number
+  page: number
+  limit: number
 }
 
 export interface IProductStockResponse {

@@ -1,4 +1,5 @@
 import { prisma } from "@/config/prisma.js";
+import { hashPassword } from "@/core/utils/crypto.utils";
 
 // ============================================================
 // CATEGORÍAS (seeder upsert por name, UUIDs autogenerados)
@@ -98,10 +99,14 @@ const seed = async () => {
   // ── Categorías ─────────────────────────────────────────────
   const catMap: CategoryMap = {};
 
-  // Limpiamos categorías existentes para regenerar con UUIDs (también limpia productos hijos)
+  // Limpiamos datos existentes (ordenado por FKs)
   await prisma.inventory_movement.deleteMany({});
   await prisma.sale_item.deleteMany({});
   await prisma.sale.deleteMany({});
+  await prisma.session.deleteMany({});
+  await prisma.account.deleteMany({});
+  await prisma.user.deleteMany({});
+  await prisma.verification.deleteMany({});
   await prisma.product.deleteMany({});
   await prisma.category.deleteMany({});
 
@@ -134,8 +139,42 @@ const seed = async () => {
   }
   console.log(`   ✅ ${products.length} productos creados con UUID`);
 
+  // ── Usuarios de prueba ──────────────────────────────────────
+  const testUsers = [
+    { name: "Admin", email: "admin@smart-miscelanea.com", password: "admin123", role: "admin" as const },
+    { name: "Cajero", email: "cajero@smart-miscelanea.com", password: "cajero123", role: "cajero" as const },
+  ];
+
+  console.log(`👤 Sembrando ${testUsers.length} usuarios de prueba...`);
+  for (const u of testUsers) {
+    const user = await prisma.user.create({
+      data: {
+        name: u.name,
+        email: u.email,
+        role: u.role,
+        email_verified: true,
+      },
+    });
+
+    const hashedPassword = await hashPassword(u.password);
+    await prisma.account.create({
+      data: {
+        account_id: user.id,
+        provider_id: "credentials",
+        user_id: user.id,
+        password: hashedPassword,
+      },
+    });
+    console.log(`   ✅ ${u.email} (${u.role})`);
+  }
+
   console.log("");
   console.log("🎉 Seeder completado exitosamente!");
+  console.log("");
+  console.log("🔐 Usuarios de prueba:");
+  for (const u of testUsers) {
+    console.log(`   • ${u.email} / ${u.password} (${u.role})`);
+  }
   console.log(`   📦 Productos por categoría:`);
 
   const counts = await prisma.product.groupBy({

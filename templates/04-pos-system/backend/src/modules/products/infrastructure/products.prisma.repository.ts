@@ -92,6 +92,8 @@ export const ProductRepository: IProductRepository = {
     return {
       products: products.map(mapToEntity),
       total,
+      page,
+      limit,
     }
   },
 

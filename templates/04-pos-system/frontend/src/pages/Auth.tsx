@@ -1,21 +1,34 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/context/AuthContext";
+import { authApi } from "@/api/auth";
 import styles from "./Auth.module.css";
 
 export default function Auth() {
-  const navigate = useNavigate();
+  const { login } = useAuth();
   const [mode, setMode] = useState<"signin" | "signup">("signin");
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    // Demo mode: just navigate to POS
+    setError("");
     setLoading(true);
-    setTimeout(() => {
-      navigate("/pos");
-    }, 300);
+
+    try {
+      if (mode === "signin") {
+        await login(email, password);
+      } else {
+        await authApi.register({ name, email, password });
+        await login(email, password);
+      }
+    } catch (err: any) {
+      setError(err?.message ?? "Error al conectar con el servidor");
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -26,6 +39,20 @@ export default function Auth() {
           <p className={styles.subtitle}>Punto de venta e inventario</p>
         </div>
         <form onSubmit={submit} className={styles.form}>
+          {mode === "signup" && (
+            <div className={styles.field}>
+              <label htmlFor="name" className={styles.label}>Nombre</label>
+              <input
+                id="name"
+                type="text"
+                autoComplete="name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required
+                className={styles.input}
+              />
+            </div>
+          )}
           <div className={styles.field}>
             <label htmlFor="email" className={styles.label}>Correo</label>
             <input
@@ -50,6 +77,7 @@ export default function Auth() {
               className={styles.input}
             />
           </div>
+          {error && <p className={styles.error}>{error}</p>}
           <button type="submit" className={styles.button} disabled={loading}>
             {loading ? "..." : mode === "signin" ? "Ingresar" : "Crear cuenta"}
           </button>
@@ -61,9 +89,6 @@ export default function Auth() {
         >
           {mode === "signin" ? "¿No tienes cuenta? Crear una" : "Ya tengo cuenta"}
         </button>
-        <p className={styles.hint}>
-          La primera cuenta creada será el administrador.
-        </p>
       </div>
     </div>
   );

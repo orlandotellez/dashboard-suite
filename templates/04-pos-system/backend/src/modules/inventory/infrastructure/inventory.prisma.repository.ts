@@ -61,6 +61,8 @@ export const InventoryRepository: IInventoryRepository = {
     return {
       movements: movements.map(mapToEntity),
       total,
+      page,
+      limit,
     }
   },
 }
