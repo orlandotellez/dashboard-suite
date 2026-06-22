@@ -63,14 +63,28 @@ CREATE TABLE "verification" (
 );
 
 -- CreateTable
+CREATE TABLE "categories" (
+    "id" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "description" TEXT,
+    "created_at" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMPTZ NOT NULL,
+    "deleted_at" TIMESTAMPTZ,
+
+    CONSTRAINT "categories_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "products" (
     "id" TEXT NOT NULL,
     "barcode" TEXT,
     "name" TEXT NOT NULL,
-    "category" TEXT,
-    "price" DECIMAL(65,30) NOT NULL,
-    "cost" DECIMAL(65,30) NOT NULL DEFAULT 0,
-    "tax_rate" DECIMAL(65,30) NOT NULL DEFAULT 0,
+    "unit_type" TEXT,
+    "unit_quantity" INTEGER,
+    "category_id" TEXT,
+    "price" DECIMAL(10,2) NOT NULL,
+    "cost" DECIMAL(10,2) NOT NULL DEFAULT 0,
+    "tax_rate" DECIMAL(10,2) NOT NULL DEFAULT 0,
     "stock" INTEGER NOT NULL DEFAULT 0,
     "low_stock_threshold" INTEGER NOT NULL DEFAULT 5,
     "active" BOOLEAN NOT NULL DEFAULT true,
@@ -84,13 +98,13 @@ CREATE TABLE "products" (
 -- CreateTable
 CREATE TABLE "sales" (
     "id" TEXT NOT NULL,
-    "subtotal" DECIMAL(65,30) NOT NULL,
-    "tax_total" DECIMAL(65,30) NOT NULL DEFAULT 0,
-    "discount" DECIMAL(65,30) NOT NULL DEFAULT 0,
-    "total" DECIMAL(65,30) NOT NULL,
+    "subtotal" DECIMAL(10,2) NOT NULL,
+    "tax_total" DECIMAL(10,2) NOT NULL DEFAULT 0,
+    "discount" DECIMAL(10,2) NOT NULL DEFAULT 0,
+    "total" DECIMAL(10,2) NOT NULL,
     "payment_method" TEXT NOT NULL,
-    "amount_received" DECIMAL(65,30),
-    "change_given" DECIMAL(65,30),
+    "amount_received" DECIMAL(10,2),
+    "change_given" DECIMAL(10,2),
     "user_id" TEXT NOT NULL,
     "created_at" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMPTZ NOT NULL,
@@ -105,9 +119,9 @@ CREATE TABLE "sale_items" (
     "product_id" TEXT NOT NULL,
     "product_name" TEXT NOT NULL,
     "quantity" INTEGER NOT NULL,
-    "unit_price" DECIMAL(65,30) NOT NULL,
-    "tax_rate" DECIMAL(65,30) NOT NULL DEFAULT 0,
-    "line_total" DECIMAL(65,30) NOT NULL,
+    "unit_price" DECIMAL(10,2) NOT NULL,
+    "tax_rate" DECIMAL(10,2) NOT NULL DEFAULT 0,
+    "line_total" DECIMAL(10,2) NOT NULL,
     "created_at" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMPTZ NOT NULL,
 
@@ -133,7 +147,7 @@ CREATE TABLE "settings" (
     "name" TEXT NOT NULL DEFAULT 'Mi Negocio',
     "address" TEXT,
     "phone" TEXT,
-    "tax_rate" DECIMAL(65,30) NOT NULL DEFAULT 16,
+    "tax_rate" DECIMAL(10,2) NOT NULL DEFAULT 16,
     "low_stock_threshold" INTEGER NOT NULL DEFAULT 5,
     "ticket_footer" TEXT,
     "updated_at" TIMESTAMPTZ NOT NULL,
@@ -157,13 +171,22 @@ CREATE INDEX "session_user_id_idx" ON "session"("user_id");
 CREATE INDEX "account_user_id_idx" ON "account"("user_id");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "categories_name_key" ON "categories"("name");
+
+-- CreateIndex
+CREATE INDEX "categories_name_idx" ON "categories"("name");
+
+-- CreateIndex
+CREATE INDEX "categories_deleted_at_idx" ON "categories"("deleted_at");
+
+-- CreateIndex
 CREATE INDEX "products_barcode_idx" ON "products"("barcode");
 
 -- CreateIndex
 CREATE INDEX "products_name_idx" ON "products"("name");
 
 -- CreateIndex
-CREATE INDEX "products_category_idx" ON "products"("category");
+CREATE INDEX "products_category_id_idx" ON "products"("category_id");
 
 -- CreateIndex
 CREATE INDEX "products_active_idx" ON "products"("active");
@@ -194,6 +217,9 @@ ALTER TABLE "session" ADD CONSTRAINT "session_user_id_fkey" FOREIGN KEY ("user_i
 
 -- AddForeignKey
 ALTER TABLE "account" ADD CONSTRAINT "account_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "products" ADD CONSTRAINT "products_category_id_fkey" FOREIGN KEY ("category_id") REFERENCES "categories"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "sales" ADD CONSTRAINT "sales_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
