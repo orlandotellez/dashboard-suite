@@ -6,11 +6,19 @@ export type DemoUser = {
   role: "admin" | "cajero";
 };
 
+export type DemoCategory = {
+  id: string;
+  name: string;
+};
+
 export type DemoProduct = {
   id: string;
   barcode: string | null;
   name: string;
-  category: string | null;
+  unit_type: string | null;
+  unit_quantity: number | null;
+  category: DemoCategory | null;
+  category_id: string | null;
   price: number;
   cost: number;
   tax_rate: number;
@@ -81,6 +89,15 @@ class DemoStore {
     role: "admin",
   };
 
+  categories: DemoCategory[] = [
+    { id: "cat-botanas", name: "Botanas" },
+    { id: "cat-refrescos", name: "Refrescos" },
+    { id: "cat-abarrotes", name: "Abarrotes" },
+    { id: "cat-lacteos", name: "Lácteos" },
+    { id: "cat-pan", name: "Pan" },
+    { id: "cat-dulces", name: "Dulces" },
+  ];
+
   products: DemoProduct[] = [];
   sales: DemoSale[] = [];
   saleItems: DemoSaleItem[] = [];
@@ -104,52 +121,60 @@ class DemoStore {
 
   private seedProducts() {
     const now = new Date("2026-06-21T10:00:00Z").toISOString();
+    const cat = (name: string) => this.categories.find((c) => c.name === name)!;
+
     const items = [
-      { name: "Sabritas Adobadas 45g", category: "Botanas", price: 18, cost: 13, barcode: "7501000111123", stock: 45 },
-      { name: "Sabritas Original 45g", category: "Botanas", price: 18, cost: 13, barcode: "7501000111130", stock: 30 },
-      { name: "Doritos Nacho 60g", category: "Botanas", price: 20, cost: 14.5, barcode: "7501000112144", stock: 25 },
-      { name: "Cacahuates Japoneses 80g", category: "Botanas", price: 12, cost: 8, barcode: "7501000113151", stock: 60 },
-      { name: "Churritos 90g", category: "Botanas", price: 15, cost: 10, barcode: "7501000114162", stock: 20 },
-      { name: "Coca-Cola 600ml", category: "Refrescos", price: 25, cost: 18, barcode: "7501055300175", stock: 48 },
-      { name: "Coca-Cola 2L", category: "Refrescos", price: 38, cost: 28, barcode: "7501055300182", stock: 18 },
-      { name: "Sprite 600ml", category: "Refrescos", price: 22, cost: 16, barcode: "7501055300199", stock: 35 },
-      { name: "Boing Mango 1L", category: "Refrescos", price: 20, cost: 14, barcode: "7501055300205", stock: 22 },
-      { name: "Agua Ciel 1L", category: "Refrescos", price: 14, cost: 10, barcode: "7501055300212", stock: 50 },
-      { name: "Arroz La Merced 1kg", category: "Abarrotes", price: 28, cost: 21, barcode: "7501002100221", stock: 15 },
-      { name: "Frijol Bayo 1kg", category: "Abarrotes", price: 32, cost: 24, barcode: "7501002100238", stock: 12 },
-      { name: "Aceite Nutrioli 900ml", category: "Abarrotes", price: 45, cost: 34, barcode: "7501002100245", stock: 8 },
-      { name: "Azúcar Morena 1kg", category: "Abarrotes", price: 35, cost: 26, barcode: "7501002100252", stock: 10 },
-      { name: "Sal de Mesa 500g", category: "Abarrotes", price: 12, cost: 8, barcode: "7501002100269", stock: 30 },
-      { name: "Leche Lala Entera 1L", category: "Lácteos", price: 26, cost: 20, barcode: "7501002100276", stock: 20 },
-      { name: "Huevo Blanco 12pz", category: "Lácteos", price: 38, cost: 29, barcode: "7501002100283", stock: 24 },
-      { name: "Yakult 5pz", category: "Lácteos", price: 22, cost: 16, barcode: "7501002100290", stock: 18 },
-      { name: "Mantequilla Gloria 90g", category: "Lácteos", price: 16, cost: 11, barcode: "7501002100306", stock: 14 },
-      { name: "Crema María 250g", category: "Lácteos", price: 24, cost: 18, barcode: "7501002100313", stock: 5 },
-      { name: "Pan Bimbo Blanco 680g", category: "Pan", price: 40, cost: 31, barcode: "7501002100320", stock: 9 },
-      { name: "Pan de Caja Integral Bimbo", category: "Pan", price: 45, cost: 35, barcode: "7501002100337", stock: 6 },
-      { name: "Gansito Marinela", category: "Pan", price: 18, cost: 13, barcode: "7501002100344", stock: 28 },
-      { name: "Barritas Marinela", category: "Pan", price: 15, cost: 11, barcode: "7501002100351", stock: 32 },
-      { name: "Bubulubu", category: "Dulces", price: 10, cost: 6.5, barcode: "7501002100368", stock: 55 },
-      { name: "Pulparindo", category: "Dulces", price: 8, cost: 5, barcode: "7501002100375", stock: 40 },
-      { name: "Chicles Bubba Blo", category: "Dulces", price: 5, cost: 3, barcode: "7501002100382", stock: 70 },
-      { name: "Mazapán de la Rosa", category: "Dulces", price: 10, cost: 7, barcode: "7501002100399", stock: 38 },
-      { name: "Paleta Payaso", category: "Dulces", price: 6, cost: 3.5, barcode: "7501002100405", stock: 65 },
+      { name: "Sabritas Adobadas 45g", unit_type: "Bolsa", category: "Botanas", price: 18, cost: 13, barcode: "7501000111123", stock: 45 },
+      { name: "Sabritas Original 45g", unit_type: "Bolsa", category: "Botanas", price: 18, cost: 13, barcode: "7501000111130", stock: 30 },
+      { name: "Doritos Nacho 60g", unit_type: "Bolsa", category: "Botanas", price: 20, cost: 14.5, barcode: "7501000112144", stock: 25 },
+      { name: "Cacahuates Japoneses 80g", unit_type: "Bolsa", category: "Botanas", price: 12, cost: 8, barcode: "7501000113151", stock: 60 },
+      { name: "Churritos 90g", unit_type: "Bolsa", category: "Botanas", price: 15, cost: 10, barcode: "7501000114162", stock: 20 },
+      { name: "Coca-Cola 600ml", unit_type: "Botella", category: "Refrescos", price: 25, cost: 18, barcode: "7501055300175", stock: 48 },
+      { name: "Coca-Cola 2L", unit_type: "Botella", category: "Refrescos", price: 38, cost: 28, barcode: "7501055300182", stock: 18 },
+      { name: "Sprite 600ml", unit_type: "Botella", category: "Refrescos", price: 22, cost: 16, barcode: "7501055300199", stock: 35 },
+      { name: "Boing Mango 1L", unit_type: "Botella", category: "Refrescos", price: 20, cost: 14, barcode: "7501055300205", stock: 22 },
+      { name: "Agua Ciel 1L", unit_type: "Botella", category: "Refrescos", price: 14, cost: 10, barcode: "7501055300212", stock: 50 },
+      { name: "Arroz La Merced 1kg", unit_type: "Bolsa", category: "Abarrotes", price: 28, cost: 21, barcode: "7501002100221", stock: 15 },
+      { name: "Frijol Bayo 1kg", unit_type: "Bolsa", category: "Abarrotes", price: 32, cost: 24, barcode: "7501002100238", stock: 12 },
+      { name: "Aceite Nutrioli 900ml", unit_type: "Botella", category: "Abarrotes", price: 45, cost: 34, barcode: "7501002100245", stock: 8 },
+      { name: "Azúcar Morena 1kg", unit_type: "Bolsa", category: "Abarrotes", price: 35, cost: 26, barcode: "7501002100252", stock: 10 },
+      { name: "Sal de Mesa 500g", unit_type: "Bolsa", category: "Abarrotes", price: 12, cost: 8, barcode: "7501002100269", stock: 30 },
+      { name: "Leche Lala Entera 1L", unit_type: "Botella", category: "Lácteos", price: 26, cost: 20, barcode: "7501002100276", stock: 20 },
+      { name: "Huevo Blanco 12pz", unit_type: "Caja", unit_quantity: 12, category: "Lácteos", price: 38, cost: 29, barcode: "7501002100283", stock: 24 },
+      { name: "Yakult 5pz", unit_type: "Paquete", unit_quantity: 5, category: "Lácteos", price: 22, cost: 16, barcode: "7501002100290", stock: 18 },
+      { name: "Mantequilla Gloria 90g", unit_type: "Barra", category: "Lácteos", price: 16, cost: 11, barcode: "7501002100306", stock: 14 },
+      { name: "Crema María 250g", unit_type: "Envase", category: "Lácteos", price: 24, cost: 18, barcode: "7501002100313", stock: 5 },
+      { name: "Pan Bimbo Blanco 680g", unit_type: "Bolsa", category: "Pan", price: 40, cost: 31, barcode: "7501002100320", stock: 9 },
+      { name: "Pan de Caja Integral Bimbo", unit_type: "Bolsa", category: "Pan", price: 45, cost: 35, barcode: "7501002100337", stock: 6 },
+      { name: "Gansito Marinela", unit_type: "Paquete", unit_quantity: 1, category: "Pan", price: 18, cost: 13, barcode: "7501002100344", stock: 28 },
+      { name: "Barritas Marinela", unit_type: "Paquete", unit_quantity: 1, category: "Pan", price: 15, cost: 11, barcode: "7501002100351", stock: 32 },
+      { name: "Bubulubu", unit_type: "Paquete", unit_quantity: 1, category: "Dulces", price: 10, cost: 6.5, barcode: "7501002100368", stock: 55 },
+      { name: "Pulparindo", unit_type: "Paquete", unit_quantity: 1, category: "Dulces", price: 8, cost: 5, barcode: "7501002100375", stock: 40 },
+      { name: "Chicles Bubba Blo", unit_type: "Paquete", unit_quantity: 1, category: "Dulces", price: 5, cost: 3, barcode: "7501002100382", stock: 70 },
+      { name: "Mazapán de la Rosa", unit_type: "Paquete", unit_quantity: 1, category: "Dulces", price: 10, cost: 7, barcode: "7501002100399", stock: 38 },
+      { name: "Paleta Payaso", unit_type: "Paquete", unit_quantity: 1, category: "Dulces", price: 6, cost: 3.5, barcode: "7501002100405", stock: 65 },
     ];
 
-    this.products = items.map((p) => ({
-      id: genId(),
-      barcode: p.barcode,
-      name: p.name,
-      category: p.category,
-      price: p.price,
-      cost: p.cost,
-      tax_rate: 16,
-      stock: p.stock,
-      low_stock_threshold: 5,
-      active: true,
-      created_at: now,
-      updated_at: now,
-    }));
+    this.products = items.map((p) => {
+      const category = cat(p.category);
+      return {
+        id: genId(),
+        barcode: p.barcode,
+        name: p.name,
+        unit_type: p.unit_type,
+        unit_quantity: p.unit_quantity ?? null,
+        category,
+        category_id: category.id,
+        price: p.price,
+        cost: p.cost,
+        tax_rate: 16,
+        stock: p.stock,
+        low_stock_threshold: 5,
+        active: true,
+        created_at: now,
+        updated_at: now,
+      };
+    });
   }
 
   private seedSales() {
