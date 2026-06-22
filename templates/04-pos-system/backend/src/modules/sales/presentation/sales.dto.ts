@@ -1,0 +1,40 @@
+import { z } from "zod"
+
+export const CreateSaleItemDtoSchema = z.object({
+  product_id: z.string().uuid(),
+  product_name: z.string().min(1),
+  quantity: z.number().int().positive(),
+  unit_price: z.number().positive(),
+  tax_rate: z.number().min(0),
+  line_total: z.number().positive(),
+})
+
+export const CreateSaleDtoSchema = z.object({
+  subtotal: z.number().positive(),
+  tax_total: z.number().min(0),
+  discount: z.number().min(0),
+  total: z.number().positive(),
+  payment_method: z.enum(["efectivo", "tarjeta", "transferencia"]),
+  amount_received: z.number().positive().optional(),
+  change_given: z.number().min(0).optional(),
+  items: z.array(CreateSaleItemDtoSchema).min(1, "At least one item is required"),
+})
+
+export const SaleQuerySchema = z.object({
+  start_date: z.string().optional(),
+  end_date: z.string().optional(),
+  user_id: z.string().uuid().optional(),
+  payment_method: z.enum(["efectivo", "tarjeta", "transferencia"]).optional(),
+  page: z.coerce.number().int().positive().optional(),
+  limit: z.coerce.number().int().positive().max(100).optional(),
+})
+
+export const ReportQuerySchema = z.object({
+  start_date: z.string().optional(),
+  end_date: z.string().optional(),
+})
+
+export type CreateSaleDto = z.infer<typeof CreateSaleDtoSchema>
+export type CreateSaleItemDto = z.infer<typeof CreateSaleItemDtoSchema>
+export type SaleQueryDto = z.infer<typeof SaleQuerySchema>
+export type ReportQueryDto = z.infer<typeof ReportQuerySchema>
