@@ -1,6 +1,8 @@
-import { createContext, useContext, useState, useCallback, useEffect, useRef, type ReactNode } from "react";
+import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { authApi, type AuthUser } from "@/api/auth";
+
+const REFRESH_INTERVAL = 14 * 60 * 1000;
 
 interface AuthContextType {
   user: AuthUser | null;
@@ -12,39 +14,33 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<AuthUser | null>(null);
-  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  const refreshAttempted = useRef(false);
+  const [user, setUser] = useState<AuthUser | null>(() => {
+    try {
+      const stored = localStorage.getItem("auth-user");
+      return stored ? JSON.parse(stored) : null;
+    } catch {
+      localStorage.removeItem("auth-user");
+      return null;
+    }
+  });
+
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    // StrictMode monta/desmonta/monta los efectos en dev.
-    // Sin este guard el refresh se ejecuta dos veces y la
-    // segunda llamada falla porque la primera ya roto el token.
-    if (refreshAttempted.current) return;
-    refreshAttempted.current = true;
+    const interval = setInterval(() => {
+      authApi.refresh()
+        .then((res) => {
+          setUser(res.user);
+          localStorage.setItem("auth-user", JSON.stringify(res.user));
+        })
+        .catch((err) => {
+          console.warn("[Auth] Background refresh failed:", err?.status ?? "", err?.message ?? "");
+        });
+    }, REFRESH_INTERVAL);
 
-    const stored = localStorage.getItem("auth-user");
-    if (stored) {
-      try {
-        setUser(JSON.parse(stored));
-      } catch {
-        localStorage.removeItem("auth-user");
-      }
-    }
-
-    authApi.refresh()
-      .then((res) => {
-        // Actualizamos user con data fresca del servidor
-        setUser(res.user);
-        localStorage.setItem("auth-user", JSON.stringify(res.user));
-      })
-      .catch(() => {
-        setUser(null);
-        localStorage.removeItem("auth-user");
-      })
-      .finally(() => setLoading(false));
+    return () => clearInterval(interval);
   }, []);
 
   useEffect(() => {
