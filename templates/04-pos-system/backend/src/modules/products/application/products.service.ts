@@ -1,6 +1,6 @@
 import { NotFoundError, ConflictError } from "@/core/errors/AppError"
 import type { IProductRepository } from "../domain/products.interface"
-import type { IProductResponse, IProductListResponse } from "../domain/products.types"
+import type { IProductResponse, IProductListResponse, IProductCategory } from "../domain/products.types"
 import type { CreateProductData, UpdateProductData } from "../domain/products.entities"
 
 function mapProductToResponse(product: any): IProductResponse {
@@ -8,7 +8,11 @@ function mapProductToResponse(product: any): IProductResponse {
     id: product.id,
     barcode: product.barcode || undefined,
     name: product.name,
-    category: product.category || undefined,
+    unit_type: product.unit_type || undefined,
+    unit_quantity: product.unit_quantity ?? undefined,
+    category: product.category
+      ? { id: product.category.id, name: product.category.name }
+      : undefined,
     price: Number(product.price),
     cost: Number(product.cost),
     tax_rate: Number(product.tax_rate),
@@ -21,7 +25,7 @@ function mapProductToResponse(product: any): IProductResponse {
 }
 
 export const createProductService = (repository: IProductRepository) => ({
-  list: async (params?: { search?: string; category?: string; active?: boolean; lowStock?: boolean; page?: number; limit?: number }): Promise<IProductListResponse> => {
+  list: async (params?: { search?: string; category_id?: string; active?: boolean; lowStock?: boolean; page?: number; limit?: number }): Promise<IProductListResponse> => {
     const result = await repository.findAll(params)
     return {
       products: result.products.map(mapProductToResponse),

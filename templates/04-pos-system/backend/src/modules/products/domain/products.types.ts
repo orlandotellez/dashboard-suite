@@ -1,8 +1,15 @@
+export interface IProductCategory {
+  id: string
+  name: string
+}
+
 export interface IProductResponse {
   id: string
   barcode?: string
   name: string
-  category?: string
+  unit_type?: string
+  unit_quantity?: number
+  category?: IProductCategory
   price: number
   cost: number
   tax_rate: number
@@ -20,7 +27,7 @@ export interface IProductListResponse {
 
 export interface IProductQueryParams {
   search?: string
-  category?: string
+  category_id?: string
   active?: boolean
   low_stock?: boolean
   page?: number

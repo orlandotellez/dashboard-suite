@@ -7,7 +7,9 @@ const productSelect = {
   id: true,
   barcode: true,
   name: true,
-  category: true,
+  unit_type: true,
+  unit_quantity: true,
+  category_id: true,
   price: true,
   cost: true,
   tax_rate: true,
@@ -17,6 +19,12 @@ const productSelect = {
   created_at: true,
   updated_at: true,
   deleted_at: true,
+  category: {
+    select: {
+      id: true,
+      name: true,
+    },
+  },
 }
 
 function mapToEntity(product: any): IProductEntity {
@@ -24,7 +32,10 @@ function mapToEntity(product: any): IProductEntity {
     id: product.id,
     barcode: product.barcode || undefined,
     name: product.name,
-    category: product.category || undefined,
+    unit_type: product.unit_type || undefined,
+    unit_quantity: product.unit_quantity ?? undefined,
+    category_id: product.category_id || undefined,
+    category_name: product.category?.name || undefined,
     price: product.price,
     cost: product.cost,
     tax_rate: product.tax_rate,
@@ -47,12 +58,12 @@ export const ProductRepository: IProductRepository = {
       where.OR = [
         { name: { contains: params.search, mode: "insensitive" } },
         { barcode: { contains: params.search, mode: "insensitive" } },
-        { category: { contains: params.search, mode: "insensitive" } },
+        { category: { name: { contains: params.search, mode: "insensitive" } } },
       ]
     }
 
-    if (params?.category) {
-      where.category = params.category
+    if (params?.category_id) {
+      where.category_id = params.category_id
     }
 
     if (params?.active !== undefined) {
@@ -107,7 +118,9 @@ export const ProductRepository: IProductRepository = {
       data: {
         barcode: data.barcode,
         name: data.name,
-        category: data.category,
+        unit_type: data.unit_type,
+        unit_quantity: data.unit_quantity,
+        category_id: data.category_id,
         price: data.price,
         cost: data.cost ?? 0,
         tax_rate: data.tax_rate ?? 0,
@@ -126,7 +139,9 @@ export const ProductRepository: IProductRepository = {
       data: {
         ...(data.barcode !== undefined && { barcode: data.barcode }),
         ...(data.name !== undefined && { name: data.name }),
-        ...(data.category !== undefined && { category: data.category }),
+        ...(data.unit_type !== undefined && { unit_type: data.unit_type }),
+        ...(data.unit_quantity !== undefined && { unit_quantity: data.unit_quantity }),
+        ...(data.category_id !== undefined && { category_id: data.category_id }),
         ...(data.price !== undefined && { price: data.price }),
         ...(data.cost !== undefined && { cost: data.cost }),
         ...(data.tax_rate !== undefined && { tax_rate: data.tax_rate }),

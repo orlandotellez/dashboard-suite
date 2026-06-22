@@ -4,7 +4,10 @@ export interface IProductEntity {
   id: string
   barcode?: string
   name: string
-  category?: string
+  unit_type?: string
+  unit_quantity?: number
+  category_id?: string
+  category_name?: string
   price: Decimal
   cost: Decimal
   tax_rate: Decimal
@@ -19,7 +22,9 @@ export interface IProductEntity {
 export type CreateProductData = {
   barcode?: string
   name: string
-  category?: string
+  unit_type?: string
+  unit_quantity?: number
+  category_id?: string
   price: number
   cost?: number
   tax_rate?: number
