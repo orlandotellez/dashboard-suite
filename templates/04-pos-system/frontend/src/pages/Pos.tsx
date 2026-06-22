@@ -24,7 +24,7 @@ export default function Pos() {
 
   // Cargar productos del backend al montar
   useEffect(() => {
-    productsApi.list({ active: true, limit: 500 })
+    productsApi.list({ active: true, limit: 100 })
       .then((res) => setProducts(res.products))
       .catch(() => {});
 
