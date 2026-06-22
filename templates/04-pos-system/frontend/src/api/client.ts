@@ -1,6 +1,3 @@
-// Cliente HTTP base — wrapper sobre fetch con tipado
-// Usa cookies (httpOnly) para auth, no tokens en JS
-
 const BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3000/api/v1";
 
 export class ApiError extends Error {
@@ -25,21 +22,25 @@ async function request<T>(
 ): Promise<T> {
   const url = new URL(`${BASE_URL}${path}`);
 
-  // Append query params, filtering out undefined values
   if (params) {
     for (const [key, val] of Object.entries(params)) {
       if (val !== undefined) url.searchParams.set(key, String(val));
     }
   }
 
+  const headers: Record<string, string> = {};
+
+  if (body !== undefined) {
+    headers["Content-Type"] = "application/json";
+  }
+
   const res = await fetch(url.toString(), {
     method,
-    headers: { "Content-Type": "application/json" },
-    credentials: "include",  // envía cookies httpOnly (accessToken, refreshToken)
+    headers,
+    credentials: "include",
     body: body !== undefined ? JSON.stringify(body) : undefined,
   });
 
-  // 204 No Content
   if (res.status === 204) return undefined as T;
 
   const data = await res.json();
