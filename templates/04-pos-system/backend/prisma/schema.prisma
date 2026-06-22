@@ -1,0 +1,194 @@
+generator client {
+    provider = "prisma-client-js"
+}
+
+datasource db {
+    provider = "postgresql"
+    url      = env("DATABASE_URL")
+}
+
+enum ROLE {
+  admin
+  cajero
+}
+
+model user {
+  id             String    @id @default(uuid())
+  name           String
+  email          String    @unique
+  email_verified Boolean   @default(false)
+  phone          String?
+  image          String?
+  role           ROLE      @default(cajero)
+
+  created_at     DateTime  @default(now()) @db.Timestamptz
+  updated_at     DateTime  @updatedAt @db.Timestamptz
+  deleted_at     DateTime? @db.Timestamptz
+
+  sessions            session[]
+  accounts            account[]
+  sales               sale[]
+  inventory_movements inventory_movement[]
+
+  @@index([email])
+  @@index([role])
+  @@map("users")
+}
+
+model session {
+  id          String   @id @default(uuid())
+  expires_at  DateTime @db.Timestamptz
+  token       String
+  ip_address  String?
+  user_agent  String?
+  user_id     String
+
+  created_at  DateTime @default(now()) @db.Timestamptz
+  updated_at  DateTime @updatedAt @db.Timestamptz
+
+  user        user @relation(fields: [user_id], references: [id])
+
+  @@index([user_id])
+  @@map("session")
+}
+
+model account {
+  id                        String    @id @default(uuid())
+  account_id                String
+  provider_id               String
+  user_id                   String?
+
+  access_token              String?
+  refresh_token             String?
+  id_token                  String?
+
+  access_token_expires_at   DateTime? @db.Timestamptz
+  refresh_token_expires_at  DateTime? @db.Timestamptz
+
+  scope                     String?
+  password                  String?
+
+  created_at                DateTime  @default(now()) @db.Timestamptz
+  updated_at                DateTime  @updatedAt @db.Timestamptz
+
+  user                      user? @relation(fields: [user_id], references: [id])
+
+  @@index([user_id])
+  @@map("account")
+}
+
+model verification {
+  id          String   @id @default(uuid())
+  identifier  String
+  value       String
+  expires_at  DateTime @db.Timestamptz
+
+  created_at  DateTime @default(now()) @db.Timestamptz
+  updated_at  DateTime @updatedAt @db.Timestamptz
+
+  @@map("verification")
+}
+
+model product {
+  id                  String    @id @default(uuid())
+  barcode             String?
+  name                String
+  category            String?
+  price               Decimal
+  cost                Decimal   @default(0)
+  tax_rate            Decimal   @default(0)
+  stock               Int       @default(0)
+  low_stock_threshold Int       @default(5)
+  active              Boolean   @default(true)
+
+  created_at          DateTime  @default(now()) @db.Timestamptz
+  updated_at          DateTime  @updatedAt @db.Timestamptz
+  deleted_at          DateTime? @db.Timestamptz
+
+  sale_items          sale_item[]
+  inventory_movements inventory_movement[]
+
+  @@index([barcode])
+  @@index([name])
+  @@index([category])
+  @@index([active])
+  @@map("products")
+}
+
+model sale {
+  id              String    @id @default(uuid())
+  subtotal        Decimal
+  tax_total       Decimal   @default(0)
+  discount        Decimal   @default(0)
+  total           Decimal
+  payment_method  String    // "efectivo" | "tarjeta" | "transferencia"
+  amount_received Decimal?
+  change_given    Decimal?
+
+  user_id         String
+
+  created_at      DateTime  @default(now()) @db.Timestamptz
+  updated_at      DateTime  @updatedAt @db.Timestamptz
+
+  user            user      @relation(fields: [user_id], references: [id])
+  items           sale_item[]
+
+  @@index([created_at])
+  @@index([user_id])
+  @@map("sales")
+}
+
+model sale_item {
+  id           String   @id @default(uuid())
+  sale_id      String
+  product_id   String
+  product_name String
+  quantity     Int
+  unit_price   Decimal
+  tax_rate     Decimal  @default(0)
+  line_total   Decimal
+
+  created_at   DateTime @default(now()) @db.Timestamptz
+  updated_at   DateTime @updatedAt @db.Timestamptz
+
+  sale         sale     @relation(fields: [sale_id], references: [id])
+  product      product  @relation(fields: [product_id], references: [id])
+
+  @@index([sale_id])
+  @@index([product_id])
+  @@map("sale_items")
+}
+
+model inventory_movement {
+  id            String   @id @default(uuid())
+  product_id    String
+  movement_type String   // "entrada" | "salida" | "ajuste" | "venta"
+  quantity      Int
+  note          String?
+
+  user_id       String
+
+  created_at    DateTime @default(now()) @db.Timestamptz
+
+  product       product  @relation(fields: [product_id], references: [id])
+  user          user     @relation(fields: [user_id], references: [id])
+
+  @@index([product_id])
+  @@index([movement_type])
+  @@index([created_at])
+  @@map("inventory_movements")
+}
+
+model settings {
+  id                  Int      @id @default(autoincrement())
+  name                String   @default("Mi Negocio")
+  address             String?
+  phone               String?
+  tax_rate            Decimal  @default(16)
+  low_stock_threshold Int      @default(5)
+  ticket_footer       String?
+
+  updated_at          DateTime @updatedAt @db.Timestamptz
+
+  @@map("settings")
+}
