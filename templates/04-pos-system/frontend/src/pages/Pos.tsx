@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { Minus, Plus, Trash2, X } from "lucide-react";
 import { productsApi, type Product } from "@/api/products";
 import { salesApi, type CreateSalePayload } from "@/api/sales";
@@ -10,8 +9,8 @@ import styles from "./Pos.module.css";
 type CartItem = Product & { quantity: number };
 
 export default function Pos() {
-  const navigate = useNavigate();
   const scanRef = useRef<HTMLInputElement>(null);
+  const searchWrapperRef = useRef<HTMLDivElement>(null);
   const [scan, setScan] = useState("");
   const [cart, setCart] = useState<CartItem[]>([]);
   const [discountPct, setDiscountPct] = useState(0);
@@ -21,6 +20,7 @@ export default function Pos() {
   const [checkingOut, setCheckingOut] = useState(false);
   const [storeName, setStoreName] = useState("");
   const [storeFooter, setStoreFooter] = useState("");
+  const [showResults, setShowResults] = useState(false);
 
   // Cargar productos del backend al montar
   useEffect(() => {
@@ -38,26 +38,54 @@ export default function Pos() {
 
   useEffect(() => { scanRef.current?.focus(); }, []);
 
-  function findAndAdd(code: string) {
-    const term = code.trim();
-    if (!term) return;
+  // Cerrar resultados al hacer click fuera
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (searchWrapperRef.current && !searchWrapperRef.current.contains(e.target as Node)) {
+        setShowResults(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, []);
 
-    const found = products.find((p) => p.barcode === term && p.active)
-      ?? products.find((p) => p.name.toLowerCase().includes(term.toLowerCase()) && p.active);
+  // Filtrar productos en vivo según el texto de búsqueda
+  const searchResults = useMemo(() => {
+    const term = scan.trim().toLowerCase();
+    if (!term) return [];
+    return products
+      .filter((p) => p.active && (
+        (p.barcode && p.barcode.toLowerCase().includes(term)) ||
+        p.name.toLowerCase().includes(term)
+      ))
+      .slice(0, 15);
+  }, [scan, products]);
 
-    if (!found) return;
-
+  function addToCart(product: Product) {
     setCart((c) => {
-      const i = c.findIndex((x) => x.id === found.id);
+      const i = c.findIndex((x) => x.id === product.id);
       if (i >= 0) {
         const copy = [...c];
         copy[i] = { ...copy[i], quantity: copy[i].quantity + 1 };
         return copy;
       }
-      return [{ ...found, quantity: 1 }, ...c];
+      return [{ ...product, quantity: 1 }, ...c];
     });
     setScan("");
+    setShowResults(false);
     scanRef.current?.focus();
+  }
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    const term = scan.trim();
+    if (!term) return;
+
+    // Si hay resultados visibles, agregar el primero
+    if (searchResults.length > 0) {
+      addToCart(searchResults[0]);
+      return;
+    }
   }
 
   function setQty(id: string, q: number) {
@@ -113,17 +141,32 @@ export default function Pos() {
     <div className={styles.grid}>
       {/* left: scan + cart */}
       <div className={styles.leftPanel}>
-        <div className={styles.searchBar}>
-          <form onSubmit={(e) => { e.preventDefault(); findAndAdd(scan); }}>
+        <div className={styles.searchBar} ref={searchWrapperRef}>
+          <form onSubmit={handleSubmit}>
             <input
               ref={scanRef}
               value={scan}
-              onChange={(e) => setScan(e.target.value)}
+              onChange={(e) => { setScan(e.target.value); setShowResults(true); }}
+              onFocus={() => { if (scan.trim()) setShowResults(true); }}
+              onKeyDown={(e) => { if (e.key === "Escape") setShowResults(false); }}
               placeholder="Escanea o escribe código / nombre"
               className={styles.searchInput}
               autoFocus
             />
           </form>
+          {showResults && searchResults.length > 0 && (
+            <div className={styles.searchResults}>
+              {searchResults.map((p) => (
+                <button key={p.id} className={styles.searchResultItem} onClick={() => addToCart(p)}>
+                  <div className={styles.searchResultLeft}>
+                    <span className={styles.searchResultName}>{p.name}</span>
+                    {p.barcode && <span className={styles.searchResultCode}>{p.barcode}</span>}
+                  </div>
+                  <span className={styles.searchResultPrice}>{money(p.price)}</span>
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         <div className={styles.cartArea}>
