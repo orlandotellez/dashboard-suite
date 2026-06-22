@@ -1,9 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Minus, Plus, Trash2, X } from "lucide-react";
-import { getDemoStore } from "@/lib/demo-store";
+import { productsApi, type Product } from "@/api/products";
+import { salesApi, type CreateSalePayload } from "@/api/sales";
+import { settingsApi } from "@/api/settings";
 import { money } from "@/lib/format";
 import styles from "./Pos.module.css";
+
+type CartItem = Product & { quantity: number };
 
 export default function Pos() {
   const navigate = useNavigate();
@@ -13,33 +17,44 @@ export default function Pos() {
   const [discountPct, setDiscountPct] = useState(0);
   const [payment, setPayment] = useState<string>("efectivo");
   const [received, setReceived] = useState("");
+  const [products, setProducts] = useState<Product[]>([]);
+  const [checkingOut, setCheckingOut] = useState(false);
+  const [storeName, setStoreName] = useState("");
+  const [storeFooter, setStoreFooter] = useState("");
 
-  const store = useMemo(() => getDemoStore(), []);
+  // Cargar productos del backend al montar
+  useEffect(() => {
+    productsApi.list({ active: true, limit: 500 })
+      .then((res) => setProducts(res.products))
+      .catch(() => {});
+
+    settingsApi.get()
+      .then((res) => {
+        setStoreName(res.name);
+        setStoreFooter(res.ticket_footer ?? "");
+      })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => { scanRef.current?.focus(); }, []);
-
-  type Product = { id: string; name: string; barcode: string | null; price: number; tax_rate: number; stock: number };
-  type CartItem = Product & { quantity: number };
 
   function findAndAdd(code: string) {
     const term = code.trim();
     if (!term) return;
 
-    // Try exact barcode match first, then name search
-    let found = store.products.find((p) => p.barcode === term && p.active);
-    if (!found) {
-      found = store.products.find((p) => p.name.toLowerCase().includes(term.toLowerCase()) && p.active);
-    }
+    const found = products.find((p) => p.barcode === term && p.active)
+      ?? products.find((p) => p.name.toLowerCase().includes(term.toLowerCase()) && p.active);
+
     if (!found) return;
 
     setCart((c) => {
-      const i = c.findIndex((x) => x.id === found!.id);
+      const i = c.findIndex((x) => x.id === found.id);
       if (i >= 0) {
         const copy = [...c];
         copy[i] = { ...copy[i], quantity: copy[i].quantity + 1 };
         return copy;
       }
-      return [{ ...(found as Product), quantity: 1 }, ...c];
+      return [{ ...found, quantity: 1 }, ...c];
     });
     setScan("");
     scanRef.current?.focus();
@@ -59,34 +74,39 @@ export default function Pos() {
     return { subtotal, tax, discount, total, change };
   }, [cart, discountPct, payment, received]);
 
-  function checkout() {
-    if (!cart.length) return;
-    // Save to demo store
-    const saleId = `demo-${Date.now().toString(36)}`;
-    store.sales.push({
-      id: saleId,
-      cashier_id: store.user.id,
-      subtotal: totals.subtotal,
-      tax_total: totals.tax,
-      discount: totals.discount,
-      total: totals.total,
-      payment_method: payment,
-      amount_received: payment === "efectivo" ? Number(received || 0) : null,
-      change_given: payment === "efectivo" ? totals.change : null,
-      created_at: new Date().toISOString(),
-    });
-    for (const item of cart) {
-      store.saleItems.push({
-        id: `si-${Date.now().toString(36)}`, sale_id: saleId,
-        product_id: item.id, product_name: item.name,
-        quantity: item.quantity, unit_price: item.price,
-        tax_rate: item.tax_rate, line_total: item.price * item.quantity,
-        created_at: new Date().toISOString(),
-      });
+  async function checkout() {
+    if (!cart.length || checkingOut) return;
+    setCheckingOut(true);
+
+    try {
+      const payload: CreateSalePayload = {
+        subtotal: totals.subtotal,
+        tax_total: totals.tax,
+        discount: totals.discount,
+        total: totals.total,
+        payment_method: payment as "efectivo" | "tarjeta" | "transferencia",
+        amount_received: payment === "efectivo" ? Number(received || 0) : undefined,
+        change_given: payment === "efectivo" ? totals.change : undefined,
+        items: cart.map((item) => ({
+          product_id: item.id,
+          product_name: item.name,
+          quantity: item.quantity,
+          unit_price: item.price,
+          tax_rate: item.tax_rate,
+          line_total: item.price * item.quantity,
+        })),
+      };
+
+      const sale = await salesApi.create(payload);
+      printTicket(sale.id, cart, totals, payment, received, storeName, storeFooter);
+      setCart([]); setDiscountPct(0); setReceived(""); setPayment("efectivo");
+    } catch (err) {
+      console.error("Error al crear venta:", err);
+      alert("Error al procesar la venta. Intenta de nuevo.");
+    } finally {
+      setCheckingOut(false);
+      scanRef.current?.focus();
     }
-    printTicket(saleId, cart, totals, payment, received);
-    setCart([]); setDiscountPct(0); setReceived(""); setPayment("efectivo");
-    scanRef.current?.focus();
   }
 
   return (
@@ -235,8 +255,7 @@ function Row({ label, value }: { label: string; value: string }) {
   );
 }
 
-function printTicket(saleId: string, cart: Array<{ name: string; price: number; quantity: number }>, totals: any, payment: string, received: string) {
-  const store = getDemoStore();
+function printTicket(saleId: string, cart: Array<{ name: string; price: number; quantity: number }>, totals: any, payment: string, received: string, storeName: string, storeFooter: string) {
   const w = window.open("", "_blank", "width=320,height=600");
   if (!w) return;
   const date = new Date().toLocaleString("es-MX");
@@ -246,9 +265,7 @@ function printTicket(saleId: string, cart: Array<{ name: string; price: number; 
   w.document.write(`
     <html><head><title>Ticket</title>
     <style>body{font-family:ui-monospace,monospace;font-size:12px;padding:12px;max-width:300px}h2{font-size:14px;margin:0 0 4px;text-align:center}.m{color:#666;text-align:center;font-size:11px}table{width:100%;margin:12px 0;border-collapse:collapse}td{padding:2px 0;vertical-align:top}.line{border-top:1px dashed #999;margin:8px 0}.tot{display:flex;justify-content:space-between}.big{font-size:16px;font-weight:bold;margin:8px 0}</style></head><body>
-    <h2>${store.settings.name}</h2>
-    <div class="m">${store.settings.address ?? ""}</div>
-    <div class="m">${store.settings.phone ?? ""}</div>
+    <h2>${storeName}</h2>
     <div class="m">${date}</div>
     <div class="m">Ticket: ${saleId.slice(0, 8)}</div>
     <div class="line"></div>
@@ -261,7 +278,7 @@ function printTicket(saleId: string, cart: Array<{ name: string; price: number; 
     <div class="tot"><span>Pago (${payment})</span><span>${money(payment === "efectivo" ? Number(received || 0) : totals.total)}</span></div>
     ${payment === "efectivo" ? `<div class="tot"><span>Cambio</span><span>${money(totals.change)}</span></div>` : ""}
     <div class="line"></div>
-    <div class="m">${store.settings.ticket_footer ?? "¡Gracias por su compra!"}</div>
+    <div class="m">${storeFooter || "¡Gracias por su compra!"}</div>
     <script>window.print();</script>
     </body></html>
   `);

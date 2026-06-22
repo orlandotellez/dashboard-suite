@@ -1,5 +1,5 @@
-import { useMemo, useState } from "react";
-import { getDemoStore } from "@/lib/demo-store";
+import { useEffect, useState } from "react";
+import { salesApi, type Sale, type SaleReport } from "@/api/sales";
 import { money } from "@/lib/format";
 import styles from "./Reports.module.css";
 
@@ -13,42 +13,41 @@ function rangeStart(r: Range) {
   return d;
 }
 
+function rangeEnd(r: Range) {
+  const d = new Date();
+  if (r === "today") { d.setHours(23, 59, 59, 999); return d; }
+  return d;
+}
+
 export default function Reports() {
-  const store = useMemo(() => getDemoStore(), []);
   const [range, setRange] = useState<Range>("today");
-  const since = useMemo(() => rangeStart(range).toISOString(), [range]);
+  const [report, setReport] = useState<SaleReport | null>(null);
+  const [sales, setSales] = useState<Sale[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const sales = useMemo(
-    () => store.sales.filter((s) => s.created_at >= since),
-    [store.sales, since],
-  );
+  useEffect(() => {
+    setLoading(true);
+    const start = rangeStart(range).toISOString();
+    const end = rangeEnd(range).toISOString();
 
-  const items = useMemo(
-    () => store.saleItems.filter((i) => i.created_at >= since),
-    [store.saleItems, since],
-  );
+    Promise.all([
+      salesApi.report({ start_date: start, end_date: end }),
+      salesApi.list({ start_date: start, end_date: end, limit: 20 }),
+    ])
+      .then(([r, list]) => {
+        setReport(r);
+        setSales(list.sales);
+      })
+      .catch((err) => {
+        console.error("Error al cargar reportes:", err);
+      })
+      .finally(() => setLoading(false));
+  }, [range]);
 
-  const stats = useMemo(() => {
-    const total = sales.reduce((s, x) => s + Number(x.total), 0);
-    const count = sales.length;
-    const avg = count ? total / count : 0;
-    const byMethod = sales.reduce((acc: Record<string, number>, x) => {
-      acc[x.payment_method] = (acc[x.payment_method] ?? 0) + Number(x.total);
-      return acc;
-    }, {});
-    return { total, count, avg, byMethod };
-  }, [sales]);
+  if (loading) return <div className={styles.page}><p className={styles.empty}>Cargando reportes…</p></div>;
 
-  const top = useMemo(() => {
-    const m: Record<string, { qty: number; total: number }> = {};
-    for (const it of items) {
-      const k = it.product_name;
-      m[k] = m[k] || { qty: 0, total: 0 };
-      m[k].qty += it.quantity;
-      m[k].total += Number(it.line_total);
-    }
-    return Object.entries(m).sort((a, b) => b[1].total - a[1].total).slice(0, 10);
-  }, [items]);
+  const topProds = report?.top_products ?? [];
+  const bm = report?.sales_by_payment_method ?? {};
 
   return (
     <div className={styles.page}>
@@ -65,34 +64,34 @@ export default function Reports() {
       </header>
 
       <div className={styles.statsGrid}>
-        <Stat label="Ventas" value={money(stats.total)} />
-        <Stat label="Transacciones" value={String(stats.count)} />
-        <Stat label="Ticket promedio" value={money(stats.avg)} />
-        <Stat label="Efectivo" value={money(stats.byMethod.efectivo ?? 0)} />
+        <Stat label="Ventas" value={money(report?.total_revenue ?? 0)} />
+        <Stat label="Transacciones" value={String(report?.total_sales ?? 0)} />
+        <Stat label="Ticket promedio" value={money(report?.average_ticket ?? 0)} />
+        <Stat label="Efectivo" value={money(bm.efectivo ?? 0)} />
       </div>
 
       <div className={styles.twoCol}>
         <section className={styles.card}>
           <h2 className={styles.cardTitle}>Cierre de caja — {range === "today" ? "hoy" : range === "week" ? "7 días" : "30 días"}</h2>
           <div className={styles.rows}>
-            <Row label="Efectivo" value={money(stats.byMethod.efectivo ?? 0)} />
-            <Row label="Tarjeta" value={money(stats.byMethod.tarjeta ?? 0)} />
-            <Row label="Transferencia" value={money(stats.byMethod.transferencia ?? 0)} />
+            <Row label="Efectivo" value={money(bm.efectivo ?? 0)} />
+            <Row label="Tarjeta" value={money(bm.tarjeta ?? 0)} />
+            <Row label="Transferencia" value={money(bm.transferencia ?? 0)} />
             <div className={styles.divider} />
-            <Row label="Total" value={money(stats.total)} bold />
+            <Row label="Total" value={money(report?.total_revenue ?? 0)} bold />
           </div>
         </section>
 
         <section className={styles.card}>
           <h2 className={styles.cardTitle}>Productos más vendidos</h2>
-          {top.length === 0 ? (
+          {topProds.length === 0 ? (
             <div className={styles.empty}>Sin datos en este período</div>
           ) : (
             <ul className={styles.topList}>
-              {top.map(([name, v]) => (
-                <li key={name} className={styles.topItem}>
-                  <span className={styles.topName}>{name}</span>
-                  <span className={styles.topStats}>{v.qty} · {money(v.total)}</span>
+              {topProds.map((p) => (
+                <li key={p.product_name} className={styles.topItem}>
+                  <span className={styles.topName}>{p.product_name}</span>
+                  <span className={styles.topStats}>{p.quantity} · {money(p.revenue)}</span>
                 </li>
               ))}
             </ul>
@@ -111,7 +110,7 @@ export default function Reports() {
             </tr>
           </thead>
           <tbody>
-            {sales.slice(0, 20).map((s) => (
+            {sales.map((s) => (
               <tr key={s.id} className={styles.tr}>
                 <td className={styles.tdDate}>{new Date(s.created_at).toLocaleString("es-MX")}</td>
                 <td className={styles.tdMethod}>{s.payment_method}</td>
