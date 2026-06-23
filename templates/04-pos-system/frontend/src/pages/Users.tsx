@@ -134,7 +134,7 @@ export default function Users() {
           <tbody>
             {users.length > 0 ? (
               users.map((u) => (
-                <tr key={u.id} className={`${styles.tr} ${loading ? styles.trDim : ""}`}>
+                <tr key={u.id} className={`${styles.tr} ${loading ? styles.trDim : ""}`} onClick={() => openEdit(u)}>
                   <td className={styles.tdLeft}>
                     <div className={styles.userName}>
                       {u.name}
@@ -150,11 +150,11 @@ export default function Users() {
                   </td>
                   <td className={styles.tdRight}>{new Date(u.created_at).toLocaleDateString()}</td>
                   <td className={styles.tdActions}>
-                    <button onClick={() => openEdit(u)} className={styles.iconBtn} title="Editar">
+                    <button onClick={(e) => { e.stopPropagation(); openEdit(u); }} className={styles.iconBtn} title="Editar">
                       <Pencil size={14} />
                     </button>
                     <button
-                      onClick={() => setDeleteTarget(u.id)}
+                      onClick={(e) => { e.stopPropagation(); setDeleteTarget(u.id); }}
                       className={`${styles.iconBtn} ${styles.iconDanger}`}
                       title="Eliminar"
                       disabled={u.id === currentUser?.id}

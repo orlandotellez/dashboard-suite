@@ -173,7 +173,7 @@ export default function Suppliers() {
           <tbody>
             {suppliers.length > 0 ? (
               suppliers.map((s) => (
-                <tr key={s.id} className={`${styles.tr} ${loading ? styles.trDim : ""}`}>
+                <tr key={s.id} className={`${styles.tr} ${loading ? styles.trDim : ""}`} onClick={() => openEdit(s)}>
                   <td className={styles.tdProduct}>
                     <div className={styles.productName}>{s.name}</div>
                   </td>
@@ -186,10 +186,10 @@ export default function Suppliers() {
                     </span>
                   </td>
                   <td className={styles.tdActions}>
-                    <button onClick={() => openEdit(s)} className={styles.iconBtn} title="Editar">
+                    <button onClick={(e) => { e.stopPropagation(); openEdit(s); }} className={styles.iconBtn} title="Editar">
                       <Pencil size={14} />
                     </button>
-                    <button onClick={() => setDeleteTarget(s.id)} className={`${styles.iconBtn} ${styles.iconDanger}`} title="Eliminar">
+                    <button onClick={(e) => { e.stopPropagation(); setDeleteTarget(s.id); }} className={`${styles.iconBtn} ${styles.iconDanger}`} title="Eliminar">
                       <Trash2 size={14} />
                     </button>
                   </td>

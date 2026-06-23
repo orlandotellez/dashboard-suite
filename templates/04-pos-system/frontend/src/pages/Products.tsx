@@ -236,7 +236,7 @@ export default function Products() {
           <tbody>
             {products.length > 0 ? (
               products.map((p) => (
-                <tr key={p.id} className={`${styles.tr} ${loading ? styles.trDim : ""}`}>
+                <tr key={p.id} className={`${styles.tr} ${loading ? styles.trDim : ""}`} onClick={() => openEdit(p)}>
                   <td className={styles.tdProduct}>
                     <div className={styles.productName}>{p.name}</div>
                     <div className={styles.productCat}>
@@ -253,10 +253,10 @@ export default function Products() {
                     </span>
                   </td>
                   <td className={styles.tdActions}>
-                    <button onClick={() => openEdit(p)} className={styles.iconBtn} title="Editar">
+                    <button onClick={(e) => { e.stopPropagation(); openEdit(p); }} className={styles.iconBtn} title="Editar">
                       <Pencil size={14} />
                     </button>
-                    <button onClick={() => setDeleteTarget(p.id)} className={`${styles.iconBtn} ${styles.iconDanger}`} title="Eliminar">
+                    <button onClick={(e) => { e.stopPropagation(); setDeleteTarget(p.id); }} className={`${styles.iconBtn} ${styles.iconDanger}`} title="Eliminar">
                       <Trash2 size={14} />
                     </button>
                   </td>
