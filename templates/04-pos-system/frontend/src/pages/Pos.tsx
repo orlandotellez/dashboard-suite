@@ -269,7 +269,7 @@ export default function Pos() {
           Cobrar
         </button>
         {cart.length > 0 && (
-          <button onClick={() => setCart([])} className={styles.clearCart}>
+          <button onClick={clearCart} className={styles.clearCart}>
             <X size={12} /> Vaciar carrito
           </button>
         )}
