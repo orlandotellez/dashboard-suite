@@ -156,11 +156,11 @@ export default function Inventory() {
     ).slice(0, 8);
   }
 
-  let _itemIdCounter = 0;
+  const itemIdCounter = useRef(0);
   function addBatchItem() {
-    _itemIdCounter++;
+    itemIdCounter.current += 1;
     setBatchItems(prev => [...prev, {
-      id: `bi_${_itemIdCounter}`,
+      id: `bi_${itemIdCounter.current}`,
       productSearch: "",
       selectedProduct: null,
       quantity: 0,
