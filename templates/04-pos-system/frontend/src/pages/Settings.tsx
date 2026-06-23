@@ -1,8 +1,19 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { getDemoStore } from "@/lib/demo-store";
+import { useAuth } from "@/context/AuthContext";
 import styles from "./Settings.module.css";
 
 export default function Settings() {
+  const navigate = useNavigate();
+  const { user } = useAuth();
+
+  useEffect(() => {
+    if (user && user.role !== "admin") {
+      navigate("/", { replace: true });
+    }
+  }, [user, navigate]);
+
   const store = useMemo(() => getDemoStore(), []);
   const [form, setForm] = useState({
     name: store.settings.name,

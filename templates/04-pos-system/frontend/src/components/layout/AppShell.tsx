@@ -10,10 +10,10 @@ const sharedNavItems = [
   { to: "/products", label: "Productos", icon: Package },
   { to: "/inventory", label: "Inventario", icon: Boxes },
   { to: "/reports", label: "Reportes", icon: BarChart3 },
-  { to: "/settings", label: "Ajustes", icon: Settings },
 ];
 
 const adminNavItems = [
+  { to: "/settings", label: "Ajustes", icon: Settings },
   { to: "/users", label: "Usuarios", icon: Users },
 ];
 
