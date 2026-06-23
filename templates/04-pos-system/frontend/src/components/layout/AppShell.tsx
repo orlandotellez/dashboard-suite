@@ -1,8 +1,9 @@
 import { Link, useLocation } from "react-router-dom";
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { ScanBarcode, Package, BarChart3, Settings, Boxes, Users, LogOut, Moon, Sun, Receipt } from "lucide-react";
 import { useTheme } from "@/context/ThemeContext";
 import { useAuth } from "@/context/AuthContext";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import logoDark from "@/assets/logo_dark.svg";
 import logoLight from "@/assets/logo_light.svg";
 import styles from "./AppShell.module.css";
@@ -26,6 +27,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const location = useLocation();
   const pathname = location.pathname;
   const isAdmin = user?.role === "admin";
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   const navItems = isAdmin ? [...sharedNavItems, ...adminNavItems] : sharedNavItems;
 
@@ -62,12 +64,25 @@ export function AppShell({ children }: { children: ReactNode }) {
         </nav>
         <div className={styles.sidebarFooter}>
           <div className={styles.footerUser}>{user?.email ?? "Sin sesión"}</div>
-          <button onClick={logout} className={styles.signOut}>
+          <button onClick={() => setShowLogoutConfirm(true)} className={styles.signOut}>
             <LogOut className={styles.navIcon} />
             Salir
           </button>
         </div>
       </aside>
+
+      <ConfirmDialog
+        open={showLogoutConfirm}
+        title="Cerrar sesión"
+        message="¿Estás seguro de que querés cerrar sesión?"
+        confirmLabel="Sí, salir"
+        cancelLabel="Cancelar"
+        onConfirm={() => {
+          setShowLogoutConfirm(false);
+          logout();
+        }}
+        onCancel={() => setShowLogoutConfirm(false)}
+      />
 
       {/* Mobile bottom nav */}
       <nav className={styles.mobileNav}>

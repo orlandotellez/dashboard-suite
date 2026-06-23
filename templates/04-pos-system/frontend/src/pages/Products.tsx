@@ -4,6 +4,7 @@ import { productsApi, type Product } from "@/api/products";
 import { categoriesApi, type Category } from "@/api/categories";
 import { money } from "@/lib/format";
 import { cacheGet, cacheSet, cacheClear, cacheKey } from "@/lib/simple-cache";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import TableSkeleton from "@/components/TableSkeleton";
 import styles from "./Products.module.css";
 
@@ -36,6 +37,7 @@ export default function Products() {
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<Product | null | "new">(null);
   const [form, setForm] = useState(emptyForm);
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
 
   const catMap = useMemo(() => {
     const m = new Map<string, Category>();
@@ -151,7 +153,6 @@ export default function Products() {
   }
 
   async function remove(id: string) {
-    if (!confirm("¿Eliminar producto?")) return;
     try {
       await productsApi.delete(id);
       cacheClear("products");
@@ -233,7 +234,7 @@ export default function Products() {
                     <button onClick={() => openEdit(p)} className={styles.iconBtn} title="Editar">
                       <Pencil size={14} />
                     </button>
-                    <button onClick={() => remove(p.id)} className={`${styles.iconBtn} ${styles.iconDanger}`} title="Eliminar">
+                    <button onClick={() => setDeleteTarget(p.id)} className={`${styles.iconBtn} ${styles.iconDanger}`} title="Eliminar">
                       <Trash2 size={14} />
                     </button>
                   </td>
@@ -381,6 +382,19 @@ export default function Products() {
           </div>
         </div>
       )}
+
+      <ConfirmDialog
+        open={deleteTarget !== null}
+        title="Eliminar producto"
+        message="¿Estás seguro de que querés eliminar este producto? Esta acción no se puede deshacer."
+        confirmLabel="Sí, eliminar"
+        cancelLabel="Cancelar"
+        onConfirm={() => {
+          if (deleteTarget) remove(deleteTarget);
+          setDeleteTarget(null);
+        }}
+        onCancel={() => setDeleteTarget(null)}
+      />
     </div>
   );
 }

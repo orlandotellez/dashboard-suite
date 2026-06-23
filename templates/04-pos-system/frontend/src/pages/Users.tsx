@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Plus, Search, Pencil, Trash2, ChevronLeft, ChevronRight, X, Shield, ShieldOff } from "lucide-react";
 import { usersApi, type UserResponse } from "@/api/users";
 import { useAuth } from "@/context/AuthContext";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import styles from "./Users.module.css";
 
 export default function Users() {
@@ -21,6 +22,7 @@ export default function Users() {
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<UserResponse | null | "new">(null);
   const [form, setForm] = useState({ name: "", email: "", password: "", role: "cajero" as string, phone: "" });
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
 
   const LIMIT = 10;
   const totalPages = Math.max(1, Math.ceil(total / LIMIT));
@@ -77,7 +79,6 @@ export default function Users() {
   }
 
   async function remove(id: string) {
-    if (!confirm("¿Eliminar usuario?")) return;
     try {
       await usersApi.delete(id);
       fetchUsers(page, q);
@@ -144,7 +145,7 @@ export default function Users() {
                       <Pencil size={14} />
                     </button>
                     <button
-                      onClick={() => remove(u.id)}
+                      onClick={() => setDeleteTarget(u.id)}
                       className={`${styles.iconBtn} ${styles.iconDanger}`}
                       title="Eliminar"
                       disabled={u.id === currentUser?.id}
@@ -246,6 +247,19 @@ export default function Users() {
           </div>
         </div>
       )}
+
+      <ConfirmDialog
+        open={deleteTarget !== null}
+        title="Eliminar usuario"
+        message="¿Estás seguro de que querés eliminar este usuario? Esta acción no se puede deshacer."
+        confirmLabel="Sí, eliminar"
+        cancelLabel="Cancelar"
+        onConfirm={() => {
+          if (deleteTarget) remove(deleteTarget);
+          setDeleteTarget(null);
+        }}
+        onCancel={() => setDeleteTarget(null)}
+      />
     </div>
   );
 }
