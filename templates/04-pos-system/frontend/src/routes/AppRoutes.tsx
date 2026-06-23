@@ -3,6 +3,7 @@ import App from "@/App";
 import Auth from "@/pages/Auth";
 import Pos from "@/pages/Pos";
 import Products from "@/pages/Products";
+import Suppliers from "@/pages/Suppliers";
 import Inventory from "@/pages/Inventory";
 import Sales from "@/pages/Sales";
 import Reports from "@/pages/Reports";
@@ -18,6 +19,7 @@ export function AppRoutes() {
         <Route path="/" element={<Pos />} />
         <Route path="/pos" element={<Pos />} />
         <Route path="/products" element={<Products />} />
+        <Route path="/suppliers" element={<Suppliers />} />
         <Route path="/inventory" element={<Inventory />} />
         <Route path="/sales" element={<Sales />} />
         <Route path="/reports" element={<Reports />} />
