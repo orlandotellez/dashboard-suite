@@ -14,7 +14,6 @@ export default function Pos() {
   const [products, setProducts] = useState<Product[]>([]);
   const [storeName, setStoreName] = useState("");
   const [storeFooter, setStoreFooter] = useState("");
-  const [storeTaxRate, setStoreTaxRate] = useState(0);
   const [showResults, setShowResults] = useState(false);
 
   const cart = usePosStore((s) => s.cart);
@@ -38,7 +37,6 @@ export default function Pos() {
       .then((res) => {
         setStoreName(res.name);
         setStoreFooter(res.ticket_footer ?? "");
-        setStoreTaxRate(res.tax_rate);
       })
       .catch(() => {});
   }, []);
@@ -124,7 +122,7 @@ export default function Pos() {
       };
 
       const sale = await salesApi.create(payload);
-      printTicket(sale.id, cart, totals, payment, received, storeName, storeFooter, discountPct, storeTaxRate);
+      printTicket(sale.id, cart, totals, payment, received, storeName, storeFooter, discountPct);
       clearCart();
     } catch (err) {
       console.error("Error al crear venta:", err);
@@ -221,7 +219,7 @@ export default function Pos() {
       <div className={styles.rightPanel}>
         <div className={styles.totalsSection}>
           <Row label="Subtotal" value={money(totals.subtotal)} />
-          <Row label="Impuestos" value={money(totals.tax)} />
+          {totals.tax > 0 && <Row label="Impuestos" value={money(totals.tax)} />}
           <div className={styles.discountRow}>
             <label className={styles.discountLabel}>Descuento %</label>
             <input
@@ -302,7 +300,7 @@ function Row({ label, value }: { label: string; value: string }) {
   );
 }
 
-function printTicket(saleId: string, cart: Array<{ name: string; price: number; quantity: number }>, totals: any, payment: string, received: string, storeName: string, storeFooter: string, discountPct: number, taxRate: number) {
+function printTicket(saleId: string, cart: Array<{ name: string; price: number; quantity: number }>, totals: any, payment: string, received: string, storeName: string, storeFooter: string, discountPct: number) {
   const w = window.open("", "_blank", "width=320,height=600");
   if (!w) return;
   const date = new Date().toLocaleString("es-MX");
@@ -319,7 +317,7 @@ function printTicket(saleId: string, cart: Array<{ name: string; price: number; 
     <table>${rows}</table>
     <div class="line"></div>
     <div class="tot"><span>Subtotal</span><span>${money(totals.subtotal)}</span></div>
-    ${totals.tax > 0 ? `<div class="tot"><span>Impuestos (${taxRate}%)</span><span>${money(totals.tax)}</span></div>` : `<div class="tot"><span>Impuestos</span><span>${money(totals.tax)}</span></div>`}
+    ${totals.tax > 0 ? `<div class="tot"><span>Impuestos</span><span>${money(totals.tax)}</span></div>` : ""}
     ${discountPct > 0 ? `<div class="tot"><span>Descuento (${discountPct}%)</span><span>−${money(totals.discount)}</span></div>` : `<div class="tot"><span>Descuento</span><span>${money(totals.discount)}</span></div>`}
     <div class="big tot"><span>TOTAL</span><span>${money(totals.total)}</span></div>
     <div class="tot"><span>Pago (${payment})</span><span>${money(payment === "efectivo" ? Number(received || 0) : totals.total)}</span></div>
