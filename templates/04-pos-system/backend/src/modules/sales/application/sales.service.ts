@@ -29,7 +29,11 @@ function mapSaleToResponse(sale: any): ISaleResponse {
 
 export const createSaleService = (repository: ISaleRepository) => ({
   create: async (data: CreateSaleData): Promise<ISaleResponse> => {
-    const sale = await repository.create(data)
+    const sale = await repository.create({
+      ...data,
+      tax_total: 0,
+      items: data.items.map(item => ({ ...item, tax_rate: 0 })),
+    })
     return mapSaleToResponse(sale)
   },
 
