@@ -1,4 +1,6 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from "react";
+import logoDark from "@/assets/logo_dark.svg";
+import logoLight from "@/assets/logo_light.svg";
 
 type Theme = "light" | "dark";
 
@@ -16,6 +18,16 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     localStorage.setItem("caja-theme", theme);
     document.documentElement.setAttribute("data-theme", theme);
+
+    // Update favicon to match theme
+    let link = document.querySelector<HTMLLinkElement>('link[rel="icon"]');
+    if (!link) {
+      link = document.createElement("link");
+      link.rel = "icon";
+      link.type = "image/svg+xml";
+      document.head.appendChild(link);
+    }
+    link.href = theme === "dark" ? logoDark : logoLight;
   }, [theme]);
 
   const toggle = () => setTheme((t) => (t === "dark" ? "light" : "dark"));

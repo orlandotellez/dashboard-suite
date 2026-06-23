@@ -3,6 +3,8 @@ import type { ReactNode } from "react";
 import { ScanBarcode, Package, BarChart3, Settings, Boxes, Users, LogOut, Moon, Sun, Receipt } from "lucide-react";
 import { useTheme } from "@/context/ThemeContext";
 import { useAuth } from "@/context/AuthContext";
+import logoDark from "@/assets/logo_dark.svg";
+import logoLight from "@/assets/logo_light.svg";
 import styles from "./AppShell.module.css";
 
 const sharedNavItems = [
@@ -32,7 +34,11 @@ export function AppShell({ children }: { children: ReactNode }) {
       {/* Desktop sidebar */}
       <aside className={styles.sidebar}>
         <div className={styles.logo}>
-          <div className={styles.logoText}>Caja</div>
+          <img
+            src={theme === "dark" ? logoDark : logoLight}
+            alt="Logo"
+            className={styles.logoImg}
+          />
           <div className={styles.logoRole}>{user?.role === "admin" ? "Administrador" : "Cajero"}</div>
         </div>
         <nav className={styles.nav}>

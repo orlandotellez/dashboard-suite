@@ -22,13 +22,16 @@
 
 .logo {
   padding: 24px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
 }
 
-.logoText {
-  font-size: 16px;
-  font-weight: 600;
-  letter-spacing: -0.025em;
-  color: var(--foreground);
+.logoImg {
+  width: 28px;
+  height: 28px;
+  display: block;
 }
 
 .logoRole {
