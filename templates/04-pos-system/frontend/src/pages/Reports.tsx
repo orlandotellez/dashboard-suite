@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { salesApi, type Sale, type SaleReport } from "@/api/sales";
 import { money } from "@/lib/format";
+import { cacheGet, cacheSet, cacheKey } from "@/lib/simple-cache";
+import TableSkeleton from "@/components/TableSkeleton";
 import styles from "./Reports.module.css";
 
 type Range = "today" | "week" | "month";
@@ -19,16 +21,36 @@ function rangeEnd(r: Range) {
   return d;
 }
 
+const SKELETON_COLS = [
+  { width: "50%" },
+  { width: "30%" },
+  { width: "20%", align: "right" as const },
+];
+
 export default function Reports() {
   const [range, setRange] = useState<Range>("today");
-  const [report, setReport] = useState<SaleReport | null>(null);
-  const [sales, setSales] = useState<Sale[]>([]);
+  const [report, setReport] = useState<SaleReport | null>(() => {
+    const cached = cacheGet<{ report: SaleReport; sales: Sale[] }>(cacheKey("reports", "today"));
+    return cached?.report ?? null;
+  });
+  const [sales, setSales] = useState<Sale[]>(() => {
+    const cached = cacheGet<{ report: SaleReport; sales: Sale[] }>(cacheKey("reports", "today"));
+    return cached?.sales ?? [];
+  });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     setLoading(true);
     const start = rangeStart(range).toISOString();
     const end = rangeEnd(range).toISOString();
+    const key = cacheKey("reports", range);
+
+    const cached = cacheGet<{ report: SaleReport; sales: Sale[] }>(key);
+    if (cached) {
+      setReport(cached.report);
+      setSales(cached.sales);
+      setLoading(false);
+    }
 
     Promise.all([
       salesApi.report({ start_date: start, end_date: end }),
@@ -37,6 +59,7 @@ export default function Reports() {
       .then(([r, list]) => {
         setReport(r);
         setSales(list.sales);
+        cacheSet(key, { report: r, sales: list.sales });
       })
       .catch((err) => {
         console.error("Error al cargar reportes:", err);
@@ -44,7 +67,51 @@ export default function Reports() {
       .finally(() => setLoading(false));
   }, [range]);
 
-  if (loading) return <div className={styles.page}><p className={styles.empty}>Cargando reportes…</p></div>;
+  const hasData = report !== null;
+
+  // if loading first time with no cached data, return minimal skeleton layout
+  if (loading && !hasData) {
+    return (
+      <div className={styles.page}>
+        <header className={styles.header}>
+          <div>
+            <h1 className={styles.h1}>Reportes</h1>
+            <p className={styles.subtitle}>Resumen de ventas y productos</p>
+          </div>
+          <div className={`${styles.select} ${styles.skeletonBar}`} style={{ width: 160, height: 40 }} />
+        </header>
+        <div className={styles.statsGrid}>
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className={styles.statCard}>
+              <div className={styles.skeletonBar} style={{ width: "40%", height: 12, marginBottom: 8 }} />
+              <div className={styles.skeletonBar} style={{ width: "60%", height: 24 }} />
+            </div>
+          ))}
+        </div>
+        <div className={styles.twoCol}>
+          <div className={styles.card}>
+            <div className={styles.skeletonBar} style={{ width: "50%", height: 16, marginBottom: 16 }} />
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className={styles.skeletonBar} style={{ width: "100%", height: 14, marginBottom: 8 }} />
+            ))}
+          </div>
+          <div className={styles.card}>
+            <div className={styles.skeletonBar} style={{ width: "50%", height: 16, marginBottom: 16 }} />
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className={styles.skeletonBar} style={{ width: `${50 + i * 8}%`, height: 14, marginBottom: 8 }} />
+            ))}
+          </div>
+        </div>
+        <div className={styles.recentCard}>
+          <div className={styles.skeletonBar} style={{ width: "30%", height: 16, marginBottom: 16 }} />
+          <table className={styles.table}>
+            <thead><tr><th>Fecha</th><th>Método</th><th>Total</th></tr></thead>
+            <tbody><TableSkeleton cols={SKELETON_COLS} rows={5} /></tbody>
+          </table>
+        </div>
+      </div>
+    );
+  }
 
   const topProds = report?.top_products ?? [];
   const bm = report?.sales_by_payment_method ?? {};
@@ -110,14 +177,17 @@ export default function Reports() {
             </tr>
           </thead>
           <tbody>
-            {sales.map((s) => (
-              <tr key={s.id} className={styles.tr}>
-                <td className={styles.tdDate}>{new Date(s.created_at).toLocaleString("es-MX")}</td>
-                <td className={styles.tdMethod}>{s.payment_method}</td>
-                <td className={styles.tdRight}>{money(s.total)}</td>
-              </tr>
-            ))}
-            {sales.length === 0 && (
+            {sales.length > 0 ? (
+              sales.map((s) => (
+                <tr key={s.id} className={`${styles.tr} ${loading ? styles.trDim : ""}`}>
+                  <td className={styles.tdDate}>{new Date(s.created_at).toLocaleString("es-MX")}</td>
+                  <td className={styles.tdMethod}>{s.payment_method}</td>
+                  <td className={styles.tdRight}>{money(s.total)}</td>
+                </tr>
+              ))
+            ) : loading ? (
+              <TableSkeleton cols={SKELETON_COLS} rows={5} />
+            ) : (
               <tr><td colSpan={3} className={styles.empty}>Sin ventas</td></tr>
             )}
           </tbody>

@@ -3,6 +3,8 @@ import { Plus, Search, Pencil, Trash2, X, ChevronLeft, ChevronRight } from "luci
 import { productsApi, type Product } from "@/api/products";
 import { categoriesApi, type Category } from "@/api/categories";
 import { money } from "@/lib/format";
+import { cacheGet, cacheSet, cacheClear, cacheKey } from "@/lib/simple-cache";
+import TableSkeleton from "@/components/TableSkeleton";
 import styles from "./Products.module.css";
 
 const LIMIT = 10;
@@ -13,10 +15,25 @@ const emptyForm = {
   stock: 0, low_stock_threshold: 5,
 };
 
+const SKELETON_COLS = [
+  { width: "55%" },
+  { width: "25%" },
+  { width: "20%", align: "right" as const },
+  { width: "15%", align: "right" as const },
+  { width: "60px", align: "center" as const },
+];
+
 export default function Products() {
-  const [products, setProducts] = useState<Product[]>([]);
+  const [products, setProducts] = useState<Product[]>(() => {
+    const cached = cacheGet<Product[]>(cacheKey("products", 1, ""));
+    return cached ?? [];
+  });
   const [categories, setCategories] = useState<Category[]>([]);
-  const [total, setTotal] = useState(0);
+  const [total, setTotal] = useState(() => {
+    // Keep old total when coming from cache — we don't cache it separately
+    // so it'll be 0 initially, but that's fine since it gets overwritten
+    return 0;
+  });
   const [page, setPage] = useState(1);
   const [q, setQ] = useState("");
   const [loading, setLoading] = useState(true);
@@ -38,17 +55,30 @@ export default function Products() {
   const searchRef = useRef(q);
   searchRef.current = q;
 
+  // Fetch products con cache + stale-while-revalidate
   useEffect(() => {
     const timer = setTimeout(() => {
-      setLoading(true);
+      const key = cacheKey("products", page, q);
+      const cached = cacheGet<{ products: Product[]; total: number }>(key);
+
+      // Cache hit → mostrar al instante, refrescar en background
+      if (cached) {
+        setProducts(cached.products);
+        setTotal(cached.total);
+        setLoading(false);
+      } else {
+        setLoading(true);
+      }
+
       productsApi.list({
         page,
         limit: LIMIT,
-        search: searchRef.current || undefined,
+        search: q || undefined,
       })
         .then((res) => {
           setProducts(res.products);
           setTotal(res.total);
+          cacheSet(key, { products: res.products, total: res.total });
         })
         .catch(() => {})
         .finally(() => setLoading(false));
@@ -110,9 +140,11 @@ export default function Products() {
       }
 
       close();
+      cacheClear("products");
       const res = await productsApi.list({ page, limit: LIMIT, search: q || undefined });
       setProducts(res.products);
       setTotal(res.total);
+      cacheSet(cacheKey("products", page, q), { products: res.products, total: res.total });
     } catch {
       alert("Error al guardar producto");
     }
@@ -122,9 +154,11 @@ export default function Products() {
     if (!confirm("¿Eliminar producto?")) return;
     try {
       await productsApi.delete(id);
+      cacheClear("products");
       const res = await productsApi.list({ page, limit: LIMIT, search: q || undefined });
       setProducts(res.products);
       setTotal(res.total);
+      cacheSet(cacheKey("products", page, q), { products: res.products, total: res.total });
     } catch {
       alert("Error al eliminar producto");
     }
@@ -166,13 +200,9 @@ export default function Products() {
             </tr>
           </thead>
           <tbody>
-            {loading ? (
-              <tr><td colSpan={5} className={styles.empty}>Cargando…</td></tr>
-            ) : products.length === 0 ? (
-              <tr><td colSpan={5} className={styles.empty}>Sin productos</td></tr>
-            ) : (
+            {products.length > 0 ? (
               products.map((p) => (
-                <tr key={p.id} className={styles.tr}>
+                <tr key={p.id} className={`${styles.tr} ${loading ? styles.trDim : ""}`}>
                   <td className={styles.tdProduct}>
                     <div className={styles.productName}>{p.name}</div>
                     <div className={styles.productCat}>
@@ -197,6 +227,10 @@ export default function Products() {
                   </td>
                 </tr>
               ))
+            ) : loading ? (
+              <TableSkeleton cols={SKELETON_COLS} />
+            ) : (
+              <tr><td colSpan={5} className={styles.empty}>Sin productos</td></tr>
             )}
           </tbody>
         </table>

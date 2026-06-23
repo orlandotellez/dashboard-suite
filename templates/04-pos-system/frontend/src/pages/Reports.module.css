@@ -224,6 +224,11 @@
   border-bottom: none;
 }
 
+.trDim {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
 .tdDate {
   padding: 8px 16px;
   color: var(--muted-foreground);
@@ -241,4 +246,18 @@
   text-align: right;
   font-variant-numeric: tabular-nums;
   color: var(--foreground);
+}
+
+/* ─── Skeleton ─── */
+@keyframes pulse {
+  0%, 100% { opacity: 0.25; }
+  50% { opacity: 0.6; }
+}
+
+.skeletonBar {
+  background: var(--border);
+  border-radius: 6px;
+  animation: pulse 1.6s ease-in-out infinite;
+  display: inline-block;
+  min-height: 12px;
 }

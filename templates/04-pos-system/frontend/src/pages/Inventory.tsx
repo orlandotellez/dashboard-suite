@@ -2,14 +2,28 @@ import { useEffect, useState } from "react";
 import { AlertTriangle, X, ChevronLeft, ChevronRight } from "lucide-react";
 import { productsApi, type Product } from "@/api/products";
 import { inventoryApi, type LowStockProduct } from "@/api/inventory";
+import { cacheGet, cacheSet, cacheClear, cacheKey } from "@/lib/simple-cache";
+import TableSkeleton from "@/components/TableSkeleton";
 import styles from "./Inventory.module.css";
 
 const LIMIT = 10;
 
 type AdjustState = { id: string; name: string; stock: number } | null;
 
+const SKELETON_COLS = [
+  { width: "55%" },
+  { width: "20%", align: "right" as const },
+  { width: "20%", align: "right" as const },
+  { width: "80px", align: "center" as const },
+];
+
 export default function Inventory() {
-  const [products, setProducts] = useState<Product[]>([]);
+  const [products, setProducts] = useState<Product[]>(() => {
+    const cached = cacheGet<{ products: Product[]; total: number; lowStock: LowStockProduct[] }>(
+      cacheKey("inventory", 1)
+    );
+    return cached?.products ?? [];
+  });
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
@@ -22,7 +36,18 @@ export default function Inventory() {
   const totalPages = Math.max(1, Math.ceil(total / LIMIT));
 
   const fetchData = async (p: number) => {
-    setLoading(true);
+    const key = cacheKey("inventory", p);
+    const cached = cacheGet<{ products: Product[]; total: number; lowStock: LowStockProduct[] }>(key);
+
+    if (cached) {
+      setProducts(cached.products);
+      setTotal(cached.total);
+      setLowStockProducts(cached.lowStock);
+      setLoading(false);
+    } else {
+      setLoading(true);
+    }
+
     try {
       const [productRes, lowStockRes] = await Promise.all([
         productsApi.list({ page: p, limit: LIMIT, active: true }),
@@ -31,6 +56,7 @@ export default function Inventory() {
       setProducts(productRes.products);
       setTotal(productRes.total);
       setLowStockProducts(lowStockRes.products);
+      cacheSet(key, { products: productRes.products, total: productRes.total, lowStock: lowStockRes.products });
     } catch {
     } finally {
       setLoading(false);
@@ -56,6 +82,7 @@ export default function Inventory() {
       setNote("");
       setType("entrada");
 
+      cacheClear("inventory");
       fetchData(page);
     } catch {
       alert("Error al ajustar inventario");
@@ -95,13 +122,9 @@ export default function Inventory() {
             </tr>
           </thead>
           <tbody>
-            {loading ? (
-              <tr><td colSpan={4} className={styles.empty}>Cargando…</td></tr>
-            ) : products.length === 0 ? (
-              <tr><td colSpan={4} className={styles.empty}>Sin productos</td></tr>
-            ) : (
+            {products.length > 0 ? (
               products.map((p) => (
-                <tr key={p.id}>
+                <tr key={p.id} className={loading ? styles.trDim : ""}>
                   <td className={styles.tdProduct}>
                     <div className={styles.productName}>{p.name}</div>
                     {p.barcode && <div className={styles.productBarcode}>{p.barcode}</div>}
@@ -122,6 +145,10 @@ export default function Inventory() {
                   </td>
                 </tr>
               ))
+            ) : loading ? (
+              <TableSkeleton cols={SKELETON_COLS} />
+            ) : (
+              <tr><td colSpan={4} className={styles.empty}>Sin productos</td></tr>
             )}
           </tbody>
         </table>
