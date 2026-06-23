@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { salesApi, type Sale, type SaleReport } from "@/api/sales";
 import { money } from "@/lib/format";
 import { cacheGet, cacheSet, cacheKey } from "@/lib/simple-cache";
@@ -38,33 +39,44 @@ export default function Reports() {
     return cached?.sales ?? [];
   });
   const [loading, setLoading] = useState(true);
+  const [salesPage, setSalesPage] = useState(1);
+  const [salesTotal, setSalesTotal] = useState(0);
+  const SALES_LIMIT = 10;
+
+  const salesTotalPages = Math.max(1, Math.ceil(salesTotal / SALES_LIMIT));
 
   useEffect(() => {
     const start = rangeStart(range).toISOString();
     const end = rangeEnd(range).toISOString();
-    const key = cacheKey("reports", range);
+    const key = cacheKey("reports", range, String(salesPage));
 
-    const cached = cacheGet<{ report: SaleReport; sales: Sale[] }>(key);
+    const cached = cacheGet<{ report: SaleReport; sales: Sale[]; total: number }>(key);
     if (cached) {
       setReport(cached.report);
       setSales(cached.sales);
+      setSalesTotal(cached.total);
     }
 
     setLoading(!cached);
 
     Promise.all([
       salesApi.report({ start_date: start, end_date: end }),
-      salesApi.list({ start_date: start, end_date: end, limit: 20 }),
+      salesApi.list({ start_date: start, end_date: end, page: salesPage, limit: SALES_LIMIT }),
     ])
       .then(([r, list]) => {
         setReport(r);
         setSales(list.sales);
-        cacheSet(key, { report: r, sales: list.sales });
+        setSalesTotal(list.total);
+        cacheSet(key, { report: r, sales: list.sales, total: list.total });
       })
       .catch((err) => {
         console.error("Error al cargar reportes:", err);
       })
       .finally(() => setLoading(false));
+  }, [range, salesPage]);
+
+  useEffect(() => {
+    setSalesPage(1);
   }, [range]);
 
   const hasData = report !== null;
@@ -191,6 +203,34 @@ export default function Reports() {
             )}
           </tbody>
         </table>
+
+        {salesTotalPages > 1 && (
+          <div className={styles.pagination}>
+            <button
+              onClick={() => setSalesPage((p) => Math.max(1, p - 1))}
+              disabled={salesPage <= 1}
+              className={styles.pageBtn}
+            >
+              <ChevronLeft size={16} />
+            </button>
+            {Array.from({ length: salesTotalPages }, (_, i) => i + 1).map((n) => (
+              <button
+                key={n}
+                onClick={() => setSalesPage(n)}
+                className={`${styles.pageBtn} ${n === salesPage ? styles.pageActive : ""}`}
+              >
+                {n}
+              </button>
+            ))}
+            <button
+              onClick={() => setSalesPage((p) => Math.min(salesTotalPages, p + 1))}
+              disabled={salesPage >= salesTotalPages}
+              className={styles.pageBtn}
+            >
+              <ChevronRight size={16} />
+            </button>
+          </div>
+        )}
       </section>
     </div>
   );
