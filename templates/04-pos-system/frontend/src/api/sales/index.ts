@@ -45,6 +45,11 @@ export interface SaleReport {
   top_products: { product_name: string; quantity: number; revenue: number }[];
 }
 
+export interface RevenueTrendItem {
+  date: string;
+  revenue: number;
+}
+
 // ---------------------------------------------------------------------------
 // Payloads
 // ---------------------------------------------------------------------------
@@ -91,4 +96,7 @@ export const salesApi = {
 
   report: (params?: { start_date?: string; end_date?: string }) =>
     api.get<SaleReport>("/sales/report", params as Record<string, string | number | boolean | undefined>),
+
+  revenueTrend: (params: { start_date: string; end_date: string; group_by: "day" | "week" | "month" }) =>
+    api.get<RevenueTrendItem[]>("/sales/revenue-trend", params as Record<string, string | number | boolean | undefined>),
 };
