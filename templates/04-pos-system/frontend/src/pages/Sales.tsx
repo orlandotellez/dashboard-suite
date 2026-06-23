@@ -126,7 +126,7 @@ export default function Sales() {
           <tbody>
             {sales.length > 0 ? (
               sales.map((s) => (
-                <tr key={s.id} className={`${styles.tr} ${loading ? styles.trDim : ""}`}>
+                <tr key={s.id} className={`${styles.tr} ${loading ? styles.trDim : ""}`} onClick={() => openDetails(s)}>
                   <td className={styles.tdLeft}>
                     <div className={styles.dateCell}>
                       {new Date(s.created_at).toLocaleDateString()}

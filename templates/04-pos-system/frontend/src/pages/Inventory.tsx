@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Search, AlertTriangle, X, ChevronLeft, ChevronRight, ArrowDownRight, ArrowUpRight, RefreshCw } from "lucide-react";
+import { Search, AlertTriangle, X, ChevronLeft, ChevronRight, ArrowDownRight, ArrowUpRight, RefreshCw, Eye } from "lucide-react";
 import { productsApi, type Product } from "@/api/products";
 import { categoriesApi, type Category } from "@/api/categories";
 import { inventoryApi, type InventoryMovement, type LowStockProduct } from "@/api/inventory";
@@ -243,6 +243,7 @@ export default function Inventory() {
                 <th className={styles.thRight}>Cantidad</th>
                 <th className={styles.thLeft}>Nota</th>
                 <th className={styles.thRight}>Fecha</th>
+                <th className={styles.thAction}></th>
               </tr>
             </thead>
             <tbody>
@@ -275,10 +276,13 @@ export default function Inventory() {
                         day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit",
                       })}
                     </td>
+                    <td className={styles.tdActions}>
+                      <Eye size={14} className={styles.eyeIcon} />
+                    </td>
                   </tr>
                 ))
               ) : (
-                <tr><td colSpan={5} className={styles.empty}>Sin movimientos</td></tr>
+                <tr><td colSpan={6} className={styles.empty}>Sin movimientos</td></tr>
               )}
             </tbody>
           </table>

@@ -139,6 +139,7 @@
 
 .tr {
   border-bottom: 1px solid var(--border);
+  cursor: pointer;
 }
 
 .tr:last-child {

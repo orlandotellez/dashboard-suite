@@ -204,6 +204,13 @@
 .tdActions {
   padding: 12px 12px;
   text-align: right;
+  width: 48px;
+}
+
+.eyeIcon {
+  color: var(--muted-foreground);
+  display: block;
+  margin-left: auto;
 }
 
 .outlineBtn {
