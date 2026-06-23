@@ -34,7 +34,14 @@ export const ReportQuerySchema = z.object({
   end_date: z.string().optional(),
 })
 
+export const RevenueTrendQuerySchema = z.object({
+  start_date: z.string(),
+  end_date: z.string(),
+  group_by: z.enum(["day", "week", "month"]),
+})
+
 export type CreateSaleDto = z.infer<typeof CreateSaleDtoSchema>
 export type CreateSaleItemDto = z.infer<typeof CreateSaleItemDtoSchema>
 export type SaleQueryDto = z.infer<typeof SaleQuerySchema>
 export type ReportQueryDto = z.infer<typeof ReportQuerySchema>
+export type RevenueTrendQueryDto = z.infer<typeof RevenueTrendQuerySchema>

@@ -13,4 +13,6 @@ export interface ISaleRepository {
     salesByPaymentMethod: Record<string, number>
     topProducts: { productName: string; quantity: number; revenue: number }[]
   }>
+
+  getRevenueTrend(params: { startDate: Date; endDate: Date; groupBy: "day" | "week" | "month" }): Promise<{ date: string; revenue: number }[]>
 }

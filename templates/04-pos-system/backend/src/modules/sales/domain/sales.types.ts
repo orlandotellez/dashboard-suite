@@ -47,3 +47,16 @@ export interface ISaleQueryParams {
   page?: number
   limit?: number
 }
+
+export interface IRevenueTrendItem {
+  date: string
+  revenue: number
+}
+
+export type GroupBy = "day" | "week" | "month"
+
+export interface IRevenueTrendQuery {
+  start_date: string
+  end_date: string
+  group_by: GroupBy
+}

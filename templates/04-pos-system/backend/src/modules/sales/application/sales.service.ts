@@ -1,6 +1,6 @@
 import { NotFoundError } from "@/core/errors/AppError"
 import type { ISaleRepository } from "../domain/sales.interface"
-import type { ISaleResponse, ISaleListResponse, ISaleReport } from "../domain/sales.types"
+import type { ISaleResponse, ISaleListResponse, ISaleReport, IRevenueTrendItem, IRevenueTrendQuery } from "../domain/sales.types"
 import type { CreateSaleData } from "../domain/sales.entities"
 
 function mapSaleToResponse(sale: any): ISaleResponse {
@@ -82,5 +82,14 @@ export const createSaleService = (repository: ISaleRepository) => ({
         revenue: p.revenue,
       })),
     }
+  },
+
+  getRevenueTrend: async (params: IRevenueTrendQuery): Promise<IRevenueTrendItem[]> => {
+    const items = await repository.getRevenueTrend({
+      startDate: new Date(params.start_date),
+      endDate: new Date(params.end_date),
+      groupBy: params.group_by,
+    })
+    return items
   },
 })

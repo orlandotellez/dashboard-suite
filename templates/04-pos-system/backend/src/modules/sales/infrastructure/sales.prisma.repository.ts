@@ -121,4 +121,25 @@ export const SaleRepository: ISaleRepository = {
       topProducts,
     }
   },
+
+  async getRevenueTrend(params) {
+    const truncMap = { day: "day", week: "week", month: "month" } as const
+    const trunc = truncMap[params.groupBy]
+
+    const rows = await prisma.$queryRawUnsafe<Array<{ date: Date; revenue: number }>>(
+      `SELECT DATE_TRUNC('${trunc}', created_at AT TIME ZONE 'UTC') as date,
+              CAST(SUM(total) AS DECIMAL(10,2)) as revenue
+       FROM sales
+       WHERE created_at >= $1::timestamptz AND created_at <= $2::timestamptz
+       GROUP BY DATE_TRUNC('${trunc}', created_at AT TIME ZONE 'UTC')
+       ORDER BY date ASC`,
+      params.startDate,
+      params.endDate,
+    )
+
+    return rows.map((r) => ({
+      date: r.date instanceof Date ? r.date.toISOString() : String(r.date),
+      revenue: Number(r.revenue),
+    }))
+  },
 }
