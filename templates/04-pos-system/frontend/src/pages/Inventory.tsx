@@ -1,6 +1,7 @@
-import { useEffect, useState } from "react";
-import { AlertTriangle, X, ChevronLeft, ChevronRight } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Search, AlertTriangle, X, ChevronLeft, ChevronRight } from "lucide-react";
 import { productsApi, type Product } from "@/api/products";
+import { categoriesApi, type Category } from "@/api/categories";
 import { inventoryApi, type LowStockProduct } from "@/api/inventory";
 import { cacheGet, cacheSet, cacheClear, cacheKey } from "@/lib/simple-cache";
 import TableSkeleton from "@/components/TableSkeleton";
@@ -20,7 +21,7 @@ const SKELETON_COLS = [
 export default function Inventory() {
   const [products, setProducts] = useState<Product[]>(() => {
     const cached = cacheGet<{ products: Product[]; total: number; lowStock: LowStockProduct[] }>(
-      cacheKey("inventory", 1)
+      cacheKey("inventory", 1, "", "")
     );
     return cached?.products ?? [];
   });
@@ -28,15 +29,25 @@ export default function Inventory() {
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [lowStockProducts, setLowStockProducts] = useState<LowStockProduct[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [categoryId, setCategoryId] = useState("");
+  const [q, setQ] = useState("");
+  const searchRef = useRef(q);
+  searchRef.current = q;
   const [adjust, setAdjust] = useState<AdjustState>(null);
   const [type, setType] = useState<"entrada" | "salida" | "ajuste">("entrada");
   const [qty, setQty] = useState(0);
   const [note, setNote] = useState("");
+  const [refreshKey, setRefreshKey] = useState(0);
 
   const totalPages = Math.max(1, Math.ceil(total / LIMIT));
 
-  const fetchData = async (p: number) => {
-    const key = cacheKey("inventory", p);
+  useEffect(() => {
+    categoriesApi.list().then(setCategories).catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    const key = cacheKey("inventory", page, q, categoryId);
     const cached = cacheGet<{ products: Product[]; total: number; lowStock: LowStockProduct[] }>(key);
 
     if (cached) {
@@ -47,24 +58,24 @@ export default function Inventory() {
 
     setLoading(!cached);
 
-    try {
-      const [productRes, lowStockRes] = await Promise.all([
-        productsApi.list({ page: p, limit: LIMIT, active: true }),
-        inventoryApi.lowStock(),
-      ]);
-      setProducts(productRes.products);
-      setTotal(productRes.total);
-      setLowStockProducts(lowStockRes.products);
-      cacheSet(key, { products: productRes.products, total: productRes.total, lowStock: lowStockRes.products });
-    } catch {
-    } finally {
-      setLoading(false);
-    }
-  };
+    const timer = setTimeout(async () => {
+      try {
+        const [productRes, lowStockRes] = await Promise.all([
+          productsApi.list({ page, limit: LIMIT, active: true, search: q || undefined, category_id: categoryId || undefined }),
+          inventoryApi.lowStock(),
+        ]);
+        setProducts(productRes.products);
+        setTotal(productRes.total);
+        setLowStockProducts(lowStockRes.products);
+        cacheSet(key, { products: productRes.products, total: productRes.total, lowStock: lowStockRes.products });
+      } catch {
+      } finally {
+        setLoading(false);
+      }
+    }, 300);
 
-  useEffect(() => {
-    fetchData(page);
-  }, [page]);
+    return () => clearTimeout(timer);
+  }, [page, q, categoryId, refreshKey]);
 
   async function apply() {
     if (!adjust) return;
@@ -82,7 +93,7 @@ export default function Inventory() {
       setType("entrada");
 
       cacheClear("inventory");
-      fetchData(page);
+      setRefreshKey((k) => k + 1);
     } catch {
       alert("Error al ajustar inventario");
     }
@@ -109,6 +120,28 @@ export default function Inventory() {
           </div>
         </div>
       )}
+
+      <div className={styles.toolbar}>
+        <div className={styles.searchWrapper}>
+          <Search size={16} className={styles.searchIcon} />
+          <input
+            value={q}
+            onChange={(e) => { setQ(e.target.value); setPage(1); }}
+            placeholder="Buscar producto…"
+            className={styles.searchInput}
+          />
+        </div>
+        <select
+          value={categoryId}
+          onChange={(e) => { setCategoryId(e.target.value); setPage(1); }}
+          className={styles.filterSelect}
+        >
+          <option value="">Todas las categorías</option>
+          {categories.map((c) => (
+            <option key={c.id} value={c.id}>{c.name}</option>
+          ))}
+        </select>
+      </div>
 
       <div className={styles.tableCard}>
         <table className={styles.table}>

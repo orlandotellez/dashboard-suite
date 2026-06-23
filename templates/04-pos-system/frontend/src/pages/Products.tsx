@@ -32,6 +32,7 @@ export default function Products() {
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [q, setQ] = useState("");
+  const [categoryId, setCategoryId] = useState("");
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<Product | null | "new">(null);
   const [form, setForm] = useState(emptyForm);
@@ -52,7 +53,7 @@ export default function Products() {
   searchRef.current = q;
 
   useEffect(() => {
-    const key = cacheKey("products", page, q);
+    const key = cacheKey("products", page, q, categoryId);
     const cached = cacheGet<{ products: Product[]; total: number }>(key);
 
     if (cached) {
@@ -67,6 +68,7 @@ export default function Products() {
         page,
         limit: LIMIT,
         search: q || undefined,
+        category_id: categoryId || undefined,
       })
         .then((res) => {
           setProducts(res.products);
@@ -78,10 +80,15 @@ export default function Products() {
     }, 300);
 
     return () => clearTimeout(timer);
-  }, [page, q]);
+  }, [page, q, categoryId]);
 
   function handleSearch(value: string) {
     setQ(value);
+    setPage(1);
+  }
+
+  function handleCategoryChange(value: string) {
+    setCategoryId(value);
     setPage(1);
   }
 
@@ -134,10 +141,10 @@ export default function Products() {
 
       close();
       cacheClear("products");
-      const res = await productsApi.list({ page, limit: LIMIT, search: q || undefined });
+      const res = await productsApi.list({ page, limit: LIMIT, search: q || undefined, category_id: categoryId || undefined });
       setProducts(res.products);
       setTotal(res.total);
-      cacheSet(cacheKey("products", page, q), { products: res.products, total: res.total });
+      cacheSet(cacheKey("products", page, q, categoryId), { products: res.products, total: res.total });
     } catch {
       alert("Error al guardar producto");
     }
@@ -148,10 +155,10 @@ export default function Products() {
     try {
       await productsApi.delete(id);
       cacheClear("products");
-      const res = await productsApi.list({ page, limit: LIMIT, search: q || undefined });
+      const res = await productsApi.list({ page, limit: LIMIT, search: q || undefined, category_id: categoryId || undefined });
       setProducts(res.products);
       setTotal(res.total);
-      cacheSet(cacheKey("products", page, q), { products: res.products, total: res.total });
+      cacheSet(cacheKey("products", page, q, categoryId), { products: res.products, total: res.total });
     } catch {
       alert("Error al eliminar producto");
     }
@@ -171,14 +178,26 @@ export default function Products() {
         </button>
       </header>
 
-      <div className={styles.searchWrapper}>
-        <Search size={16} className={styles.searchIcon} />
-        <input
-          value={q}
-          onChange={(e) => handleSearch(e.target.value)}
-          placeholder="Buscar por nombre, código o categoría"
-          className={styles.searchInput}
-        />
+      <div className={styles.toolbar}>
+        <div className={styles.searchWrapper}>
+          <Search size={16} className={styles.searchIcon} />
+          <input
+            value={q}
+            onChange={(e) => handleSearch(e.target.value)}
+            placeholder="Buscar por nombre, código o categoría"
+            className={styles.searchInput}
+          />
+        </div>
+        <select
+          value={categoryId}
+          onChange={(e) => handleCategoryChange(e.target.value)}
+          className={styles.filterSelect}
+        >
+          <option value="">Todas las categorías</option>
+          {categories.map((c) => (
+            <option key={c.id} value={c.id}>{c.name}</option>
+          ))}
+        </select>
       </div>
 
       <div className={styles.tableCard}>
