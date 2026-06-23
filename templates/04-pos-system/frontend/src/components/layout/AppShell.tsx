@@ -1,9 +1,9 @@
 import { Link, useLocation } from "react-router-dom";
-import { useState, type ReactNode } from "react";
-import { ScanBarcode, Package, BarChart3, Settings, Boxes, Users, LogOut, Moon, Sun, Receipt } from "lucide-react";
+import { type ReactNode } from "react";
+import { ScanBarcode, Package, BarChart3, Settings, Boxes, Users, Moon, Sun, Receipt } from "lucide-react";
 import { useTheme } from "@/context/ThemeContext";
 import { useAuth } from "@/context/AuthContext";
-import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { UserMenu } from "./UserMenu";
 import logoDark from "@/assets/logo_dark.svg";
 import logoLight from "@/assets/logo_light.svg";
 import styles from "./AppShell.module.css";
@@ -23,11 +23,10 @@ const adminNavItems = [
 
 export function AppShell({ children }: { children: ReactNode }) {
   const { theme, toggle } = useTheme();
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const location = useLocation();
   const pathname = location.pathname;
   const isAdmin = user?.role === "admin";
-  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   const navItems = isAdmin ? [...sharedNavItems, ...adminNavItems] : sharedNavItems;
 
@@ -63,26 +62,9 @@ export function AppShell({ children }: { children: ReactNode }) {
           })}
         </nav>
         <div className={styles.sidebarFooter}>
-          <div className={styles.footerUser}>{user?.email ?? "Sin sesión"}</div>
-          <button onClick={() => setShowLogoutConfirm(true)} className={styles.signOut}>
-            <LogOut className={styles.navIcon} />
-            Salir
-          </button>
+          <UserMenu />
         </div>
       </aside>
-
-      <ConfirmDialog
-        open={showLogoutConfirm}
-        title="Cerrar sesión"
-        message="¿Estás seguro de que querés cerrar sesión?"
-        confirmLabel="Sí, salir"
-        cancelLabel="Cancelar"
-        onConfirm={() => {
-          setShowLogoutConfirm(false);
-          logout();
-        }}
-        onCancel={() => setShowLogoutConfirm(false)}
-      />
 
       {/* Mobile bottom nav */}
       <nav className={styles.mobileNav}>
