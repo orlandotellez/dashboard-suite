@@ -16,7 +16,7 @@ export default function Sales() {
   const [selected, setSelected] = useState<Sale | null>(null);
   const [storeName, setStoreName] = useState("");
 
-  const LIMIT = 15;
+  const LIMIT = 10;
   const totalPages = Math.max(1, Math.ceil(total / LIMIT));
 
   useEffect(() => {
