@@ -1,6 +1,6 @@
 import { Link, useLocation } from "react-router-dom";
 import type { ReactNode } from "react";
-import { ScanBarcode, Package, BarChart3, Settings, Boxes, Users, LogOut, Moon, Sun } from "lucide-react";
+import { ScanBarcode, Package, BarChart3, Settings, Boxes, Users, LogOut, Moon, Sun, Receipt } from "lucide-react";
 import { useTheme } from "@/context/ThemeContext";
 import { useAuth } from "@/context/AuthContext";
 import styles from "./AppShell.module.css";
@@ -9,6 +9,7 @@ const sharedNavItems = [
   { to: "/pos", label: "Venta", icon: ScanBarcode },
   { to: "/products", label: "Productos", icon: Package },
   { to: "/inventory", label: "Inventario", icon: Boxes },
+  { to: "/sales", label: "Ventas", icon: Receipt },
   { to: "/reports", label: "Reportes", icon: BarChart3 },
 ];
 
