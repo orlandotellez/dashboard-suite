@@ -294,7 +294,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 20px 24px;
+  padding: 16px 24px;
   border-bottom: 1px solid var(--border);
 }
 
@@ -304,10 +304,34 @@
   color: var(--foreground);
 }
 
+.modalHeaderActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.printBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--background);
+  color: var(--foreground);
+  font-size: 13px;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.printBtn:hover {
+  background: var(--accent);
+}
+
 .modalClose {
-  padding: 4px;
+  padding: 6px;
   border: none;
-  border-radius: 4px;
+  border-radius: 6px;
   background: none;
   cursor: pointer;
   color: var(--muted-foreground);
@@ -317,98 +341,80 @@
   color: var(--foreground);
 }
 
-/* ─── Invoice inside modal ─── */
-.invoice {
+/* ─── Ticket inside modal ─── */
+.ticket {
   padding: 24px;
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 12px;
+  max-width: 320px;
+  margin: 0 auto;
 }
 
-.invoiceHeader {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 12px;
+.ticketHeader {
+  text-align: center;
+  font-size: 14px;
+  font-weight: 700;
+  margin-bottom: 4px;
   color: var(--foreground);
 }
 
-.invoiceStore {
-  font-size: 16px;
-  font-weight: 600;
+.ticketMeta {
   text-align: center;
-}
-
-.invoiceMeta {
-  text-align: center;
-  font-size: 12px;
+  font-size: 11px;
   color: var(--muted-foreground);
   line-height: 1.6;
-  margin-bottom: 12px;
+  margin-bottom: 8px;
 }
 
-.invoiceLine {
+.ticketDivider {
   border-top: 1px dashed var(--border);
-  margin: 12px 0;
+  margin: 8px 0;
 }
 
-.invoiceItems {
+.ticketTable {
   width: 100%;
-  font-size: 13px;
   border-collapse: collapse;
 }
 
-.invoiceItems th {
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: var(--muted-foreground);
-  font-weight: 500;
-  border-bottom: 1px solid var(--border);
-  padding: 6px 4px;
-}
-
-.invoiceItems td {
-  padding: 6px 4px;
-  border-bottom: 1px solid var(--border);
+.ticketTable td {
+  padding: 2px 0;
   vertical-align: top;
 }
 
-.invoiceThLeft,
-.invoiceTdLeft {
+.ticketTdLeft {
   text-align: left;
+  color: var(--foreground);
 }
 
-.invoiceThRight,
-.invoiceTdRight {
+.ticketTdRight {
   text-align: right;
   font-variant-numeric: tabular-nums;
-}
-
-.invoiceTdLeft {
   color: var(--foreground);
 }
 
-.invoiceTdRight {
-  color: var(--foreground);
-  font-variant-numeric: tabular-nums;
-}
-
-.invoiceTotals {
+.ticketRows {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  font-size: 13px;
+  gap: 2px;
 }
 
-.invoiceRow {
+.ticketRow {
   display: flex;
   justify-content: space-between;
   color: var(--foreground);
 }
 
-.invoiceTotalRow {
-  font-size: 16px;
+.ticketRowTotal {
+  font-size: 14px;
   font-weight: 700;
   padding-top: 8px;
   margin-top: 8px;
   border-top: 2px solid var(--foreground);
+}
+
+.ticketFooter {
+  text-align: center;
+  color: var(--muted-foreground);
+  font-size: 11px;
+  margin-top: 12px;
 }
