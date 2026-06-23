@@ -35,7 +35,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       <aside className={styles.sidebar}>
         <div className={styles.logo}>
           <img
-            src={theme === "dark" ? logoDark : logoLight}
+            src={theme === "dark" ? logoLight : logoDark}
             alt="Logo"
             className={styles.logoImg}
           />
