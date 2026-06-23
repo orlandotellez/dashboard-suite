@@ -358,6 +358,14 @@
   color: var(--foreground);
 }
 
+.ticketAddress {
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--muted-foreground);
+  margin-top: 2px;
+  line-height: 1.4;
+}
+
 .ticketMeta {
   text-align: center;
   font-size: 11px;

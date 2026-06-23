@@ -15,12 +15,16 @@ export default function Sales() {
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<Sale | null>(null);
   const [storeName, setStoreName] = useState("");
+  const [storeAddress, setStoreAddress] = useState("");
 
   const LIMIT = 10;
   const totalPages = Math.max(1, Math.ceil(total / LIMIT));
 
   useEffect(() => {
-    settingsApi.get().then((res) => setStoreName(res.name)).catch(() => {});
+    settingsApi.get().then((res) => {
+      setStoreName(res.name);
+      if (res.address) setStoreAddress(res.address);
+    }).catch(() => {});
   }, []);
 
   const fetchSales = async (p: number) => {
@@ -179,7 +183,7 @@ export default function Sales() {
             <div className={styles.modalHeader}>
               <h2 className={styles.modalTitle}>Ticket de venta</h2>
               <div className={styles.modalHeaderActions}>
-                <button onClick={() => printSaleTicket(selected, storeName)} className={styles.printBtn} title="Reimprimir">
+                <button onClick={() => printSaleTicket(selected, storeName, storeAddress)} className={styles.printBtn} title="Reimprimir">
                   <Printer size={16} /> Reimprimir
                 </button>
                 <button onClick={() => setSelected(null)} className={styles.modalClose}>
@@ -191,6 +195,7 @@ export default function Sales() {
             <div className={styles.ticket}>
               <div className={styles.ticketHeader}>
                 <strong>{storeName || "Tienda"}</strong>
+                {storeAddress && <div className={styles.ticketAddress}>{storeAddress}</div>}
               </div>
               <div className={styles.ticketMeta}>
                 <div>{new Date(selected.created_at).toLocaleString("es-MX")}</div>
@@ -257,7 +262,7 @@ export default function Sales() {
   );
 }
 
-function printSaleTicket(sale: Sale, storeName: string) {
+function printSaleTicket(sale: Sale, storeName: string, storeAddress?: string) {
   const w = window.open("", "_blank", "width=320,height=600");
   if (!w) return;
   const date = new Date(sale.created_at).toLocaleString("es-MX");
@@ -268,6 +273,7 @@ function printSaleTicket(sale: Sale, storeName: string) {
     <html><head><title>Ticket</title>
     <style>body{font-family:ui-monospace,monospace;font-size:12px;padding:12px;max-width:300px}strong{font-size:14px;display:block;text-align:center;margin-bottom:4px}.m{color:#666;text-align:center;font-size:11px;margin-bottom:2px}table{width:100%;margin:12px 0;border-collapse:collapse}td{padding:2px 0;vertical-align:top}.line{border-top:1px dashed #999;margin:8px 0}.tot{display:flex;justify-content:space-between}.big{font-size:16px;font-weight:bold;margin:8px 0}.f{color:#666;text-align:center;font-size:11px;margin-top:12px}</style></head><body>
     <strong>${storeName}</strong>
+    ${storeAddress ? `<div class="m">${storeAddress}</div>` : ""}
     <div class="m">${date}</div>
     <div class="m">Ticket: ${sale.id.slice(0, 8)}</div>
     <div class="line"></div>
