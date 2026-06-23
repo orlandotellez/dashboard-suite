@@ -13,6 +13,9 @@ function mapProductToResponse(product: any): IProductResponse {
     category: product.category
       ? { id: product.category.id, name: product.category.name }
       : undefined,
+    supplier: product.supplier
+      ? { id: product.supplier.id, name: product.supplier.name }
+      : undefined,
     price: Number(product.price),
     cost: Number(product.cost),
     tax_rate: Number(product.tax_rate),

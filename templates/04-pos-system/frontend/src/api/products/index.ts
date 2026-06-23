@@ -9,6 +9,11 @@ export interface ProductCategory {
   name: string;
 }
 
+export interface ProductSupplier {
+  id: string;
+  name: string;
+}
+
 export interface Product {
   id: string;
   barcode?: string;
@@ -16,6 +21,7 @@ export interface Product {
   unit_type?: string;
   unit_quantity?: number;
   category?: ProductCategory;
+  supplier?: ProductSupplier | null;
   price: number;
   cost: number;
   tax_rate: number;
@@ -47,6 +53,7 @@ export interface CreateProductPayload {
   unit_type?: string;
   unit_quantity?: number;
   category_id?: string;
+  supplier_id?: string;
   price: number;
   cost?: number;
   tax_rate?: number;

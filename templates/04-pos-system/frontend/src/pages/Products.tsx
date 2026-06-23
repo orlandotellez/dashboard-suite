@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Plus, Search, Pencil, Trash2, X, ChevronLeft, ChevronRight } from "lucide-react";
 import { productsApi, type Product } from "@/api/products";
 import { categoriesApi, type Category } from "@/api/categories";
+import { suppliersApi, type Supplier } from "@/api/suppliers";
 import { money } from "@/lib/format";
 import { cacheGet, cacheSet, cacheClear, cacheKey } from "@/lib/simple-cache";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
@@ -10,16 +11,31 @@ import styles from "./Products.module.css";
 
 const LIMIT = 10;
 
+const UNIT_TYPE_LABELS: Record<string, string> = {
+  unidad: "Unidad",
+  paquete: "Paquete",
+  caja: "Caja",
+  bolsa: "Bolsa",
+  botella: "Botella",
+  lata: "Lata",
+  sobre: "Sobre",
+  barra: "Barra",
+  rollo: "Rollo",
+  galon: "Galón",
+  ristra: "Ristra",
+};
+
 const emptyForm = {
   name: "", barcode: "", unit_type: "", unit_quantity: 0,
-  category_id: "", price: 0, cost: 0, tax_rate: 16,
+  category_id: "", supplier_id: "", price: 0, cost: 0, tax_rate: 16,
   stock: 0, low_stock_threshold: 5,
 };
 
 const SKELETON_COLS = [
-  { width: "55%" },
-  { width: "25%" },
-  { width: "20%", align: "right" as const },
+  { width: "35%" },
+  { width: "15%" },
+  { width: "20%" },
+  { width: "15%", align: "right" as const },
   { width: "15%", align: "right" as const },
   { width: "60px", align: "center" as const },
 ];
@@ -30,6 +46,7 @@ export default function Products() {
     return cached ?? [];
   });
   const [categories, setCategories] = useState<Category[]>([]);
+  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [q, setQ] = useState("");
@@ -49,6 +66,7 @@ export default function Products() {
 
   useEffect(() => {
     categoriesApi.list().then(setCategories).catch(() => {});
+    suppliersApi.list().then(res => setSuppliers(res.suppliers)).catch(() => {});
   }, []);
 
   const searchRef = useRef(q);
@@ -106,6 +124,7 @@ export default function Products() {
       unit_type: p.unit_type ?? "",
       unit_quantity: p.unit_quantity ?? 0,
       category_id: p.category?.id ?? "",
+      supplier_id: p.supplier?.id ?? "",
       price: p.price,
       cost: p.cost,
       tax_rate: p.tax_rate,
@@ -128,6 +147,7 @@ export default function Products() {
         unit_type: form.unit_type || undefined,
         unit_quantity: form.unit_quantity || undefined,
         category_id: form.category_id || undefined,
+        supplier_id: form.supplier_id || undefined,
         price: form.price,
         cost: form.cost || undefined,
         tax_rate: form.tax_rate,
@@ -207,6 +227,7 @@ export default function Products() {
             <tr>
               <th className={styles.thLeft}>Producto</th>
               <th className={styles.thLeft}>Código</th>
+              <th className={styles.thLeft}>Proveedor</th>
               <th className={styles.thRight}>Precio</th>
               <th className={styles.thRight}>Stock</th>
               <th className={styles.thAction}></th>
@@ -220,10 +241,11 @@ export default function Products() {
                     <div className={styles.productName}>{p.name}</div>
                     <div className={styles.productCat}>
                       {p.category && <span>{p.category.name}</span>}
-                      {p.unit_type && <span> · {p.unit_type}{p.unit_quantity ? ` ${p.unit_quantity}` : ""}</span>}
+                      {p.unit_type && <span> · {UNIT_TYPE_LABELS[p.unit_type] || p.unit_type}{p.unit_quantity ? ` ${p.unit_quantity}` : ""}</span>}
                     </div>
                   </td>
                   <td className={styles.tdBarcode}>{p.barcode ?? "—"}</td>
+                  <td className={styles.tdLeft}>{p.supplier?.name ?? "—"}</td>
                   <td className={styles.tdRight}>{money(p.price)}</td>
                   <td className={styles.tdRight}>
                     <span className={p.stock <= p.low_stock_threshold ? styles.stockWarning : styles.stockNormal}>
@@ -243,7 +265,7 @@ export default function Products() {
             ) : loading ? (
               <TableSkeleton cols={SKELETON_COLS} />
             ) : (
-              <tr><td colSpan={5} className={styles.empty}>Sin productos</td></tr>
+              <tr><td colSpan={6} className={styles.empty}>Sin productos</td></tr>
             )}
           </tbody>
         </table>
@@ -310,10 +332,15 @@ export default function Products() {
               <div className={styles.fieldGrid}>
                 <div className={styles.field}>
                   <label className={styles.fieldLabel}>Tipo de empaque</label>
-                  <input
+                  <select
                     value={form.unit_type} onChange={(e) => setForm({ ...form, unit_type: e.target.value })}
-                    className={styles.input} placeholder="Ej: Ristra, Paquete, Bolsa, Caja"
-                  />
+                    className={styles.input}
+                  >
+                    <option value="">Sin empaque</option>
+                    {Object.entries(UNIT_TYPE_LABELS).map(([value, label]) => (
+                      <option key={value} value={value}>{label}</option>
+                    ))}
+                  </select>
                 </div>
                 <div className={styles.field}>
                   <label className={styles.fieldLabel}>Cantidad x empaque</label>
@@ -324,19 +351,32 @@ export default function Products() {
                 </div>
               </div>
               <div className={styles.field}>
-                <label className={styles.fieldLabel}>Categoría</label>
-                <select
-                  value={form.category_id}
-                  onChange={(e) => setForm({ ...form, category_id: e.target.value })}
-                  className={styles.input}
-                >
-                  <option value="">Sin categoría</option>
-                  {categories.map((c) => (
-                    <option key={c.id} value={c.id}>{c.name}</option>
-                  ))}
-                </select>
-              </div>
-              <div className={styles.fieldGrid}>
+                  <label className={styles.fieldLabel}>Categoría</label>
+                  <select
+                    value={form.category_id}
+                    onChange={(e) => setForm({ ...form, category_id: e.target.value })}
+                    className={styles.input}
+                  >
+                    <option value="">Sin categoría</option>
+                    {categories.map((c) => (
+                      <option key={c.id} value={c.id}>{c.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className={styles.field}>
+                  <label className={styles.fieldLabel}>Proveedor</label>
+                  <select
+                    value={form.supplier_id}
+                    onChange={(e) => setForm({ ...form, supplier_id: e.target.value })}
+                    className={styles.input}
+                  >
+                    <option value="">Sin proveedor</option>
+                    {suppliers.map((s) => (
+                      <option key={s.id} value={s.id}>{s.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className={styles.fieldGrid}>
                 <div className={styles.field}>
                   <label className={styles.fieldLabel}>Precio venta</label>
                   <input type="number" step="0.01" value={form.price}

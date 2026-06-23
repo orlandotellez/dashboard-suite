@@ -10,6 +10,7 @@ export interface IProductResponse {
   unit_type?: string
   unit_quantity?: number
   category?: IProductCategory
+  supplier?: { id: string; name: string } | null
   price: number
   cost: number
   tax_rate: number

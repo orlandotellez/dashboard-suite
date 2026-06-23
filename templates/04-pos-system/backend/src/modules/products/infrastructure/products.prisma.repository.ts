@@ -1,7 +1,7 @@
 import { prisma } from "@/config/prisma"
 import type { IProductRepository } from "../domain/products.interface"
 import type { IProductEntity, CreateProductData, UpdateProductData } from "../domain/products.entities"
-import { Prisma } from "@prisma/client"
+import { Prisma, type UNIT_TYPE } from "@prisma/client"
 
 const productSelect = {
   id: true,
@@ -10,6 +10,7 @@ const productSelect = {
   unit_type: true,
   unit_quantity: true,
   category_id: true,
+  supplier_id: true,
   price: true,
   cost: true,
   tax_rate: true,
@@ -20,6 +21,12 @@ const productSelect = {
   updated_at: true,
   deleted_at: true,
   category: {
+    select: {
+      id: true,
+      name: true,
+    },
+  },
+  supplier: {
     select: {
       id: true,
       name: true,
@@ -36,6 +43,7 @@ function mapToEntity(product: any): IProductEntity {
     unit_quantity: product.unit_quantity ?? undefined,
     category_id: product.category_id || undefined,
     category_name: product.category?.name || undefined,
+    supplier_id: product.supplier_id || undefined,
     price: product.price,
     cost: product.cost,
     tax_rate: product.tax_rate,
@@ -120,9 +128,10 @@ export const ProductRepository: IProductRepository = {
       data: {
         barcode: data.barcode,
         name: data.name,
-        unit_type: data.unit_type,
+        unit_type: data.unit_type as UNIT_TYPE | undefined | null,
         unit_quantity: data.unit_quantity,
         category_id: data.category_id,
+        supplier_id: data.supplier_id,
         price: data.price,
         cost: data.cost ?? 0,
         tax_rate: data.tax_rate ?? 0,
@@ -141,9 +150,10 @@ export const ProductRepository: IProductRepository = {
       data: {
         ...(data.barcode !== undefined && { barcode: data.barcode }),
         ...(data.name !== undefined && { name: data.name }),
-        ...(data.unit_type !== undefined && { unit_type: data.unit_type }),
+        ...(data.unit_type !== undefined && { unit_type: data.unit_type as UNIT_TYPE | null }),
         ...(data.unit_quantity !== undefined && { unit_quantity: data.unit_quantity }),
         ...(data.category_id !== undefined && { category_id: data.category_id }),
+        ...(data.supplier_id !== undefined && { supplier_id: data.supplier_id }),
         ...(data.price !== undefined && { price: data.price }),
         ...(data.cost !== undefined && { cost: data.cost }),
         ...(data.tax_rate !== undefined && { tax_rate: data.tax_rate }),
