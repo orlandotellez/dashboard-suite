@@ -29,9 +29,6 @@ export default function Auth() {
       {/* ─── Left panel: branding ─── */}
       <div className={styles.brand}>
         <div className={styles.brandInner}>
-          <div className={styles.logo}>
-            <Store size={32} />
-          </div>
           <h1 className={styles.brandTitle}>Caja</h1>
           <p className={styles.brandSubtitle}>Sistema de Punto de Venta e Inventario</p>
 
@@ -59,6 +56,9 @@ export default function Auth() {
       {/* ─── Right panel: form ─── */}
       <div className={styles.formPanel}>
         <div className={styles.formCard}>
+          <div className={styles.formIcon}>
+            <Store size={28} />
+          </div>
           <h2 className={styles.formTitle}>Iniciar sesión</h2>
           <p className={styles.formSubtitle}>Ingresá tus credenciales para acceder</p>
 
