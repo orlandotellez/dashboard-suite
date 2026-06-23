@@ -7,7 +7,8 @@
 ### ========================================
 
 ### ---------- REGISTER ----------
-### Crea una nueva cuenta. Setea cookies de acceso automáticamente.
+### [Requiere adminGuard] Crea una nueva cuenta.
+### Primero logueate como admin, luego ejecutá este request.
 POST {{apiUrl}}/auth/register
 Content-Type: application/json
 
