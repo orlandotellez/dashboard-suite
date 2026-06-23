@@ -6,6 +6,7 @@ export interface IInventoryMovementResponse {
   quantity: number
   note?: string
   user_id: string
+  batch_id?: string
   created_at: string
 }
 

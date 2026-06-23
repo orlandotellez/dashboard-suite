@@ -9,6 +9,7 @@ function mapToEntity(movement: any): IInventoryMovementEntity {
     movement_type: movement.movement_type,
     quantity: movement.quantity,
     note: movement.note || undefined,
+    batch_id: movement.batch_id || undefined,
     user_id: movement.user_id,
     created_at: movement.created_at,
   }
@@ -22,6 +23,7 @@ export const InventoryRepository: IInventoryRepository = {
         movement_type: data.movement_type,
         quantity: data.quantity,
         note: data.note,
+        batch_id: data.batch_id,
         user_id: data.user_id,
       },
       include: { product: { select: { name: true } } },

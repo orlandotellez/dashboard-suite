@@ -5,6 +5,7 @@ export const CreateMovementDtoSchema = z.object({
   movement_type: z.enum(["entrada", "salida", "ajuste"]),
   quantity: z.number().int().positive("Quantity must be positive"),
   note: z.string().optional(),
+  batch_id: z.string().uuid().optional(),
 })
 
 export const MovementQuerySchema = z.object({

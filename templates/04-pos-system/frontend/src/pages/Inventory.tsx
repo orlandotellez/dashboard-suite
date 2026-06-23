@@ -4,6 +4,8 @@ import { productsApi, type Product } from "@/api/products";
 import { categoriesApi, type Category } from "@/api/categories";
 import { inventoryApi, type InventoryMovement, type LowStockProduct } from "@/api/inventory";
 import { cacheGet, cacheSet, cacheClear, cacheKey } from "@/lib/simple-cache";
+import { suppliersApi } from "@/api/suppliers";
+import type { Supplier, BatchResponse, CreateBatchPayload } from "@/api";
 import TableSkeleton from "@/components/TableSkeleton";
 import styles from "./Inventory.module.css";
 
@@ -50,8 +52,31 @@ export default function Inventory() {
   const totalPages = Math.max(1, Math.ceil(total / LIMIT));
   const movementsTotalPages = Math.max(1, Math.ceil(movementsTotal / MOVEMENT_LIMIT));
 
+  type BatchFormItem = {
+    id: string;
+    productSearch: string;
+    selectedProduct: Product | null;
+    quantity: number;
+    unitCost: number | null;
+    notes: string;
+    showDropdown: boolean;
+  };
+  const [batchModalOpen, setBatchModalOpen] = useState(false);
+  const [batchType, setBatchType] = useState<"entrada" | "salida" | "ajuste">("entrada");
+  const [batchSupplierId, setBatchSupplierId] = useState("");
+  const [batchNotes, setBatchNotes] = useState("");
+  const [batchItems, setBatchItems] = useState<BatchFormItem[]>([]);
+  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+  const [submitting, setSubmitting] = useState(false);
+  const [batches, setBatches] = useState<BatchResponse[]>([]);
+  const [batchesTotal, setBatchesTotal] = useState(0);
+  const [batchPage, setBatchPage] = useState(1);
+  const [batchDetail, setBatchDetail] = useState<BatchResponse | null>(null);
+  const BATCH_LIMIT = 10;
+
   useEffect(() => {
     categoriesApi.list().then(setCategories).catch(() => {});
+    suppliersApi.list().then(res => setSuppliers(res.suppliers)).catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -93,6 +118,13 @@ export default function Inventory() {
     }).catch(() => {});
   }, [movementPage, refreshKey]);
 
+  useEffect(() => {
+    inventoryApi.batchList({ page: batchPage, limit: BATCH_LIMIT }).then((res) => {
+      setBatches(res.batches);
+      setBatchesTotal(res.total);
+    }).catch(() => {});
+  }, [batchPage, refreshKey]);
+
   async function apply() {
     if (!adjust) return;
     try {
@@ -115,12 +147,97 @@ export default function Inventory() {
     }
   }
 
+  function searchProducts(query: string): Product[] {
+    if (!query.trim()) return [];
+    const q = query.toLowerCase();
+    return products.filter(p =>
+      p.name.toLowerCase().includes(q) ||
+      (p.barcode && p.barcode.toLowerCase().includes(q))
+    ).slice(0, 8);
+  }
+
+  let _itemIdCounter = 0;
+  function addBatchItem() {
+    _itemIdCounter++;
+    setBatchItems(prev => [...prev, {
+      id: `bi_${_itemIdCounter}`,
+      productSearch: "",
+      selectedProduct: null,
+      quantity: 0,
+      unitCost: null,
+      notes: "",
+      showDropdown: false,
+    }]);
+  }
+
+  function removeBatchItem(id: string) {
+    setBatchItems(prev => prev.filter(i => i.id !== id));
+  }
+
+  function updateBatchItem(id: string, updates: Partial<BatchFormItem>) {
+    setBatchItems(prev => prev.map(i => i.id === id ? { ...i, ...updates } : i));
+  }
+
+  function selectProductForItem(itemId: string, product: Product) {
+    updateBatchItem(itemId, {
+      selectedProduct: product,
+      productSearch: product.name,
+      showDropdown: false,
+    });
+  }
+
+  async function submitBatch(e: React.FormEvent) {
+    e.preventDefault();
+    const validItems = batchItems.filter(i => i.selectedProduct && i.quantity > 0);
+    if (validItems.length === 0) { alert("Agrega al menos un producto con cantidad válida"); return; }
+    setSubmitting(true);
+    try {
+      const payload: CreateBatchPayload = {
+        movement_type: batchType,
+        supplier_id: batchType === "entrada" && batchSupplierId ? batchSupplierId : null,
+        notes: batchNotes || null,
+        items: validItems.map(i => ({
+          product_id: i.selectedProduct!.id,
+          quantity: i.quantity,
+          unit_cost: i.unitCost ?? null,
+          notes: i.notes || null,
+        })),
+      };
+      await inventoryApi.batchCreate(payload);
+      setBatchModalOpen(false);
+      setBatchType("entrada");
+      setBatchSupplierId("");
+      setBatchNotes("");
+      setBatchItems([]);
+      cacheClear("inventory");
+      setRefreshKey(k => k + 1);
+    } catch {
+      alert("Error al registrar movimiento agrupado");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function openBatchDetail(batch: BatchResponse) {
+    try {
+      const detail = await inventoryApi.batchGetById(batch.id);
+      setBatchDetail(detail);
+    } catch {
+      alert("Error al cargar detalle");
+    }
+  }
+
   return (
     <div className={styles.page}>
       <header className={styles.header}>
-        <div>
-          <h1 className={styles.h1}>Inventario</h1>
-          <p className={styles.subtitle}>Control de stock en tiempo real</p>
+        <div className={styles.headerRow}>
+          <div>
+            <h1 className={styles.h1}>Inventario</h1>
+            <p className={styles.subtitle}>Control de stock en tiempo real</p>
+          </div>
+          <button onClick={() => setBatchModalOpen(true)} className={styles.primaryBtnSmall}>
+            Nuevo movimiento agrupado
+          </button>
         </div>
       </header>
 
@@ -317,6 +434,72 @@ export default function Inventory() {
         </div>
       </section>
 
+      <section className={styles.movementSection}>
+        <h2 className={styles.movementSectionTitle}>Historial de movimientos agrupados</h2>
+        <div className={styles.tableCard}>
+          <table className={styles.table}>
+            <thead>
+              <tr>
+                <th className={styles.thLeft}>Fecha</th>
+                <th className={styles.thLeft}>Tipo</th>
+                <th className={styles.thLeft}>Proveedor</th>
+                <th className={styles.thRight}>Items</th>
+                <th className={styles.thRight}>Total unidades</th>
+                <th className={styles.thAction}></th>
+              </tr>
+            </thead>
+            <tbody>
+              {batches.length > 0 ? (
+                batches.map((b) => (
+                  <tr key={b.id} className={styles.movementRow} onClick={() => openBatchDetail(b)}>
+                    <td className={styles.tdProduct}>
+                      {new Date(b.created_at).toLocaleString("es-MX", {
+                        day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit",
+                      })}
+                    </td>
+                    <td className={styles.tdLeft}>
+                      <span className={`${styles.movementBadge} ${styles[`movement_${b.movement_type}`] ?? ""}`}>
+                        {b.movement_type === "entrada" && " Entrada"}
+                        {b.movement_type === "salida" && " Salida"}
+                        {b.movement_type === "ajuste" && " Ajuste"}
+                      </span>
+                    </td>
+                    <td className={styles.tdLeft}>{b.supplier_name ?? "—"}</td>
+                    <td className={styles.tdRight}>{b.total_items}</td>
+                    <td className={styles.tdRight}>{b.total_quantity}</td>
+                    <td className={styles.tdActions}><Eye size={14} className={styles.eyeIcon} /></td>
+                  </tr>
+                ))
+              ) : (
+                <tr><td colSpan={6} className={styles.empty}>Sin movimientos agrupados</td></tr>
+              )}
+            </tbody>
+          </table>
+
+          {batchesTotal > BATCH_LIMIT && (
+            <div className={styles.pagination}>
+              <button
+                onClick={() => setBatchPage(p => Math.max(1, p - 1))}
+                disabled={batchPage <= 1}
+                className={styles.pageBtn}
+              ><ChevronLeft size={16} /></button>
+              {Array.from({ length: Math.ceil(batchesTotal / BATCH_LIMIT) }, (_, i) => i + 1).map(n => (
+                <button
+                  key={n}
+                  onClick={() => setBatchPage(n)}
+                  className={`${styles.pageBtn} ${n === batchPage ? styles.pageActive : ""}`}
+                >{n}</button>
+              ))}
+              <button
+                onClick={() => setBatchPage(p => Math.min(Math.ceil(batchesTotal / BATCH_LIMIT), p + 1))}
+                disabled={batchPage >= Math.ceil(batchesTotal / BATCH_LIMIT)}
+                className={styles.pageBtn}
+              ><ChevronRight size={16} /></button>
+            </div>
+          )}
+        </div>
+      </section>
+
       {adjust && (
         <div className={styles.overlay} onClick={() => setAdjust(null)}>
           <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
@@ -423,6 +606,218 @@ export default function Inventory() {
           </div>
         </div>
       )}
+
+      {batchModalOpen && (
+        <div className={styles.overlay} onClick={() => { if (!submitting) setBatchModalOpen(false); }}>
+          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.modalHeader}>
+              <h2 className={styles.modalTitle}>Movimiento agrupado</h2>
+              <button onClick={() => setBatchModalOpen(false)} className={styles.modalClose} disabled={submitting}>
+                <X size={18} />
+              </button>
+            </div>
+
+            <form onSubmit={submitBatch} className={styles.modalForm}>
+              <div className={styles.field}>
+                <label className={styles.fieldLabel}>Tipo de movimiento</label>
+                <select value={batchType} onChange={(e) => setBatchType(e.target.value as any)} className={styles.select}>
+                  <option value="entrada">Entrada (compra)</option>
+                  <option value="salida">Salida (merma)</option>
+                  <option value="ajuste">Ajuste</option>
+                </select>
+              </div>
+
+              {batchType === "entrada" && (
+                <div className={styles.field}>
+                  <label className={styles.fieldLabel}>Proveedor</label>
+                  <select value={batchSupplierId} onChange={(e) => setBatchSupplierId(e.target.value)} className={styles.select}>
+                    <option value="">Sin proveedor</option>
+                    {suppliers.map((s) => (
+                      <option key={s.id} value={s.id}>{s.name}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              <div className={styles.field}>
+                <label className={styles.fieldLabel}>Notas generales (opcional)</label>
+                <textarea
+                  value={batchNotes}
+                  onChange={(e) => setBatchNotes(e.target.value)}
+                  placeholder="Notas del movimiento"
+                  className={styles.formTextarea}
+                  rows={3}
+                />
+              </div>
+
+              <div className={styles.field}>
+                <label className={styles.fieldLabel}>Productos</label>
+                <div className={styles.batchFormItems}>
+                  {batchItems.map((item) => (
+                    <div key={item.id} className={styles.batchFormItem}>
+                      <div className={styles.batchFormItemRow}>
+                        <div className={styles.batchFormSearchWrap}>
+                          <input
+                            value={item.productSearch}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              updateBatchItem(item.id, { productSearch: val, selectedProduct: null, showDropdown: true });
+                            }}
+                            onBlur={() => setTimeout(() => updateBatchItem(item.id, { showDropdown: false }), 200)}
+                            placeholder="Buscar producto…"
+                            className={styles.batchFormSearchInput}
+                          />
+                          {item.showDropdown && item.productSearch && (
+                            <div className={styles.batchDropdown}>
+                              {searchProducts(item.productSearch).map((p) => (
+                                <button
+                                  key={p.id}
+                                  type="button"
+                                  onMouseDown={(e) => e.preventDefault()}
+                                  onClick={() => selectProductForItem(item.id, p)}
+                                  className={styles.batchDropdownItem}
+                                >
+                                  <span>{p.name}</span>
+                                  <span className={styles.batchDropdownStock}>Stock: {p.stock}</span>
+                                </button>
+                              ))}
+                              {searchProducts(item.productSearch).length === 0 && (
+                                <div className={styles.batchDropdownEmpty}>Sin resultados</div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                        <input
+                          type="number" min={1} value={item.quantity || ""}
+                          onChange={(e) => updateBatchItem(item.id, { quantity: Math.max(0, Number(e.target.value)) })}
+                          placeholder="Cant."
+                          className={styles.batchFormQtyInput}
+                        />
+                        <input
+                          type="number" min={0} step={0.01}
+                          value={item.unitCost ?? ""}
+                          onChange={(e) => updateBatchItem(item.id, { unitCost: e.target.value ? Number(e.target.value) : null })}
+                          placeholder="Costo"
+                          className={styles.batchFormCostInput}
+                        />
+                        <button type="button" onClick={() => removeBatchItem(item.id)} className={styles.batchFormRemove}>
+                          <X size={16} />
+                        </button>
+                      </div>
+                      <input
+                        value={item.notes}
+                        onChange={(e) => updateBatchItem(item.id, { notes: e.target.value })}
+                        placeholder="Notas del producto (opcional)"
+                        className={styles.batchFormNotesInput}
+                      />
+                    </div>
+                  ))}
+                </div>
+                <button type="button" onClick={addBatchItem} className={styles.outlineBtn}>
+                  + Agregar producto
+                </button>
+              </div>
+
+              {batchItems.filter(i => i.selectedProduct).length > 0 && (
+                <div className={styles.batchSummary}>
+                  <div className={styles.batchSummaryTitle}>Resumen</div>
+                  <div className={styles.batchSummaryGrid}>
+                    <div className={styles.batchSummaryItem}>
+                      <span className={styles.batchSummaryLabel}>Productos</span>
+                      <span className={styles.batchSummaryValue}>{batchItems.filter(i => i.selectedProduct).length}</span>
+                    </div>
+                    <div className={styles.batchSummaryItem}>
+                      <span className={styles.batchSummaryLabel}>Total unidades</span>
+                      <span className={styles.batchSummaryValue}>
+                        {batchItems.reduce((sum, i) => sum + (i.quantity || 0), 0)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <button type="submit" className={styles.primaryBtn} disabled={submitting}>
+                {submitting ? "Registrando…" : "Registrar movimiento agrupado"}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {batchDetail && (
+        <div className={styles.overlayCenter} onClick={() => setBatchDetail(null)}>
+          <div className={styles.detailModal} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.modalHeader}>
+              <h2 className={styles.modalTitle}>Detalle del movimiento agrupado</h2>
+              <button onClick={() => setBatchDetail(null)} className={styles.modalClose}>
+                <X size={18} />
+              </button>
+            </div>
+            <div className={styles.detailBody}>
+              <div className={styles.detailField}>
+                <span className={styles.detailLabel}>Tipo</span>
+                <span className={`${styles.movementBadge} ${styles[`movement_${batchDetail.movement_type}`] ?? ""}`}>
+                  {batchDetail.movement_type === "entrada" && <ArrowDownRight size={14} />}
+                  {batchDetail.movement_type === "salida" && <ArrowUpRight size={14} />}
+                  {batchDetail.movement_type === "ajuste" && <RefreshCw size={14} />}
+                  {batchDetail.movement_type === "entrada" && " Entrada"}
+                  {batchDetail.movement_type === "salida" && " Salida"}
+                  {batchDetail.movement_type === "ajuste" && " Ajuste"}
+                </span>
+              </div>
+              {batchDetail.supplier_name && (
+                <div className={styles.detailField}>
+                  <span className={styles.detailLabel}>Proveedor</span>
+                  <span className={styles.detailValue}>{batchDetail.supplier_name}</span>
+                </div>
+              )}
+              {batchDetail.user_name && (
+                <div className={styles.detailField}>
+                  <span className={styles.detailLabel}>Usuario</span>
+                  <span className={styles.detailValue}>{batchDetail.user_name}</span>
+                </div>
+              )}
+              <div className={styles.detailField}>
+                <span className={styles.detailLabel}>Fecha</span>
+                <span className={styles.detailValue}>{new Date(batchDetail.created_at).toLocaleString("es-MX")}</span>
+              </div>
+              {batchDetail.notes && (
+                <div className={styles.detailField}>
+                  <span className={styles.detailLabel}>Notas</span>
+                  <p className={styles.detailNote}>{batchDetail.notes}</p>
+                </div>
+              )}
+
+              <div className={styles.detailField}>
+                <span className={styles.detailLabel}>Productos ({batchDetail.total_items})</span>
+                <table className={styles.batchDetailTable}>
+                  <thead>
+                    <tr>
+                      <th>Producto</th>
+                      <th className={styles.thRight}>Cantidad</th>
+                      <th className={styles.thRight}>Costo unit.</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(batchDetail.items ?? []).map((item) => (
+                      <tr key={item.id}>
+                        <td>{item.product_name ?? "—"}</td>
+                        <td className={styles.tdRight}>{item.quantity}</td>
+                        <td className={styles.tdRight}>{item.unit_cost != null ? `$${Number(item.unit_cost).toFixed(2)}` : "—"}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              <p className={styles.batchDetailHint}>
+                Los movimientos individuales de este lote están disponibles en el historial general.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }

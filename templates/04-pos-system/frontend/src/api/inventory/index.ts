@@ -1,10 +1,6 @@
 import { api } from "../client";
 import type { Product } from "../products";
 
-// ---------------------------------------------------------------------------
-// Tipos
-// ---------------------------------------------------------------------------
-
 export interface InventoryMovement {
   id: string;
   product_id: string;
@@ -13,6 +9,7 @@ export interface InventoryMovement {
   quantity: number;
   note?: string;
   user_id: string;
+  batch_id?: string;
   created_at: string;
 }
 
@@ -35,9 +32,35 @@ export interface LowStockResponse {
   products: LowStockProduct[];
 }
 
-// ---------------------------------------------------------------------------
-// Payloads
-// ---------------------------------------------------------------------------
+export interface BatchItemResponse {
+  id: string;
+  product_id: string;
+  product_name?: string;
+  quantity: number;
+  unit_cost?: number | null;
+  notes?: string | null;
+}
+
+export interface BatchResponse {
+  id: string;
+  movement_type: string;
+  supplier_id?: string | null;
+  supplier_name?: string;
+  notes?: string | null;
+  user_id: string;
+  user_name?: string;
+  items?: BatchItemResponse[];
+  total_items: number;
+  total_quantity: number;
+  created_at: string;
+}
+
+export interface BatchListResponse {
+  batches: BatchResponse[];
+  total: number;
+  page: number;
+  limit: number;
+}
 
 export interface CreateMovementPayload {
   product_id: string;
@@ -46,9 +69,19 @@ export interface CreateMovementPayload {
   note?: string;
 }
 
-// ---------------------------------------------------------------------------
-// Endpoints
-// ---------------------------------------------------------------------------
+export interface CreateBatchItemPayload {
+  product_id: string;
+  quantity: number;
+  unit_cost?: number | null;
+  notes?: string | null;
+}
+
+export interface CreateBatchPayload {
+  movement_type: "entrada" | "salida" | "ajuste";
+  supplier_id?: string | null;
+  notes?: string | null;
+  items: CreateBatchItemPayload[];
+}
 
 export const inventoryApi = {
   list: (params?: {
@@ -66,4 +99,17 @@ export const inventoryApi = {
 
   lowStock: () =>
     api.get<LowStockResponse>("/inventory/low-stock"),
+
+  batchList: (params?: {
+    movement_type?: string;
+    supplier_id?: string;
+    page?: number;
+    limit?: number;
+  }) => api.get<BatchListResponse>("/inventory/batches", params as Record<string, string | number | boolean | undefined>),
+
+  batchGetById: (id: string) =>
+    api.get<BatchResponse>(`/inventory/batches/${id}`),
+
+  batchCreate: (data: CreateBatchPayload) =>
+    api.post<BatchResponse>("/inventory/batches", data),
 };
