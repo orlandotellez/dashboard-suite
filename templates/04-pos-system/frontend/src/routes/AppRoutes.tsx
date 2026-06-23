@@ -6,6 +6,7 @@ import Products from "@/pages/Products";
 import Inventory from "@/pages/Inventory";
 import Reports from "@/pages/Reports";
 import Settings from "@/pages/Settings";
+import Users from "@/pages/Users";
 import { NotFound } from "@/pages/NotFound";
 
 export function AppRoutes() {
@@ -19,6 +20,7 @@ export function AppRoutes() {
         <Route path="/inventory" element={<Inventory />} />
         <Route path="/reports" element={<Reports />} />
         <Route path="/settings" element={<Settings />} />
+        <Route path="/users" element={<Users />} />
         <Route path="*" element={<NotFound />} />
       </Route>
     </Routes>

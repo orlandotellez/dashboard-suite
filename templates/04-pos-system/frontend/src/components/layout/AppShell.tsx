@@ -1,11 +1,11 @@
 import { Link, useLocation } from "react-router-dom";
 import type { ReactNode } from "react";
-import { ScanBarcode, Package, BarChart3, Settings, Boxes, LogOut, Moon, Sun } from "lucide-react";
+import { ScanBarcode, Package, BarChart3, Settings, Boxes, Users, LogOut, Moon, Sun } from "lucide-react";
 import { useTheme } from "@/context/ThemeContext";
 import { useAuth } from "@/context/AuthContext";
 import styles from "./AppShell.module.css";
 
-const navItems = [
+const sharedNavItems = [
   { to: "/pos", label: "Venta", icon: ScanBarcode },
   { to: "/products", label: "Productos", icon: Package },
   { to: "/inventory", label: "Inventario", icon: Boxes },
@@ -13,11 +13,18 @@ const navItems = [
   { to: "/settings", label: "Ajustes", icon: Settings },
 ];
 
+const adminNavItems = [
+  { to: "/users", label: "Usuarios", icon: Users },
+];
+
 export function AppShell({ children }: { children: ReactNode }) {
   const { theme, toggle } = useTheme();
   const { user, logout } = useAuth();
   const location = useLocation();
   const pathname = location.pathname;
+  const isAdmin = user?.role === "admin";
+
+  const navItems = isAdmin ? [...sharedNavItems, ...adminNavItems] : sharedNavItems;
 
   return (
     <div className={styles.shell}>
@@ -25,7 +32,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       <aside className={styles.sidebar}>
         <div className={styles.logo}>
           <div className={styles.logoText}>Caja</div>
-          <div className={styles.logoRole}>Administrador</div>
+          <div className={styles.logoRole}>{user?.role === "admin" ? "Administrador" : "Cajero"}</div>
         </div>
         <nav className={styles.nav}>
           {navItems.map((it) => {

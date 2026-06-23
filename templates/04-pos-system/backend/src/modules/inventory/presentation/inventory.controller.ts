@@ -10,7 +10,7 @@ const inventoryService = createInventoryService(InventoryRepository, ProductRepo
 
 export const inventoryController = {
   createMovement: async (request: FastifyRequest, reply: FastifyReply) => {
-    const userId = getUserIdFromCookies(request)
+    const { userId } = getUserIdFromCookies(request)
     if (!userId) throw new UnauthorizedError("Authentication required")
 
     const data = CreateMovementDtoSchema.parse(request.body)

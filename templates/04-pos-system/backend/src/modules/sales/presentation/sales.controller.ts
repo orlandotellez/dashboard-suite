@@ -9,7 +9,7 @@ const saleService = createSaleService(SaleRepository)
 
 export const salesController = {
   create: async (request: FastifyRequest, reply: FastifyReply) => {
-    const userId = getUserIdFromCookies(request)
+    const { userId } = getUserIdFromCookies(request)
     if (!userId) throw new UnauthorizedError("Authentication required")
 
     const data = CreateSaleDtoSchema.parse(request.body)
