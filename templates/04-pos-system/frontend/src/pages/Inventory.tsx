@@ -43,10 +43,9 @@ export default function Inventory() {
       setProducts(cached.products);
       setTotal(cached.total);
       setLowStockProducts(cached.lowStock);
-      setLoading(false);
-    } else {
-      setLoading(true);
     }
+
+    setLoading(!cached);
 
     try {
       const [productRes, lowStockRes] = await Promise.all([

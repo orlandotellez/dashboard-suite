@@ -22,7 +22,6 @@ export default function Pos() {
   const [storeFooter, setStoreFooter] = useState("");
   const [showResults, setShowResults] = useState(false);
 
-  // Cargar productos del backend al montar
   useEffect(() => {
     productsApi.list({ active: true, limit: 100 })
       .then((res) => setProducts(res.products))
@@ -38,7 +37,6 @@ export default function Pos() {
 
   useEffect(() => { scanRef.current?.focus(); }, []);
 
-  // Cerrar resultados al hacer click fuera
   useEffect(() => {
     function handleClick(e: MouseEvent) {
       if (searchWrapperRef.current && !searchWrapperRef.current.contains(e.target as Node)) {
@@ -49,7 +47,6 @@ export default function Pos() {
     return () => document.removeEventListener("mousedown", handleClick);
   }, []);
 
-  // Filtrar productos en vivo según el texto de búsqueda
   const searchResults = useMemo(() => {
     const term = scan.trim().toLowerCase();
     if (!term) return [];
@@ -81,7 +78,6 @@ export default function Pos() {
     const term = scan.trim();
     if (!term) return;
 
-    // Si hay resultados visibles, agregar el primero
     if (searchResults.length > 0) {
       addToCart(searchResults[0]);
       return;

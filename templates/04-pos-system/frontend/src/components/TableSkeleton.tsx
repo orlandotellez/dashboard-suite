@@ -1,10 +1,3 @@
-// ---------------------------------------------------------------------------
-// TableSkeleton — pulsing rows that match exact column layout
-// ---------------------------------------------------------------------------
-// Cada columna se define con { width, align? } para que el skeleton se vea
-// idéntico a la tabla real. Evita que la tabla "desaparezca" al recargar.
-// ---------------------------------------------------------------------------
-
 import s from "./Skeleton.module.css";
 
 export interface SkeletonCol {

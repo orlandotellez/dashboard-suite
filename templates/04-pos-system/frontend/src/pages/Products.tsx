@@ -29,11 +29,7 @@ export default function Products() {
     return cached ?? [];
   });
   const [categories, setCategories] = useState<Category[]>([]);
-  const [total, setTotal] = useState(() => {
-    // Keep old total when coming from cache — we don't cache it separately
-    // so it'll be 0 initially, but that's fine since it gets overwritten
-    return 0;
-  });
+  const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [q, setQ] = useState("");
   const [loading, setLoading] = useState(true);
@@ -55,21 +51,18 @@ export default function Products() {
   const searchRef = useRef(q);
   searchRef.current = q;
 
-  // Fetch products con cache + stale-while-revalidate
   useEffect(() => {
+    const key = cacheKey("products", page, q);
+    const cached = cacheGet<{ products: Product[]; total: number }>(key);
+
+    if (cached) {
+      setProducts(cached.products);
+      setTotal(cached.total);
+    }
+
+    setLoading(!cached);
+
     const timer = setTimeout(() => {
-      const key = cacheKey("products", page, q);
-      const cached = cacheGet<{ products: Product[]; total: number }>(key);
-
-      // Cache hit → mostrar al instante, refrescar en background
-      if (cached) {
-        setProducts(cached.products);
-        setTotal(cached.total);
-        setLoading(false);
-      } else {
-        setLoading(true);
-      }
-
       productsApi.list({
         page,
         limit: LIMIT,

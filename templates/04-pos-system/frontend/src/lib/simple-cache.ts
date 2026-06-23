@@ -1,27 +1,14 @@
-// ---------------------------------------------------------------------------
-// Simple module-level data cache with TTL
-// ---------------------------------------------------------------------------
-// Las páginas se montan/desmontan al navegar, pero este módulo vive en memoria
-// toda la sesión. Así podemos saltarnos el fetch inicial si ya tenemos datos.
-// ---------------------------------------------------------------------------
+const _store = new Map<string, { data: unknown }>();
 
-const _store = new Map<string, { data: unknown; ts: number }>();
-const DEFAULT_TTL = 60_000; // 1 minuto
-
-/** Obtener del cache. Devuelve null si no existe o expiró. */
+/** Obtener del cache. Devuelve null si nunca se pidió esta key. */
 export function cacheGet<T>(key: string): T | null {
   const entry = _store.get(key);
-  if (!entry) return null;
-  if (Date.now() - entry.ts > DEFAULT_TTL) {
-    _store.delete(key);
-    return null;
-  }
-  return entry.data as T;
+  return entry ? (entry.data as T) : null;
 }
 
 /** Guardar en cache. */
 export function cacheSet(key: string, data: unknown): void {
-  _store.set(key, { data, ts: Date.now() });
+  _store.set(key, { data });
 }
 
 /** Invalidar cache completo o por prefijo (ej: "products."). */

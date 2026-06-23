@@ -40,7 +40,6 @@ export default function Reports() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    setLoading(true);
     const start = rangeStart(range).toISOString();
     const end = rangeEnd(range).toISOString();
     const key = cacheKey("reports", range);
@@ -49,8 +48,9 @@ export default function Reports() {
     if (cached) {
       setReport(cached.report);
       setSales(cached.sales);
-      setLoading(false);
     }
+
+    setLoading(!cached);
 
     Promise.all([
       salesApi.report({ start_date: start, end_date: end }),
@@ -69,7 +69,6 @@ export default function Reports() {
 
   const hasData = report !== null;
 
-  // if loading first time with no cached data, return minimal skeleton layout
   if (loading && !hasData) {
     return (
       <div className={styles.page}>
