@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Plus, Search, Pencil, Trash2, ChevronLeft, ChevronRight, X, Shield, ShieldOff } from "lucide-react";
 import { usersApi, type UserResponse } from "@/api/users";
+import TableSkeleton, { type SkeletonCol } from "@/components/TableSkeleton";
 import { useAuth } from "@/context/AuthContext";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import styles from "./Users.module.css";
@@ -26,6 +27,14 @@ export default function Users() {
 
   const LIMIT = 10;
   const totalPages = Math.max(1, Math.ceil(total / LIMIT));
+
+  const SKELETON_COLS: SkeletonCol[] = [
+    { width: "35%" },
+    { width: "35%" },
+    { width: "15%" },
+    { width: "10%", align: "right" },
+    { width: "5%", align: "center" },
+  ];
 
   const fetchUsers = async (p: number, search: string) => {
     setLoading(true);
@@ -156,7 +165,9 @@ export default function Users() {
                 </tr>
               ))
             ) : loading ? (
-              <tr><td colSpan={5} className={styles.empty}>Cargando…</td></tr>
+              <>
+                <TableSkeleton cols={SKELETON_COLS} rows={5} />
+              </>
             ) : (
               <tr><td colSpan={5} className={styles.empty}>Sin usuarios</td></tr>
             )}
