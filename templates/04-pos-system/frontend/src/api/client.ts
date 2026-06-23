@@ -5,13 +5,26 @@ export class ApiError extends Error {
   data: unknown;
 
   constructor(status: number, data: unknown) {
-    super(typeof data === "object" && data !== null && "message" in data
-      ? String((data as { message: string }).message)
-      : `HTTP ${status}`);
+    const message = extractErrorMessage(data) ?? `HTTP ${status}`;
+    super(message);
     this.name = "ApiError";
     this.status = status;
     this.data = data;
   }
+}
+
+function extractErrorMessage(data: unknown): string | null {
+  if (typeof data === "object" && data !== null) {
+    // Object with message field
+    if ("message" in data && typeof (data as Record<string, unknown>).message === "string") {
+      return (data as Record<string, unknown>).message as string;
+    }
+    // Array of Zod errors — grab first message
+    if (Array.isArray(data) && data.length > 0 && "message" in data[0]) {
+      return String(data[0].message);
+    }
+  }
+  return null;
 }
 
 async function request<T>(

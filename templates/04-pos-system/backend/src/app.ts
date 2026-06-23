@@ -4,6 +4,8 @@ import cors from "@fastify/cors"
 import compress from "@fastify/compress"
 import cookie from "@fastify/cookie"
 import rateLimit from "@fastify/rate-limit"
+import { ZodError } from "zod"
+import { AppError } from "./core/errors/AppError"
 import { env } from "./config/env"
 import { getRedisClient } from "./config/redis"
 import { routes } from "./presentation/routes"
@@ -45,6 +47,28 @@ export const buildApp = async () => {
   })
 
   await app.register(cookie)
+
+  // ─── Global error handler ───
+  app.setErrorHandler((error, _request, reply) => {
+    if (error instanceof ZodError) {
+      const first = error.errors[0]
+      return reply.status(400).send({
+        message: first?.message ?? "Datos inválidos"
+      })
+    }
+
+    if (error instanceof AppError) {
+      return reply.status(error.statusCode).send({
+        message: error.message
+      })
+    }
+
+    // Unknown errors — log and return generic message
+    app.log.error(error)
+    return reply.status(500).send({
+      message: "Error interno del servidor"
+    })
+  })
 
   app.register(routes, { prefix: '/api/v1' });
 
