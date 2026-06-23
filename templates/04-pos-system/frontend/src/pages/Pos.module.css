@@ -400,6 +400,10 @@
   color: var(--foreground);
 }
 
+.changeNegative {
+  color: var(--destructive);
+}
+
 .checkoutBtn {
   margin-top: 24px;
   width: 100%;

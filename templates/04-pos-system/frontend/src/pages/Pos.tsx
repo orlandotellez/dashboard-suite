@@ -93,6 +93,13 @@ export default function Pos() {
 
   async function checkout() {
     if (!cart.length || checkingOut) return;
+
+    if (payment === "efectivo" && Number(received || 0) < totals.total) {
+      alert(`El monto recibido ($${money(Number(received || 0))}) es menor al total ($${money(totals.total)}).`);
+      setCheckingOut(false);
+      return;
+    }
+
     setCheckingOut(true);
 
     try {
@@ -255,7 +262,12 @@ export default function Pos() {
               </div>
               <div className={styles.changeRow}>
                 <span className={styles.changeLabel}>Cambio</span>
-                <span className={styles.changeValue}>{money(totals.change)}</span>
+                <span className={`${styles.changeValue} ${payment === "efectivo" && received && Number(received) < totals.total ? styles.changeNegative : ""}`}>
+                  {payment === "efectivo" && received && Number(received) < totals.total
+                    ? `−$${money(totals.total - Number(received))}`
+                    : money(totals.change)
+                  }
+                </span>
               </div>
             </>
           )}
@@ -263,7 +275,7 @@ export default function Pos() {
 
         <button
           onClick={checkout}
-          disabled={cart.length === 0}
+          disabled={cart.length === 0 || (payment === "efectivo" && received !== "" && Number(received || 0) < totals.total)}
           className={styles.checkoutBtn}
         >
           Cobrar
