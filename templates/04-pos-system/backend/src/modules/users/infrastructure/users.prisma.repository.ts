@@ -70,7 +70,7 @@ export const UserRepository: IUserRepository = {
 
   async findByEmail(email: string) {
     const user = await prisma.user.findFirst({
-      where: { email, deleted_at: null },
+      where: { email },
       select: userSelect,
     })
     return user ? mapToEntity(user) : null
@@ -85,6 +85,17 @@ export const UserRepository: IUserRepository = {
       },
       select: userSelect,
     })
+
+    // Store credentials in the account table so login works
+    await prisma.account.create({
+      data: {
+        account_id: user.id,
+        provider_id: "credentials",
+        user_id: user.id,
+        password,
+      },
+    })
+
     return mapToEntity(user)
   },
 
