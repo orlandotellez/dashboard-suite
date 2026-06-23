@@ -12,6 +12,20 @@ enum ROLE {
   cajero
 }
 
+enum UNIT_TYPE {
+  unidad
+  paquete
+  caja
+  bolsa
+  botella
+  lata
+  sobre
+  barra
+  rollo
+  galon
+  ristra
+}
+
 model user {
   id             String    @id @default(uuid())
   name           String
@@ -29,6 +43,7 @@ model user {
   accounts            account[]
   sales               sale[]
   inventory_movements inventory_movement[]
+  inventory_batches   inventory_batch[]
 
   @@index([email])
   @@index([role])
@@ -105,13 +120,36 @@ model category {
   @@map("categories")
 }
 
+model supplier {
+  id           String    @id @default(uuid())
+  name         String
+  contact_name String?   @map("contact_name")
+  email        String?
+  phone        String?
+  address      String?
+  notes        String?
+  is_active    Boolean   @default(true) @map("is_active")
+
+  created_at   DateTime  @default(now()) @db.Timestamptz
+  updated_at   DateTime  @updatedAt @db.Timestamptz
+  deleted_at   DateTime? @db.Timestamptz
+
+  products            product[]
+  inventory_batches   inventory_batch[]
+
+  @@index([name])
+  @@index([is_active])
+  @@map("suppliers")
+}
+
 model product {
   id                  String    @id @default(uuid())
   barcode             String?
   name                String
-  unit_type           String?
+  unit_type           UNIT_TYPE?
   unit_quantity       Int?
   category_id         String?
+  supplier_id         String?
   price               Decimal   @db.Decimal(10, 2)
   cost                Decimal   @default(0) @db.Decimal(10, 2)
   tax_rate            Decimal   @default(0) @db.Decimal(10, 2)
@@ -124,12 +162,15 @@ model product {
   deleted_at          DateTime? @db.Timestamptz
 
   category            category? @relation(fields: [category_id], references: [id])
+  supplier            supplier? @relation(fields: [supplier_id], references: [id])
   sale_items          sale_item[]
   inventory_movements inventory_movement[]
+  inventory_batch_items inventory_batch_item[]
 
   @@index([barcode])
   @@index([name])
   @@index([category_id])
+  @@index([supplier_id])
   @@index([active])
   @@map("products")
 }
@@ -178,22 +219,63 @@ model sale_item {
   @@map("sale_items")
 }
 
+model inventory_batch {
+  id            String   @id @default(uuid())
+  movement_type String   // "entrada" | "salida" | "ajuste"
+  supplier_id   String?
+  notes         String?
+  user_id       String
+
+  created_at    DateTime @default(now()) @db.Timestamptz
+
+  supplier      supplier?                       @relation(fields: [supplier_id], references: [id])
+  user          user                            @relation(fields: [user_id], references: [id])
+  items         inventory_batch_item[]
+  movements     inventory_movement[]
+
+  @@index([movement_type])
+  @@index([supplier_id])
+  @@index([created_at])
+  @@map("inventory_batches")
+}
+
+model inventory_batch_item {
+  id              String   @id @default(uuid())
+  batch_id        String
+  product_id      String
+  quantity        Int
+  unit_cost       Decimal? @db.Decimal(10, 2)
+  notes           String?
+
+  created_at      DateTime @default(now()) @db.Timestamptz
+
+  batch           inventory_batch @relation(fields: [batch_id], references: [id], onDelete: Cascade)
+  product         product         @relation(fields: [product_id], references: [id])
+
+  @@index([batch_id])
+  @@index([product_id])
+  @@map("inventory_batch_items")
+}
+
 model inventory_movement {
   id            String   @id @default(uuid())
   product_id    String
   movement_type String   // "entrada" | "salida" | "ajuste" | "venta"
   quantity      Int
   note          String?
+  batch_id      String?
 
   user_id       String
 
   created_at    DateTime @default(now()) @db.Timestamptz
 
-  product       product  @relation(fields: [product_id], references: [id])
-  user          user     @relation(fields: [user_id], references: [id])
+  product       product           @relation(fields: [product_id], references: [id])
+  user          user              @relation(fields: [user_id], references: [id])
+  batch         inventory_batch?  @relation(fields: [batch_id], references: [id])
 
   @@index([product_id])
   @@index([movement_type])
+  @@index([batch_id])
   @@index([created_at])
   @@map("inventory_movements")
 }
