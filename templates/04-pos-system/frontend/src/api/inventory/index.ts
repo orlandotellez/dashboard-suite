@@ -8,6 +8,7 @@ import type { Product } from "../products";
 export interface InventoryMovement {
   id: string;
   product_id: string;
+  product_name?: string;
   movement_type: string;
   quantity: number;
   note?: string;

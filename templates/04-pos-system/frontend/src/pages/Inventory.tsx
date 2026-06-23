@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from "react";
-import { Search, AlertTriangle, X, ChevronLeft, ChevronRight } from "lucide-react";
+import { Search, AlertTriangle, X, ChevronLeft, ChevronRight, ArrowDownRight, ArrowUpRight, RefreshCw } from "lucide-react";
 import { productsApi, type Product } from "@/api/products";
 import { categoriesApi, type Category } from "@/api/categories";
-import { inventoryApi, type LowStockProduct } from "@/api/inventory";
+import { inventoryApi, type InventoryMovement, type LowStockProduct } from "@/api/inventory";
 import { cacheGet, cacheSet, cacheClear, cacheKey } from "@/lib/simple-cache";
 import TableSkeleton from "@/components/TableSkeleton";
 import styles from "./Inventory.module.css";
@@ -40,7 +40,14 @@ export default function Inventory() {
   const [note, setNote] = useState("");
   const [refreshKey, setRefreshKey] = useState(0);
 
+  // Movement history
+  const [movements, setMovements] = useState<InventoryMovement[]>([]);
+  const [movementsTotal, setMovementsTotal] = useState(0);
+  const [movementPage, setMovementPage] = useState(1);
+  const MOVEMENT_LIMIT = 10;
+
   const totalPages = Math.max(1, Math.ceil(total / LIMIT));
+  const movementsTotalPages = Math.max(1, Math.ceil(movementsTotal / MOVEMENT_LIMIT));
 
   useEffect(() => {
     categoriesApi.list().then(setCategories).catch(() => {});
@@ -76,6 +83,14 @@ export default function Inventory() {
 
     return () => clearTimeout(timer);
   }, [page, q, categoryId, refreshKey]);
+
+  // ─── Fetch movement history ───
+  useEffect(() => {
+    inventoryApi.list({ page: movementPage, limit: MOVEMENT_LIMIT }).then((res) => {
+      setMovements(res.movements);
+      setMovementsTotal(res.total);
+    }).catch(() => {});
+  }, [movementPage, refreshKey]);
 
   async function apply() {
     if (!adjust) return;
@@ -213,6 +228,89 @@ export default function Inventory() {
           </div>
         )}
       </div>
+
+      {/* ─── Movement history ─── */}
+      <section className={styles.movementSection}>
+        <h2 className={styles.movementSectionTitle}>Historial de movimientos</h2>
+
+        <div className={styles.tableCard}>
+          <table className={styles.table}>
+            <thead>
+              <tr>
+                <th className={styles.thLeft}>Producto</th>
+                <th className={styles.thLeft}>Tipo</th>
+                <th className={styles.thRight}>Cantidad</th>
+                <th className={styles.thLeft}>Nota</th>
+                <th className={styles.thRight}>Fecha</th>
+              </tr>
+            </thead>
+            <tbody>
+              {movements.length > 0 ? (
+                movements.map((m) => (
+                  <tr key={m.id}>
+                    <td className={styles.tdProduct}>{m.product_name ?? m.product_id.slice(0, 8)}</td>
+                    <td className={styles.tdLeft}>
+                      <span className={`${styles.movementBadge} ${styles[`movement_${m.movement_type}`] ?? ""}`}>
+                        {m.movement_type === "entrada" && <ArrowDownRight size={14} />}
+                        {m.movement_type === "salida" && <ArrowUpRight size={14} />}
+                        {m.movement_type === "ajuste" && <RefreshCw size={14} />}
+                        {m.movement_type === "venta" && <ArrowUpRight size={14} />}
+                        {m.movement_type === "entrada" && " Entrada"}
+                        {m.movement_type === "salida" && " Salida"}
+                        {m.movement_type === "ajuste" && " Ajuste"}
+                        {m.movement_type === "venta" && " Venta"}
+                        {!"entrada|salida|ajuste|venta".includes(m.movement_type) && m.movement_type}
+                      </span>
+                    </td>
+                    <td className={`${styles.tdRight} ${styles.movementQty}`}>
+                      {m.movement_type === "entrada" || m.movement_type === "venta" ? "+" : m.movement_type === "salida" ? "−" : ""}
+                      {m.quantity}
+                    </td>
+                    <td className={styles.tdLeft}>
+                      <span className={styles.movementNote}>{m.note ?? "—"}</span>
+                    </td>
+                    <td className={styles.tdRightMuted}>
+                      {new Date(m.created_at).toLocaleString("es-MX", {
+                        day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit",
+                      })}
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr><td colSpan={5} className={styles.empty}>Sin movimientos</td></tr>
+              )}
+            </tbody>
+          </table>
+
+          {movementsTotalPages > 1 && (
+            <div className={styles.pagination}>
+              <button
+                onClick={() => setMovementPage((p) => Math.max(1, p - 1))}
+                disabled={movementPage <= 1}
+                className={styles.pageBtn}
+              >
+                <ChevronLeft size={16} />
+              </button>
+              {Array.from({ length: movementsTotalPages }, (_, i) => i + 1).map((n) => (
+                <button
+                  key={n}
+                  onClick={() => setMovementPage(n)}
+                  className={`${styles.pageBtn} ${n === movementPage ? styles.pageActive : ""}`}
+                >
+                  {n}
+                </button>
+              ))}
+              <button
+                onClick={() => setMovementPage((p) => Math.min(movementsTotalPages, p + 1))}
+                disabled={movementPage >= movementsTotalPages}
+                className={styles.pageBtn}
+              >
+                <ChevronRight size={16} />
+              </button>
+            </div>
+          )}
+        </div>
+      </section>
 
       {adjust && (
         <div className={styles.overlay} onClick={() => setAdjust(null)}>

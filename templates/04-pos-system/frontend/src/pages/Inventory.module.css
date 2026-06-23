@@ -400,3 +400,61 @@
   color: var(--background);
   border-color: var(--foreground);
 }
+
+/* ─── Movement history ─── */
+.movementSection {
+  margin-top: 32px;
+}
+
+.movementSectionTitle {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--foreground);
+  margin-bottom: 16px;
+}
+
+.tdLeft {
+  padding: 12px 16px;
+  text-align: left;
+  color: var(--foreground);
+}
+
+.movementBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.movement_entrada {
+  background: color-mix(in oklch, var(--success) 12%, transparent);
+  color: var(--success);
+}
+
+.movement_salida {
+  background: color-mix(in oklch, var(--destructive) 12%, transparent);
+  color: var(--destructive);
+}
+
+.movement_ajuste {
+  background: color-mix(in oklch, var(--warning) 12%, transparent);
+  color: var(--warning);
+}
+
+.movement_venta {
+  background: color-mix(in oklch, var(--destructive) 12%, transparent);
+  color: var(--destructive);
+}
+
+.movementQty {
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+}
+
+.movementNote {
+  color: var(--muted-foreground);
+  font-size: 13px;
+}
