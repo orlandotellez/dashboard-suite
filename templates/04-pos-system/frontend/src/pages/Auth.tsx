@@ -1,26 +1,31 @@
 import { useState } from "react";
+import { Navigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { Store, ShoppingCart, Package, BarChart3, Shield } from "lucide-react";
 import styles from "./Auth.module.css";
 
 export default function Auth() {
-  const { login } = useAuth();
+  const { user, loading, login } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+
+  if (!loading && user) {
+    return <Navigate to="/pos" replace />;
+  }
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
-    setLoading(true);
+    setSubmitting(true);
 
     try {
       await login(email, password);
     } catch (err: any) {
       setError(err?.message ?? "Error al conectar con el servidor");
     } finally {
-      setLoading(false);
+      setSubmitting(false);
     }
   }
 
@@ -93,8 +98,8 @@ export default function Auth() {
 
             {error && <p className={styles.error}>{error}</p>}
 
-            <button type="submit" className={styles.button} disabled={loading}>
-              {loading ? "Ingresando…" : "Ingresar"}
+            <button type="submit" className={styles.button} disabled={submitting}>
+              {submitting ? "Ingresando…" : "Ingresar"}
             </button>
           </form>
         </div>

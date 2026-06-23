@@ -26,7 +26,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   });
 
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const initialize = async () => {
+      try {
+        const res = await authApi.refresh();
+        setUser(res.user);
+        localStorage.setItem("auth-user", JSON.stringify(res.user));
+      } catch {
+        setUser(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    initialize();
+  }, []);
 
   useEffect(() => {
     const interval = setInterval(() => {
