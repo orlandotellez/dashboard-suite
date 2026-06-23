@@ -44,6 +44,7 @@ export default function Inventory() {
   const [movements, setMovements] = useState<InventoryMovement[]>([]);
   const [movementsTotal, setMovementsTotal] = useState(0);
   const [movementPage, setMovementPage] = useState(1);
+  const [selectedMovement, setSelectedMovement] = useState<InventoryMovement | null>(null);
   const MOVEMENT_LIMIT = 10;
 
   const totalPages = Math.max(1, Math.ceil(total / LIMIT));
@@ -247,7 +248,7 @@ export default function Inventory() {
             <tbody>
               {movements.length > 0 ? (
                 movements.map((m) => (
-                  <tr key={m.id}>
+                  <tr key={m.id} className={styles.movementRow} onClick={() => setSelectedMovement(m)}>
                     <td className={styles.tdProduct}>{m.product_name ?? "—"}</td>
                     <td className={styles.tdLeft}>
                       <span className={`${styles.movementBadge} ${styles[`movement_${m.movement_type}`] ?? ""}`}>
@@ -364,6 +365,57 @@ export default function Inventory() {
 
               <button type="submit" className={styles.primaryBtn}>Aplicar</button>
             </form>
+          </div>
+        </div>
+      )}
+
+      {selectedMovement && (
+        <div className={styles.overlayCenter} onClick={() => setSelectedMovement(null)}>
+          <div className={styles.detailModal} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.modalHeader}>
+              <h2 className={styles.modalTitle}>Detalle del movimiento</h2>
+              <button onClick={() => setSelectedMovement(null)} className={styles.modalClose}>
+                <X size={18} />
+              </button>
+            </div>
+            <div className={styles.detailBody}>
+              <div className={styles.detailField}>
+                <span className={styles.detailLabel}>Producto</span>
+                <span className={styles.detailValue}>{selectedMovement.product_name ?? "—"}</span>
+              </div>
+              <div className={styles.detailField}>
+                <span className={styles.detailLabel}>Tipo</span>
+                <span className={`${styles.movementBadge} ${styles[`movement_${selectedMovement.movement_type}`] ?? ""}`}>
+                  {selectedMovement.movement_type === "entrada" && <ArrowDownRight size={14} />}
+                  {selectedMovement.movement_type === "salida" && <ArrowUpRight size={14} />}
+                  {selectedMovement.movement_type === "ajuste" && <RefreshCw size={14} />}
+                  {selectedMovement.movement_type === "venta" && <ArrowUpRight size={14} />}
+                  {selectedMovement.movement_type === "entrada" && " Entrada"}
+                  {selectedMovement.movement_type === "salida" && " Salida"}
+                  {selectedMovement.movement_type === "ajuste" && " Ajuste"}
+                  {selectedMovement.movement_type === "venta" && " Venta"}
+                </span>
+              </div>
+              <div className={styles.detailField}>
+                <span className={styles.detailLabel}>Cantidad</span>
+                <span className={styles.detailValue}>
+                  {selectedMovement.movement_type === "entrada" || selectedMovement.movement_type === "venta" ? "+" : selectedMovement.movement_type === "salida" ? "−" : ""}
+                  {selectedMovement.quantity}
+                </span>
+              </div>
+              <div className={styles.detailField}>
+                <span className={styles.detailLabel}>Fecha</span>
+                <span className={styles.detailValue}>
+                  {new Date(selectedMovement.created_at).toLocaleString("es-MX")}
+                </span>
+              </div>
+              {selectedMovement.note && (
+                <div className={styles.detailField}>
+                  <span className={styles.detailLabel}>Nota</span>
+                  <p className={styles.detailNote}>{selectedMovement.note}</p>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}

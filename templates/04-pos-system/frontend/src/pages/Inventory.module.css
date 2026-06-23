@@ -457,4 +457,82 @@
 .movementNote {
   color: var(--muted-foreground);
   font-size: 13px;
+  display: block;
+  max-width: 200px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.movementRow {
+  cursor: pointer;
+  border-bottom: 1px solid var(--border);
+}
+
+.movementRow:last-child {
+  border-bottom: none;
+}
+
+.movementRow:hover {
+  background: var(--accent);
+}
+
+/* ─── Movement detail modal ─── */
+.overlayCenter {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+}
+
+.detailModal {
+  width: 100%;
+  max-width: 420px;
+  background: var(--background);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  animation: fadeIn 0.15s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.detailBody {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.detailField {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.detailLabel {
+  font-size: 12px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted-foreground);
+}
+
+.detailValue {
+  font-size: 14px;
+  color: var(--foreground);
+}
+
+.detailNote {
+  font-size: 14px;
+  color: var(--foreground);
+  line-height: 1.6;
+  margin: 0;
+  white-space: pre-wrap;
 }
