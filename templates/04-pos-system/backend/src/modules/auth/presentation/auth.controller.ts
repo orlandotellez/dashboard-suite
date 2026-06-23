@@ -28,22 +28,18 @@ export const authController = {
   register: async (request: FastifyRequest, reply: FastifyReply) => {
     const data = RegisterPayloadDtoSchema.parse(request.body)
 
-    const currentUserId = await resolveCurrentUserId(request, reply)
-
-    if (currentUserId) {
-      throw new ConflictError(
-        "Already logged in. Please logout before creating a new account."
-      )
-    }
-
     const result = await authService.register(data)
 
-    setAuthCookies(
-      reply,
-      result.accessToken,
-      result.refreshToken,
-      env.NODE_ENV === "production"
-    )
+    // When register is called by an admin (authenticated via authGuard),
+    // we must NOT overwrite the admin's cookies with the new user's tokens.
+    if (!request.userId) {
+      setAuthCookies(
+        reply,
+        result.accessToken,
+        result.refreshToken,
+        env.NODE_ENV === "production"
+      )
+    }
 
     return reply.status(201).send({
       message: result.message,

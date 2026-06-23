@@ -1,12 +1,10 @@
 import { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { authApi } from "@/api/auth";
+import { Store, ShoppingCart, Package, BarChart3, Shield } from "lucide-react";
 import styles from "./Auth.module.css";
 
 export default function Auth() {
   const { login } = useAuth();
-  const [mode, setMode] = useState<"signin" | "signup">("signin");
-  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -18,12 +16,7 @@ export default function Auth() {
     setLoading(true);
 
     try {
-      if (mode === "signin") {
-        await login(email, password);
-      } else {
-        await authApi.register({ name, email, password });
-        await login(email, password);
-      }
+      await login(email, password);
     } catch (err: any) {
       setError(err?.message ?? "Error al conectar con el servidor");
     } finally {
@@ -33,62 +26,78 @@ export default function Auth() {
 
   return (
     <div className={styles.container}>
-      <div className={styles.card}>
-        <div className={styles.header}>
-          <h1 className={styles.title}>Caja</h1>
-          <p className={styles.subtitle}>Punto de venta e inventario</p>
+      {/* ─── Left panel: branding ─── */}
+      <div className={styles.brand}>
+        <div className={styles.brandInner}>
+          <div className={styles.logo}>
+            <Store size={32} />
+          </div>
+          <h1 className={styles.brandTitle}>Caja</h1>
+          <p className={styles.brandSubtitle}>Sistema de Punto de Venta e Inventario</p>
+
+          <div className={styles.features}>
+            <div className={styles.feature}>
+              <ShoppingCart size={18} />
+              <span>Ventas rápidas con escáner y búsqueda</span>
+            </div>
+            <div className={styles.feature}>
+              <Package size={18} />
+              <span>Gestión de productos y categorías</span>
+            </div>
+            <div className={styles.feature}>
+              <BarChart3 size={18} />
+              <span>Reportes de ventas e inventario</span>
+            </div>
+            <div className={styles.feature}>
+              <Shield size={18} />
+              <span>Control de acceso por roles</span>
+            </div>
+          </div>
         </div>
-        <form onSubmit={submit} className={styles.form}>
-          {mode === "signup" && (
+      </div>
+
+      {/* ─── Right panel: form ─── */}
+      <div className={styles.formPanel}>
+        <div className={styles.formCard}>
+          <h2 className={styles.formTitle}>Iniciar sesión</h2>
+          <p className={styles.formSubtitle}>Ingresá tus credenciales para acceder</p>
+
+          <form onSubmit={submit} className={styles.form}>
             <div className={styles.field}>
-              <label htmlFor="name" className={styles.label}>Nombre</label>
+              <label htmlFor="email" className={styles.label}>Correo</label>
               <input
-                id="name"
-                type="text"
-                autoComplete="name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
+                id="email"
+                type="email"
+                autoComplete="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 required
                 className={styles.input}
+                placeholder="admin@ejemplo.com"
               />
             </div>
-          )}
-          <div className={styles.field}>
-            <label htmlFor="email" className={styles.label}>Correo</label>
-            <input
-              id="email"
-              type="email"
-              autoComplete="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              className={styles.input}
-            />
-          </div>
-          <div className={styles.field}>
-            <label htmlFor="password" className={styles.label}>Contraseña</label>
-            <input
-              id="password"
-              type="password"
-              autoComplete={mode === "signin" ? "current-password" : "new-password"}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              className={styles.input}
-            />
-          </div>
-          {error && <p className={styles.error}>{error}</p>}
-          <button type="submit" className={styles.button} disabled={loading}>
-            {loading ? "..." : mode === "signin" ? "Ingresar" : "Crear cuenta"}
-          </button>
-        </form>
-        <button
-          type="button"
-          onClick={() => setMode(mode === "signin" ? "signup" : "signin")}
-          className={styles.toggle}
-        >
-          {mode === "signin" ? "¿No tienes cuenta? Crear una" : "Ya tengo cuenta"}
-        </button>
+
+            <div className={styles.field}>
+              <label htmlFor="password" className={styles.label}>Contraseña</label>
+              <input
+                id="password"
+                type="password"
+                autoComplete="current-password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                className={styles.input}
+                placeholder="••••••••"
+              />
+            </div>
+
+            {error && <p className={styles.error}>{error}</p>}
+
+            <button type="submit" className={styles.button} disabled={loading}>
+              {loading ? "Ingresando…" : "Ingresar"}
+            </button>
+          </form>
+        </div>
       </div>
     </div>
   );
