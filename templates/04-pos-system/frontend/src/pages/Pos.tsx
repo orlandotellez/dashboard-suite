@@ -3,24 +3,30 @@ import { Minus, Plus, Trash2, X } from "lucide-react";
 import { productsApi, type Product } from "@/api/products";
 import { salesApi, type CreateSalePayload } from "@/api/sales";
 import { settingsApi } from "@/api/settings";
+import { usePosStore } from "@/store/posStore";
 import { money } from "@/lib/format";
 import styles from "./Pos.module.css";
-
-type CartItem = Product & { quantity: number };
 
 export default function Pos() {
   const scanRef = useRef<HTMLInputElement>(null);
   const searchWrapperRef = useRef<HTMLDivElement>(null);
   const [scan, setScan] = useState("");
-  const [cart, setCart] = useState<CartItem[]>([]);
-  const [discountPct, setDiscountPct] = useState(0);
-  const [payment, setPayment] = useState<string>("efectivo");
-  const [received, setReceived] = useState("");
   const [products, setProducts] = useState<Product[]>([]);
-  const [checkingOut, setCheckingOut] = useState(false);
   const [storeName, setStoreName] = useState("");
   const [storeFooter, setStoreFooter] = useState("");
   const [showResults, setShowResults] = useState(false);
+
+  const cart = usePosStore((s) => s.cart);
+  const discountPct = usePosStore((s) => s.discountPct);
+  const payment = usePosStore((s) => s.payment);
+  const received = usePosStore((s) => s.received);
+  const checkingOut = usePosStore((s) => s.checkingOut);
+  const setQty = usePosStore((s) => s.setQty);
+  const clearCart = usePosStore((s) => s.clearCart);
+  const setDiscountPct = usePosStore((s) => s.setDiscountPct);
+  const setPayment = usePosStore((s) => s.setPayment);
+  const setReceived = usePosStore((s) => s.setReceived);
+  const setCheckingOut = usePosStore((s) => s.setCheckingOut);
 
   useEffect(() => {
     productsApi.list({ active: true, limit: 100 })
@@ -59,15 +65,7 @@ export default function Pos() {
   }, [scan, products]);
 
   function addToCart(product: Product) {
-    setCart((c) => {
-      const i = c.findIndex((x) => x.id === product.id);
-      if (i >= 0) {
-        const copy = [...c];
-        copy[i] = { ...copy[i], quantity: copy[i].quantity + 1 };
-        return copy;
-      }
-      return [{ ...product, quantity: 1 }, ...c];
-    });
+    usePosStore.getState().addToCart(product);
     setScan("");
     setShowResults(false);
     scanRef.current?.focus();
@@ -85,8 +83,7 @@ export default function Pos() {
   }
 
   function setQty(id: string, q: number) {
-    if (q <= 0) return setCart((c) => c.filter((x) => x.id !== id));
-    setCart((c) => c.map((x) => (x.id === id ? { ...x, quantity: q } : x)));
+    usePosStore.getState().setQty(id, q);
   }
 
   const totals = useMemo(() => {
@@ -123,7 +120,7 @@ export default function Pos() {
 
       const sale = await salesApi.create(payload);
       printTicket(sale.id, cart, totals, payment, received, storeName, storeFooter);
-      setCart([]); setDiscountPct(0); setReceived(""); setPayment("efectivo");
+      clearCart();
     } catch (err) {
       console.error("Error al crear venta:", err);
       alert("Error al procesar la venta. Intenta de nuevo.");
