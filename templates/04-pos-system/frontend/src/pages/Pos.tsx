@@ -84,9 +84,9 @@ export default function Pos() {
 
   const totals = useMemo(() => {
     const subtotal = cart.reduce((s, x) => s + x.price * x.quantity, 0);
-    const tax = cart.reduce((s, x) => s + x.price * x.quantity * (Number(x.tax_rate) / 100), 0);
-    const discount = (subtotal + tax) * (discountPct / 100);
-    const total = subtotal + tax - discount;
+    const tax = 0; // IVA ya incluido en el precio del producto
+    const discount = subtotal * (discountPct / 100);
+    const total = subtotal - discount;
     const change = payment === "efectivo" && received ? Math.max(0, Number(received) - total) : 0;
     return { subtotal, tax, discount, total, change };
   }, [cart, discountPct, payment, received]);
@@ -105,7 +105,7 @@ export default function Pos() {
     try {
       const payload: CreateSalePayload = {
         subtotal: totals.subtotal,
-        tax_total: totals.tax,
+        tax_total: 0, // IVA ya incluido en precio del producto
         discount: totals.discount,
         total: totals.total,
         payment_method: payment as "efectivo" | "tarjeta" | "transferencia",
@@ -116,7 +116,7 @@ export default function Pos() {
           product_name: item.name,
           quantity: item.quantity,
           unit_price: item.price,
-          tax_rate: item.tax_rate,
+          tax_rate: 0, // IVA ya incluido
           line_total: item.price * item.quantity,
         })),
       };
