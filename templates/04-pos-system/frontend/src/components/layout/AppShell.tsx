@@ -34,11 +34,14 @@ export function AppShell({ children }: { children: ReactNode }) {
       {/* Desktop sidebar */}
       <aside className={styles.sidebar}>
         <div className={styles.logo}>
-          <img
-            src={theme === "dark" ? logoLight : logoDark}
-            alt="Logo"
-            className={styles.logoImg}
-          />
+          <div className={styles.logoTop}>
+            <img
+              src={theme === "dark" ? logoLight : logoDark}
+              alt="Logo"
+              className={styles.logoImg}
+            />
+            <span className={styles.logoText}>Sistema POS</span>
+          </div>
           <div className={styles.logoRole}>{user?.role === "admin" ? "Administrador" : "Cajero"}</div>
         </div>
         <nav className={styles.nav}>

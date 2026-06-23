@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Minus, Plus, Trash2, X } from "lucide-react";
+import { Minus, Plus, Trash2, X, ScanBarcode } from "lucide-react";
 import { productsApi, type Product } from "@/api/products";
 import { salesApi, type CreateSalePayload } from "@/api/sales";
 import { settingsApi } from "@/api/settings";
@@ -170,7 +170,8 @@ export default function Pos() {
         <div className={styles.cartArea}>
           {cart.length === 0 ? (
             <div className={styles.emptyCart}>
-              Escanea un producto para empezar
+              <ScanBarcode size={40} className={styles.emptyCartIcon} />
+              <span>Escanea un producto para empezar</span>
             </div>
           ) : (
             <table className={styles.cartTable}>

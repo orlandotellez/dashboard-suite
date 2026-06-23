@@ -121,11 +121,17 @@
 
 .emptyCart {
   display: flex;
-  height: 100%;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 12px;
+  height: 100%;
   font-size: 14px;
   color: var(--muted-foreground);
+}
+
+.emptyCartIcon {
+  opacity: 0.5;
 }
 
 .cartTable {
