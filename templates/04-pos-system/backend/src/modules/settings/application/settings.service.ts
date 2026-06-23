@@ -19,7 +19,7 @@ export const createSettingsService = (repository: ISettingsRepository) => ({
     const settings = await repository.get()
     if (!settings) {
       return {
-        name: "Mi Negocio",
+        name: "",
         tax_rate: 16,
         low_stock_threshold: 5,
         updated_at: new Date().toISOString(),
