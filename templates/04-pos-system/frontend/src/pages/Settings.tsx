@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { getDemoStore } from "@/lib/demo-store";
+import { settingsApi, type UpdateSettingsPayload } from "@/api/settings";
 import { useAuth } from "@/context/AuthContext";
 import styles from "./Settings.module.css";
 
@@ -14,25 +14,63 @@ export default function Settings() {
     }
   }, [user, navigate]);
 
-  const store = useMemo(() => getDemoStore(), []);
-  const [form, setForm] = useState({
-    name: store.settings.name,
-    address: store.settings.address ?? "",
-    phone: store.settings.phone ?? "",
-    tax_rate: store.settings.tax_rate.toString(),
-    low_stock_threshold: store.settings.low_stock_threshold.toString(),
-    ticket_footer: store.settings.ticket_footer ?? "",
+  const [form, setForm] = useState<UpdateSettingsPayload>({
+    name: "",
+    address: "",
+    phone: "",
+    tax_rate: 16,
+    low_stock_threshold: 10,
+    ticket_footer: "",
   });
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState("");
 
-  function save(e: React.FormEvent) {
+  useEffect(() => {
+    settingsApi.get()
+      .then((res) => {
+        setForm({
+          name: res.name ?? "",
+          address: res.address ?? "",
+          phone: res.phone ?? "",
+          tax_rate: res.tax_rate,
+          low_stock_threshold: res.low_stock_threshold,
+          ticket_footer: res.ticket_footer ?? "",
+        });
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  async function save(e: React.FormEvent) {
     e.preventDefault();
-    store.settings.name = form.name;
-    store.settings.address = form.address || null;
-    store.settings.phone = form.phone || null;
-    store.settings.tax_rate = Number(form.tax_rate);
-    store.settings.low_stock_threshold = Number(form.low_stock_threshold);
-    store.settings.ticket_footer = form.ticket_footer || null;
-    store.settings.updated_at = new Date().toISOString();
+    setSaving(true);
+    setMessage("");
+
+    try {
+      await settingsApi.update({
+        name: form.name,
+        address: form.address || null,
+        phone: form.phone || null,
+        tax_rate: form.tax_rate,
+        low_stock_threshold: form.low_stock_threshold,
+        ticket_footer: form.ticket_footer || null,
+      });
+      setMessage("Datos guardados correctamente");
+    } catch {
+      setMessage("Error al guardar");
+    } finally {
+      setSaving(false);
+      setTimeout(() => setMessage(""), 3000);
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className={styles.page}>
+        <p className={styles.loading}>Cargando configuración…</p>
+      </div>
+    );
   }
 
   return (
@@ -47,27 +85,52 @@ export default function Settings() {
       <form onSubmit={save} className={styles.form}>
         <div className={styles.field}>
           <label className={styles.label}>Nombre del negocio</label>
-          <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className={styles.input} required />
+          <input
+            value={form.name}
+            onChange={(e) => setForm({ ...form, name: e.target.value })}
+            className={styles.input}
+            required
+            placeholder="Mi Negocio"
+          />
         </div>
 
         <div className={styles.field}>
           <label className={styles.label}>Dirección</label>
-          <input value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} className={styles.input} />
+          <input
+            value={form.address ?? ""}
+            onChange={(e) => setForm({ ...form, address: e.target.value })}
+            className={styles.input}
+          />
         </div>
 
         <div className={styles.field}>
           <label className={styles.label}>Teléfono</label>
-          <input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} className={styles.input} />
+          <input
+            value={form.phone ?? ""}
+            onChange={(e) => setForm({ ...form, phone: e.target.value })}
+            className={styles.input}
+          />
         </div>
 
         <div className={styles.fieldRow}>
           <div className={styles.field}>
             <label className={styles.label}>IVA por defecto %</label>
-            <input type="number" step="0.01" value={form.tax_rate} onChange={(e) => setForm({ ...form, tax_rate: e.target.value })} className={styles.input} />
+            <input
+              type="number"
+              step="0.01"
+              value={form.tax_rate}
+              onChange={(e) => setForm({ ...form, tax_rate: Number(e.target.value) })}
+              className={styles.input}
+            />
           </div>
           <div className={styles.field}>
             <label className={styles.label}>Stock mínimo por defecto</label>
-            <input type="number" value={form.low_stock_threshold} onChange={(e) => setForm({ ...form, low_stock_threshold: e.target.value })} className={styles.input} />
+            <input
+              type="number"
+              value={form.low_stock_threshold}
+              onChange={(e) => setForm({ ...form, low_stock_threshold: Number(e.target.value) })}
+              className={styles.input}
+            />
           </div>
         </div>
 
@@ -75,14 +138,18 @@ export default function Settings() {
           <label className={styles.label}>Pie de página del ticket</label>
           <textarea
             rows={3}
-            value={form.ticket_footer}
+            value={form.ticket_footer ?? ""}
             onChange={(e) => setForm({ ...form, ticket_footer: e.target.value })}
             placeholder="¡Gracias por su compra!"
             className={styles.textarea}
           />
         </div>
 
-        <button type="submit" className={styles.button}>Guardar cambios</button>
+        {message && <p className={message.includes("Error") ? styles.error : styles.success}>{message}</p>}
+
+        <button type="submit" className={styles.button} disabled={saving}>
+          {saving ? "Guardando…" : "Guardar cambios"}
+        </button>
       </form>
     </div>
   );
