@@ -1,26 +1,15 @@
 import { prisma } from "@/config/prisma.js";
 import { hashPassword } from "@/core/utils/crypto.utils";
 
-// ============================================================
-// CATEGORÍAS (seeder upsert por name, UUIDs autogenerados)
-// ============================================================
-const categories = [
-  { name: "Chiverías y Snacks", description: "Botanas, papas, chicharrones y snacks en general" },
-  { name: "Galletas", description: "Galletas dulces, saladas, wafers y chocolates" },
-  { name: "Dulces, Caramelos y Chocolates", description: "Caramelos, chicles, gomitas, bombones y chocolates" },
-  { name: "Bebidas", description: "Gaseosas, jugos, aguas, energizantes y malta" },
-  { name: "Abarrotes", description: "Café, leche, sopas, salsas, aceite y complementos de despensa" },
-  { name: "Higiene y Desechables", description: "Papel higiénico, jabón, detergente y desechables" },
-];
-
-// Mapa name → uuid para asignar a los productos después del upsert
 type CategoryMap = Record<string, string>;
+type SupplierMap = Record<string, string>;
 
 type ProductSeed = {
   name: string;
-  unit_type: string;
+  unit_type: "unidad" | "paquete" | "caja" | "bolsa" | "botella" | "lata" | "sobre" | "barra" | "rollo" | "galon" | "ristra";
   unit_quantity?: number;
-  category_name: string;  // resolves via catMap
+  category_name: string;
+  supplier_name: string;
   cost: number;
   price: number;
   stock: number;
@@ -29,77 +18,113 @@ type ProductSeed = {
   barcode?: string;
 };
 
+const categories = [
+  { name: "Snacks y Chiverías", description: "Papas, churritos, cacahuates y botanas" },
+  { name: "Galletas y Dulces", description: "Galletas, caramelos, chocolates y chicles" },
+  { name: "Bebidas", description: "Gaseosas, jugos, aguas y energizantes" },
+  { name: "Abarrotes", description: "Café, leche, aceite, sopas y salsas" },
+  { name: "Lácteos y Fríos", description: "Leche, yogurt, crema y embutidos" },
+  { name: "Higiene y Limpieza", description: "Papel higiénico, jabón, detergente y cuidado personal" },
+];
+
+const suppliers = [
+  { name: "Diana Nicaragua", contact_name: "Ejecutivo de Ventas", email: "ventas@diana.com", phone: "0000-0000", address: "Managua, Nicaragua", notes: "Snacks, chiverías y productos Diana" },
+  { name: "Coca-Cola FEMSA Nicaragua", contact_name: "Ejecutivo Comercial", email: "ventas@coca-cola.com", phone: "0000-0000", address: "Managua, Nicaragua", notes: "Bebidas Coca-Cola, Fanta, Sprite, Del Valle" },
+  { name: "Pepsi Nicaragua", contact_name: "Ejecutivo Comercial", email: "ventas@pepsi.com", phone: "0000-0000", address: "Managua, Nicaragua", notes: "Pepsi, 7UP, Mirinda, AMP" },
+  { name: "Nestlé Nicaragua", contact_name: "Ejecutivo Comercial", email: "ventas@nestle.com", phone: "0000-0000", address: "Managua, Nicaragua", notes: "Café, chocolates, lácteos y alimentos" },
+  { name: "Cargill Nicaragua", contact_name: "Ejecutivo Comercial", email: "ventas@cargill.com", phone: "0000-0000", address: "Managua, Nicaragua", notes: "Tip Top, embutidos y productos alimenticios" },
+  { name: "Grupo Lala Nicaragua", contact_name: "Ejecutivo Comercial", email: "ventas@lala.com", phone: "0000-0000", address: "Managua, Nicaragua", notes: "Lácteos y bebidas" },
+  { name: "Distribuidora La Colonia", contact_name: "Ventas Mayoristas", email: "mayoreo@lacolonia.com", phone: "0000-0000", address: "Managua, Nicaragua", notes: "Abarrotes y productos de consumo masivo" },
+  { name: "Mayoreo El Gallo Más Gallo", contact_name: "Ventas", email: "ventas@gallomasgallo.com", phone: "0000-0000", address: "Managua, Nicaragua", notes: "Distribución y abastecimiento" },
+  { name: "Kimberly-Clark Nicaragua", contact_name: "Ejecutivo Comercial", email: "ventas@kimberly-clark.com", phone: "0000-0000", address: "Managua, Nicaragua", notes: "Papel higiénico, servilletas y productos de higiene" },
+  { name: "Unilever Nicaragua", contact_name: "Ejecutivo Comercial", email: "ventas@unilever.com", phone: "0000-0000", address: "Managua, Nicaragua", notes: "Detergentes, jabones y productos de limpieza" },
+];
+
 const products: ProductSeed[] = [
-  // ── Chiverías y Snacks ────────────────────────────────────
-  { name: "Ranchitas Originales", unit_type: "Ristra", unit_quantity: 12, category_name: "Chiverías y Snacks", cost: 55.0, price: 70.0, stock: 50, low_stock_threshold: 10, tax_rate: 0 },
-  { name: "Jalapeños Diana", unit_type: "Ristra", unit_quantity: 12, category_name: "Chiverías y Snacks", cost: 60.0, price: 75.0, stock: 50, low_stock_threshold: 10, tax_rate: 0 },
-  { name: "Elotitos Diana", unit_type: "Ristra", unit_quantity: 12, category_name: "Chiverías y Snacks", cost: 60.0, price: 75.0, stock: 50, low_stock_threshold: 10, tax_rate: 0 },
-  { name: "Zambos con Chile", unit_type: "Ristra", unit_quantity: 12, category_name: "Chiverías y Snacks", cost: 70.0, price: 85.0, stock: 50, low_stock_threshold: 10, tax_rate: 0 },
-  { name: "Platanitos Yummis", unit_type: "Ristra", unit_quantity: 12, category_name: "Chiverías y Snacks", cost: 65.0, price: 80.0, stock: 50, low_stock_threshold: 10, tax_rate: 0 },
-  { name: "Cheetos Flamin' Hot", unit_type: "Ristra", unit_quantity: 12, category_name: "Chiverías y Snacks", cost: 80.0, price: 95.0, stock: 50, low_stock_threshold: 10, tax_rate: 0 },
-  { name: "Doritos Nacho", unit_type: "Ristra", unit_quantity: 12, category_name: "Chiverías y Snacks", cost: 80.0, price: 95.0, stock: 50, low_stock_threshold: 10, tax_rate: 0 },
-  { name: "Tronquitos", unit_type: "Ristra", unit_quantity: 12, category_name: "Chiverías y Snacks", cost: 55.0, price: 70.0, stock: 50, low_stock_threshold: 10, tax_rate: 0 },
-  { name: "Chicharrón Señorial", unit_type: "Ristra", unit_quantity: 12, category_name: "Chiverías y Snacks", cost: 65.0, price: 80.0, stock: 50, low_stock_threshold: 10, tax_rate: 0 },
-  { name: "Maní Salado Pro", unit_type: "Ristra", unit_quantity: 12, category_name: "Chiverías y Snacks", cost: 70.0, price: 85.0, stock: 50, low_stock_threshold: 10, tax_rate: 0 },
+  { name: "Ranchitas Originales", unit_type: "ristra", unit_quantity: 12, category_name: "Snacks y Chiverías", supplier_name: "Diana Nicaragua", cost: 55, price: 70, stock: 50, low_stock_threshold: 10, tax_rate: 0 },
+  { name: "Jalapeños Diana", unit_type: "ristra", unit_quantity: 12, category_name: "Snacks y Chiverías", supplier_name: "Diana Nicaragua", cost: 60, price: 75, stock: 50, low_stock_threshold: 10, tax_rate: 0 },
+  { name: "Elotitos Diana", unit_type: "ristra", unit_quantity: 12, category_name: "Snacks y Chiverías", supplier_name: "Diana Nicaragua", cost: 60, price: 75, stock: 50, low_stock_threshold: 10, tax_rate: 0 },
+  { name: "Yuca Diana", unit_type: "ristra", unit_quantity: 12, category_name: "Snacks y Chiverías", supplier_name: "Diana Nicaragua", cost: 50, price: 65, stock: 50, low_stock_threshold: 10, tax_rate: 0 },
+  { name: "Zambos con Chile", unit_type: "ristra", unit_quantity: 12, category_name: "Snacks y Chiverías", supplier_name: "Diana Nicaragua", cost: 70, price: 85, stock: 50, low_stock_threshold: 10, tax_rate: 0 },
+  { name: "Tronaditas", unit_type: "ristra", unit_quantity: 12, category_name: "Snacks y Chiverías", supplier_name: "Diana Nicaragua", cost: 55, price: 70, stock: 50, low_stock_threshold: 10, tax_rate: 0 },
+  { name: "Churritos Diana", unit_type: "ristra", unit_quantity: 12, category_name: "Snacks y Chiverías", supplier_name: "Diana Nicaragua", cost: 55, price: 70, stock: 50, low_stock_threshold: 10, tax_rate: 0 },
 
-  // ── Galletas ──────────────────────────────────────────────
-  { name: "Galletas Pozuelo Chiky Chocolate", unit_type: "Paquete", unit_quantity: 12, category_name: "Galletas", cost: 75.0, price: 90.0, stock: 50, low_stock_threshold: 10, tax_rate: 0 },
-  { name: "Galletas Pozuelo Club Social", unit_type: "Paquete", unit_quantity: 12, category_name: "Galletas", cost: 65.0, price: 80.0, stock: 50, low_stock_threshold: 10, tax_rate: 0 },
-  { name: "Galletas Oreo Regular", unit_type: "Paquete", unit_quantity: 12, category_name: "Galletas", cost: 90.0, price: 110.0, stock: 50, low_stock_threshold: 10, tax_rate: 0 },
-  { name: "Galletas Gamesa Marías", unit_type: "Paquete", unit_quantity: 12, category_name: "Galletas", cost: 85.0, price: 105.0, stock: 50, low_stock_threshold: 10, tax_rate: 0 },
-  { name: "Galletas Cuétara Soda", unit_type: "Paquete", unit_quantity: 12, category_name: "Galletas", cost: 50.0, price: 65.0, stock: 50, low_stock_threshold: 10, tax_rate: 0 },
-  { name: "Wafer Pozuelo Vainilla/Fresa", unit_type: "Paquete", unit_quantity: 12, category_name: "Galletas", cost: 70.0, price: 85.0, stock: 50, low_stock_threshold: 10, tax_rate: 0 },
-  { name: "Galletas Canasta Pozuelo", unit_type: "Paquete", unit_quantity: 12, category_name: "Galletas", cost: 75.0, price: 90.0, stock: 50, low_stock_threshold: 10, tax_rate: 0 },
-  { name: "Best Chocolate Pozuelo", unit_type: "Paquete", unit_quantity: 12, category_name: "Galletas", cost: 80.0, price: 95.0, stock: 50, low_stock_threshold: 10, tax_rate: 0 },
+  { name: "Galletas Chiky Chocolate", unit_type: "paquete", unit_quantity: 12, category_name: "Galletas y Dulces", supplier_name: "Mayoreo El Gallo Más Gallo", cost: 75, price: 90, stock: 50, low_stock_threshold: 10, tax_rate: 0 },
+  { name: "Galletas Club Social", unit_type: "paquete", unit_quantity: 12, category_name: "Galletas y Dulces", supplier_name: "Mayoreo El Gallo Más Gallo", cost: 65, price: 80, stock: 50, low_stock_threshold: 10, tax_rate: 0 },
+  { name: "Galletas Oreo", unit_type: "paquete", unit_quantity: 12, category_name: "Galletas y Dulces", supplier_name: "Mayoreo El Gallo Más Gallo", cost: 90, price: 110, stock: 50, low_stock_threshold: 10, tax_rate: 0 },
+  { name: "Galletas Festival", unit_type: "paquete", unit_quantity: 12, category_name: "Galletas y Dulces", supplier_name: "Mayoreo El Gallo Más Gallo", cost: 80, price: 100, stock: 50, low_stock_threshold: 10, tax_rate: 0 },
+  { name: "Galletas Canasta", unit_type: "paquete", unit_quantity: 12, category_name: "Galletas y Dulces", supplier_name: "Mayoreo El Gallo Más Gallo", cost: 75, price: 90, stock: 50, low_stock_threshold: 10, tax_rate: 0 },
+  { name: "Galletas Soda Pozuelo", unit_type: "paquete", unit_quantity: 12, category_name: "Galletas y Dulces", supplier_name: "Mayoreo El Gallo Más Gallo", cost: 50, price: 65, stock: 50, low_stock_threshold: 10, tax_rate: 0 },
+  { name: "Caramelos Bum Bum", unit_type: "bolsa", unit_quantity: 24, category_name: "Galletas y Dulces", supplier_name: "Mayoreo El Gallo Más Gallo", cost: 55, price: 70, stock: 30, low_stock_threshold: 5, tax_rate: 0 },
+  { name: "Gomitas Trululú", unit_type: "paquete", unit_quantity: 12, category_name: "Galletas y Dulces", supplier_name: "Mayoreo El Gallo Más Gallo", cost: 65, price: 80, stock: 30, low_stock_threshold: 5, tax_rate: 0 },
+  { name: "Chicles Clorets", unit_type: "caja", unit_quantity: 60, category_name: "Galletas y Dulces", supplier_name: "Mayoreo El Gallo Más Gallo", cost: 85, price: 105, stock: 30, low_stock_threshold: 5, tax_rate: 0 },
+  { name: "Chicles Trident", unit_type: "caja", unit_quantity: 12, category_name: "Galletas y Dulces", supplier_name: "Mayoreo El Gallo Más Gallo", cost: 110, price: 135, stock: 30, low_stock_threshold: 5, tax_rate: 0 },
+  { name: "Chocolates Crunch", unit_type: "barra", category_name: "Galletas y Dulces", supplier_name: "Mayoreo El Gallo Más Gallo", cost: 25, price: 35, stock: 50, low_stock_threshold: 10, tax_rate: 0 },
+  { name: "Mentas Halls", unit_type: "bolsa", unit_quantity: 50, category_name: "Galletas y Dulces", supplier_name: "Mayoreo El Gallo Más Gallo", cost: 40, price: 55, stock: 30, low_stock_threshold: 5, tax_rate: 0 },
 
-  // ── Dulces, Caramelos y Chocolates ────────────────────────
-  { name: "Caramelos Super Hiper Ácido", unit_type: "Bolsa", unit_quantity: 100, category_name: "Dulces, Caramelos y Chocolates", cost: 45.0, price: 60.0, stock: 30, low_stock_threshold: 5, tax_rate: 0 },
-  { name: "Bombones Bum Bum Molina", unit_type: "Bolsa", unit_quantity: 24, category_name: "Dulces, Caramelos y Chocolates", cost: 55.0, price: 70.0, stock: 30, low_stock_threshold: 5, tax_rate: 0 },
-  { name: "Chicles Clorets", unit_type: "Caja", unit_quantity: 60, category_name: "Dulces, Caramelos y Chocolates", cost: 85.0, price: 105.0, stock: 30, low_stock_threshold: 5, tax_rate: 0 },
-  { name: "Chicles Trident Menta", unit_type: "Caja", unit_quantity: 12, category_name: "Dulces, Caramelos y Chocolates", cost: 110.0, price: 135.0, stock: 30, low_stock_threshold: 5, tax_rate: 0 },
-  { name: "Marshmallows Malvaviscos", unit_type: "Bolsa", category_name: "Dulces, Caramelos y Chocolates", cost: 40.0, price: 55.0, stock: 30, low_stock_threshold: 5, tax_rate: 0 },
-  { name: "Chocolates Crunch / Nestlé", unit_type: "Caja", unit_quantity: 12, category_name: "Dulces, Caramelos y Chocolates", cost: 140.0, price: 170.0, stock: 30, low_stock_threshold: 5, tax_rate: 0 },
-  { name: "Caramelos de Leche Vaquita", unit_type: "Bolsa", unit_quantity: 100, category_name: "Dulces, Caramelos y Chocolates", cost: 50.0, price: 65.0, stock: 30, low_stock_threshold: 5, tax_rate: 0 },
-  { name: "Gomitas Trululu", unit_type: "Paquete", unit_quantity: 12, category_name: "Dulces, Caramelos y Chocolates", cost: 65.0, price: 80.0, stock: 30, low_stock_threshold: 5, tax_rate: 0 },
-  { name: "Mentas Heladas", unit_type: "Bolsa", unit_quantity: 100, category_name: "Dulces, Caramelos y Chocolates", cost: 40.0, price: 55.0, stock: 30, low_stock_threshold: 5, tax_rate: 0 },
+  { name: "Coca-Cola 355ml Vidrio", unit_type: "caja", unit_quantity: 24, category_name: "Bebidas", supplier_name: "Coca-Cola FEMSA Nicaragua", cost: 310, price: 360, stock: 24, low_stock_threshold: 6, tax_rate: 0 },
+  { name: "Coca-Cola 500ml PET", unit_type: "paquete", unit_quantity: 12, category_name: "Bebidas", supplier_name: "Coca-Cola FEMSA Nicaragua", cost: 210, price: 240, stock: 24, low_stock_threshold: 6, tax_rate: 0 },
+  { name: "Sprite 500ml", unit_type: "paquete", unit_quantity: 12, category_name: "Bebidas", supplier_name: "Coca-Cola FEMSA Nicaragua", cost: 200, price: 230, stock: 24, low_stock_threshold: 6, tax_rate: 0 },
+  { name: "Fanta Naranja 500ml", unit_type: "paquete", unit_quantity: 12, category_name: "Bebidas", supplier_name: "Coca-Cola FEMSA Nicaragua", cost: 200, price: 230, stock: 24, low_stock_threshold: 6, tax_rate: 0 },
+  { name: "Fresca 500ml", unit_type: "paquete", unit_quantity: 12, category_name: "Bebidas", supplier_name: "Coca-Cola FEMSA Nicaragua", cost: 200, price: 230, stock: 24, low_stock_threshold: 6, tax_rate: 0 },
+  { name: "Del Valle Naranja 1L", unit_type: "paquete", unit_quantity: 12, category_name: "Bebidas", supplier_name: "Coca-Cola FEMSA Nicaragua", cost: 190, price: 220, stock: 24, low_stock_threshold: 6, tax_rate: 0 },
+  { name: "Powerade 500ml", unit_type: "paquete", unit_quantity: 12, category_name: "Bebidas", supplier_name: "Coca-Cola FEMSA Nicaragua", cost: 240, price: 280, stock: 24, low_stock_threshold: 6, tax_rate: 0 },
+  { name: "Agua Cristal 600ml", unit_type: "paquete", unit_quantity: 24, category_name: "Bebidas", supplier_name: "Coca-Cola FEMSA Nicaragua", cost: 180, price: 220, stock: 48, low_stock_threshold: 12, tax_rate: 0 },
 
-  // ── Bebidas ────────────────────────────────────────────────
-  { name: "Coca-Cola 355ml Vidrio", unit_type: "Caja", unit_quantity: 24, category_name: "Bebidas", cost: 310.0, price: 360.0, stock: 24, low_stock_threshold: 6, tax_rate: 0 },
-  { name: "Coca-Cola 500ml PET", unit_type: "Paquete", unit_quantity: 12, category_name: "Bebidas", cost: 210.0, price: 240.0, stock: 24, low_stock_threshold: 6, tax_rate: 0 },
-  { name: "Coca-Cola 3 Litros", unit_type: "Paquete", unit_quantity: 4, category_name: "Bebidas", cost: 260.0, price: 290.0, stock: 12, low_stock_threshold: 4, tax_rate: 0 },
-  { name: "Pepsi 500ml", unit_type: "Paquete", unit_quantity: 12, category_name: "Bebidas", cost: 180.0, price: 210.0, stock: 24, low_stock_threshold: 6, tax_rate: 0 },
-  { name: "Rojita 500ml", unit_type: "Paquete", unit_quantity: 12, category_name: "Bebidas", cost: 165.0, price: 195.0, stock: 24, low_stock_threshold: 6, tax_rate: 0 },
-  { name: "Jugos del Valle Naranja/Manzana", unit_type: "Paquete", unit_quantity: 12, category_name: "Bebidas", cost: 190.0, price: 220.0, stock: 24, low_stock_threshold: 6, tax_rate: 0 },
-  { name: "Jugos Petit Lata/Tetra", unit_type: "Paquete", unit_quantity: 24, category_name: "Bebidas", cost: 280.0, price: 330.0, stock: 24, low_stock_threshold: 6, tax_rate: 0 },
-  { name: "Energizante Raptor", unit_type: "Paquete", unit_quantity: 12, category_name: "Bebidas", cost: 240.0, price: 280.0, stock: 24, low_stock_threshold: 6, tax_rate: 0 },
-  { name: "Energizante AMP", unit_type: "Paquete", unit_quantity: 12, category_name: "Bebidas", cost: 220.0, price: 260.0, stock: 24, low_stock_threshold: 6, tax_rate: 0 },
-  { name: "Agua Purificada Fuente Pura 600ml", unit_type: "Paquete", unit_quantity: 24, category_name: "Bebidas", cost: 180.0, price: 220.0, stock: 48, low_stock_threshold: 12, tax_rate: 0 },
-  { name: "Sula Malta", unit_type: "Paquete", unit_quantity: 6, category_name: "Bebidas", cost: 110.0, price: 130.0, stock: 24, low_stock_threshold: 6, tax_rate: 0 },
+  { name: "Pepsi 500ml", unit_type: "paquete", unit_quantity: 12, category_name: "Bebidas", supplier_name: "Pepsi Nicaragua", cost: 180, price: 210, stock: 24, low_stock_threshold: 6, tax_rate: 0 },
+  { name: "7UP 500ml", unit_type: "paquete", unit_quantity: 12, category_name: "Bebidas", supplier_name: "Pepsi Nicaragua", cost: 180, price: 210, stock: 24, low_stock_threshold: 6, tax_rate: 0 },
+  { name: "Mirinda 500ml", unit_type: "paquete", unit_quantity: 12, category_name: "Bebidas", supplier_name: "Pepsi Nicaragua", cost: 165, price: 195, stock: 24, low_stock_threshold: 6, tax_rate: 0 },
+  { name: "AMP Energy 500ml", unit_type: "paquete", unit_quantity: 12, category_name: "Bebidas", supplier_name: "Pepsi Nicaragua", cost: 220, price: 260, stock: 24, low_stock_threshold: 6, tax_rate: 0 },
+  { name: "Adrenaline Rush 500ml", unit_type: "paquete", unit_quantity: 12, category_name: "Bebidas", supplier_name: "Pepsi Nicaragua", cost: 220, price: 260, stock: 24, low_stock_threshold: 6, tax_rate: 0 },
+  { name: "Agua Purificada 600ml", unit_type: "paquete", unit_quantity: 24, category_name: "Bebidas", supplier_name: "Pepsi Nicaragua", cost: 160, price: 200, stock: 48, low_stock_threshold: 12, tax_rate: 0 },
 
-  // ── Abarrotes ─────────────────────────────────────────────
-  { name: "Café Presto Instantáneo", unit_type: "Ristra", unit_quantity: 12, category_name: "Abarrotes", cost: 48.0, price: 60.0, stock: 50, low_stock_threshold: 12, tax_rate: 0 },
-  { name: "Leche Doña Blanca en Polvo", unit_type: "Paquete", unit_quantity: 12, category_name: "Abarrotes", cost: 130.0, price: 155.0, stock: 24, low_stock_threshold: 6, tax_rate: 0 },
-  { name: "Tang / Clight Refresco en Polvo", unit_type: "Caja", unit_quantity: 20, category_name: "Abarrotes", cost: 140.0, price: 170.0, stock: 24, low_stock_threshold: 6, tax_rate: 0 },
-  { name: "Sabor Ami / Maggi Mi Sazón", unit_type: "Ristra", unit_quantity: 12, category_name: "Abarrotes", cost: 35.0, price: 45.0, stock: 50, low_stock_threshold: 12, tax_rate: 0 },
-  { name: "Sopa Maruchan Vaso", unit_type: "Caja", unit_quantity: 12, category_name: "Abarrotes", cost: 220.0, price: 260.0, stock: 24, low_stock_threshold: 6, tax_rate: 0 },
-  { name: "Salsa de Tomate Natura's", unit_type: "Ristra", unit_quantity: 12, category_name: "Abarrotes", cost: 95.0, price: 115.0, stock: 24, low_stock_threshold: 6, tax_rate: 0 },
-  { name: "Frijoles Rojos Blanditos", unit_type: "Caja", unit_quantity: 12, category_name: "Abarrotes", cost: 280.0, price: 320.0, stock: 24, low_stock_threshold: 6, tax_rate: 0 },
-  { name: "Aceite Tip-Top 1 Litro", unit_type: "Caja", unit_quantity: 12, category_name: "Abarrotes", cost: 720.0, price: 780.0, stock: 12, low_stock_threshold: 3, tax_rate: 0 },
+  { name: "Nescafé Tradicional 200g", unit_type: "sobre", category_name: "Abarrotes", supplier_name: "Nestlé Nicaragua", cost: 85, price: 105, stock: 30, low_stock_threshold: 6, tax_rate: 0 },
+  { name: "Café Presto Instantáneo", unit_type: "sobre", category_name: "Abarrotes", supplier_name: "Nestlé Nicaragua", cost: 48, price: 60, stock: 50, low_stock_threshold: 12, tax_rate: 0 },
+  { name: "Maggi Sazonador", unit_type: "sobre", category_name: "Abarrotes", supplier_name: "Nestlé Nicaragua", cost: 10, price: 15, stock: 100, low_stock_threshold: 20, tax_rate: 0 },
+  { name: "Leche Ideal 400g", unit_type: "lata", category_name: "Abarrotes", supplier_name: "Nestlé Nicaragua", cost: 55, price: 70, stock: 24, low_stock_threshold: 6, tax_rate: 0 },
+  { name: "Chocapic 300g", unit_type: "caja", category_name: "Abarrotes", supplier_name: "Nestlé Nicaragua", cost: 120, price: 145, stock: 24, low_stock_threshold: 6, tax_rate: 0 },
+  { name: "Puré de Tomate Natura's", unit_type: "lata", category_name: "Abarrotes", supplier_name: "Nestlé Nicaragua", cost: 35, price: 45, stock: 50, low_stock_threshold: 12, tax_rate: 0 },
 
-  // ── Higiene y Desechables ─────────────────────────────────
-  { name: "Papel Higiénico Rosal 4 rollos", unit_type: "Paquete", unit_quantity: 10, category_name: "Higiene y Desechables", cost: 380.0, price: 430.0, stock: 20, low_stock_threshold: 5, tax_rate: 0 },
-  { name: "Jabón de Baño Protex", unit_type: "Paquete", unit_quantity: 4, category_name: "Higiene y Desechables", cost: 125.0, price: 145.0, stock: 24, low_stock_threshold: 6, tax_rate: 0 },
-  { name: "Detergente Rinso 250g", unit_type: "Paquete", unit_quantity: 12, category_name: "Higiene y Desechables", cost: 160.0, price: 190.0, stock: 24, low_stock_threshold: 6, tax_rate: 0 },
-  { name: "Vasos Desechables 8oz", unit_type: "Paquete", unit_quantity: 50, category_name: "Higiene y Desechables", cost: 35.0, price: 45.0, stock: 50, low_stock_threshold: 10, tax_rate: 0 },
+  { name: "Aceite Tip Top 1L", unit_type: "botella", category_name: "Abarrotes", supplier_name: "Cargill Nicaragua", cost: 120, price: 140, stock: 24, low_stock_threshold: 6, tax_rate: 0 },
+  { name: "Arroz Gold 2lb", unit_type: "bolsa", category_name: "Abarrotes", supplier_name: "Cargill Nicaragua", cost: 65, price: 80, stock: 50, low_stock_threshold: 12, tax_rate: 0 },
+  { name: "Frijoles Rojos 2lb", unit_type: "bolsa", category_name: "Abarrotes", supplier_name: "Cargill Nicaragua", cost: 60, price: 75, stock: 50, low_stock_threshold: 12, tax_rate: 0 },
+  { name: "Azúcar San Antonio 2lb", unit_type: "bolsa", category_name: "Abarrotes", supplier_name: "Cargill Nicaragua", cost: 55, price: 70, stock: 50, low_stock_threshold: 12, tax_rate: 0 },
+
+  { name: "Sopa Maruchan Vaso", unit_type: "caja", unit_quantity: 12, category_name: "Abarrotes", supplier_name: "Distribuidora La Colonia", cost: 220, price: 260, stock: 24, low_stock_threshold: 6, tax_rate: 0 },
+  { name: "Sopa Maruchan Sobre", unit_type: "sobre", category_name: "Abarrotes", supplier_name: "Distribuidora La Colonia", cost: 18, price: 25, stock: 100, low_stock_threshold: 20, tax_rate: 0 },
+  { name: "Frijoles Molidos 1lb", unit_type: "bolsa", category_name: "Abarrotes", supplier_name: "Distribuidora La Colonia", cost: 45, price: 55, stock: 50, low_stock_threshold: 12, tax_rate: 0 },
+  { name: "Sal de Mesa 1lb", unit_type: "bolsa", category_name: "Abarrotes", supplier_name: "Distribuidora La Colonia", cost: 12, price: 18, stock: 100, low_stock_threshold: 20, tax_rate: 0 },
+  { name: "Salsa Inglesa Lea & Perrins", unit_type: "botella", category_name: "Abarrotes", supplier_name: "Distribuidora La Colonia", cost: 65, price: 80, stock: 24, low_stock_threshold: 6, tax_rate: 0 },
+
+  { name: "Tang Naranja", unit_type: "sobre", category_name: "Abarrotes", supplier_name: "Mayoreo El Gallo Más Gallo", cost: 10, price: 15, stock: 100, low_stock_threshold: 20, tax_rate: 0 },
+  { name: "Tang Limón", unit_type: "sobre", category_name: "Abarrotes", supplier_name: "Mayoreo El Gallo Más Gallo", cost: 10, price: 15, stock: 100, low_stock_threshold: 20, tax_rate: 0 },
+  { name: "Refresco Clight", unit_type: "sobre", category_name: "Abarrotes", supplier_name: "Mayoreo El Gallo Más Gallo", cost: 15, price: 22, stock: 100, low_stock_threshold: 20, tax_rate: 0 },
+  { name: "Avena Quaker", unit_type: "bolsa", category_name: "Abarrotes", supplier_name: "Mayoreo El Gallo Más Gallo", cost: 40, price: 55, stock: 50, low_stock_threshold: 12, tax_rate: 0 },
+  { name: "Incaparina", unit_type: "bolsa", category_name: "Abarrotes", supplier_name: "Mayoreo El Gallo Más Gallo", cost: 45, price: 60, stock: 50, low_stock_threshold: 12, tax_rate: 0 },
+
+  { name: "Leche Lala 1L", unit_type: "botella", category_name: "Lácteos y Fríos", supplier_name: "Grupo Lala Nicaragua", cost: 65, price: 80, stock: 30, low_stock_threshold: 6, tax_rate: 0 },
+  { name: "Yogurt Lala Bebible", unit_type: "botella", category_name: "Lácteos y Fríos", supplier_name: "Grupo Lala Nicaragua", cost: 35, price: 45, stock: 30, low_stock_threshold: 6, tax_rate: 0 },
+  { name: "Crema Lala 500ml", unit_type: "bolsa", category_name: "Lácteos y Fríos", supplier_name: "Grupo Lala Nicaragua", cost: 55, price: 70, stock: 20, low_stock_threshold: 5, tax_rate: 0 },
+  { name: "Mantequilla Lala 200g", unit_type: "barra", category_name: "Lácteos y Fríos", supplier_name: "Grupo Lala Nicaragua", cost: 50, price: 65, stock: 20, low_stock_threshold: 5, tax_rate: 0 },
+
+  { name: "Papel Higiénico Scott 4 rollos", unit_type: "paquete", category_name: "Higiene y Limpieza", supplier_name: "Kimberly-Clark Nicaragua", cost: 120, price: 145, stock: 30, low_stock_threshold: 6, tax_rate: 0 },
+  { name: "Pañuelos Kleenex", unit_type: "caja", category_name: "Higiene y Limpieza", supplier_name: "Kimberly-Clark Nicaragua", cost: 45, price: 60, stock: 24, low_stock_threshold: 6, tax_rate: 0 },
+  { name: "Toallas Húmedas Huggies", unit_type: "paquete", category_name: "Higiene y Limpieza", supplier_name: "Kimberly-Clark Nicaragua", cost: 80, price: 100, stock: 20, low_stock_threshold: 5, tax_rate: 0 },
+  { name: "Servilletas Scott", unit_type: "paquete", category_name: "Higiene y Limpieza", supplier_name: "Kimberly-Clark Nicaragua", cost: 35, price: 45, stock: 50, low_stock_threshold: 12, tax_rate: 0 },
+
+  { name: "Jabón de Baño Dove", unit_type: "barra", category_name: "Higiene y Limpieza", supplier_name: "Unilever Nicaragua", cost: 38, price: 48, stock: 50, low_stock_threshold: 12, tax_rate: 0 },
+  { name: "Jabón de Baño Lux", unit_type: "barra", category_name: "Higiene y Limpieza", supplier_name: "Unilever Nicaragua", cost: 30, price: 38, stock: 50, low_stock_threshold: 12, tax_rate: 0 },
+  { name: "Detergente Rinso 250g", unit_type: "bolsa", category_name: "Higiene y Limpieza", supplier_name: "Unilever Nicaragua", cost: 30, price: 38, stock: 50, low_stock_threshold: 12, tax_rate: 0 },
+  { name: "Detergente Surf 250g", unit_type: "bolsa", category_name: "Higiene y Limpieza", supplier_name: "Unilever Nicaragua", cost: 35, price: 45, stock: 50, low_stock_threshold: 12, tax_rate: 0 },
+  { name: "Desodorante Axe", unit_type: "unidad", category_name: "Higiene y Limpieza", supplier_name: "Unilever Nicaragua", cost: 65, price: 82, stock: 24, low_stock_threshold: 6, tax_rate: 0 },
+  { name: "Shampoo Dove 400ml", unit_type: "botella", category_name: "Higiene y Limpieza", supplier_name: "Unilever Nicaragua", cost: 85, price: 105, stock: 24, low_stock_threshold: 6, tax_rate: 0 },
 ];
 
 const seed = async () => {
   console.log("🌱 Iniciando seeder de POS...");
 
-  // ── Categorías ─────────────────────────────────────────────
-  const catMap: CategoryMap = {};
-
-  // Limpiamos datos existentes (ordenado por FKs)
+  await prisma.inventory_batch_item.deleteMany({});
+  await prisma.inventory_batch.deleteMany({});
   await prisma.inventory_movement.deleteMany({});
   await prisma.sale_item.deleteMany({});
   await prisma.sale.deleteMany({});
@@ -109,6 +134,10 @@ const seed = async () => {
   await prisma.verification.deleteMany({});
   await prisma.product.deleteMany({});
   await prisma.category.deleteMany({});
+  await prisma.supplier.deleteMany({});
+
+  const catMap: CategoryMap = {};
+  const supMap: SupplierMap = {};
 
   console.log(`📂 Sembrando ${categories.length} categorías...`);
   for (const cat of categories) {
@@ -117,10 +146,18 @@ const seed = async () => {
     });
     catMap[cat.name] = created.id;
   }
-  console.log(`   ✅ ${categories.length} categorías con UUID`);
+  console.log(`   ✅ ${categories.length} categorías`);
 
-  // ── Productos ──────────────────────────────────────────────
-  console.log(`📦 Sembrando ${products.length} productos con UUID...`);
+  console.log(`🏢 Sembrando ${suppliers.length} proveedores...`);
+  for (const sup of suppliers) {
+    const created = await prisma.supplier.create({
+      data: sup,
+    });
+    supMap[sup.name] = created.id;
+  }
+  console.log(`   ✅ ${suppliers.length} proveedores`);
+
+  console.log(`📦 Sembrando ${products.length} productos...`);
   for (const p of products) {
     await prisma.product.create({
       data: {
@@ -128,6 +165,7 @@ const seed = async () => {
         unit_type: p.unit_type,
         unit_quantity: p.unit_quantity,
         category_id: catMap[p.category_name],
+        supplier_id: supMap[p.supplier_name],
         cost: p.cost,
         price: p.price,
         stock: p.stock,
@@ -137,9 +175,8 @@ const seed = async () => {
       },
     });
   }
-  console.log(`   ✅ ${products.length} productos creados con UUID`);
+  console.log(`   ✅ ${products.length} productos`);
 
-  // ── Usuarios de prueba ──────────────────────────────────────
   const testUsers = [
     { name: "Admin", email: "admin@smart-miscelanea.com", password: "admin123", role: "admin" as const },
     { name: "Cajero", email: "cajero@smart-miscelanea.com", password: "cajero123", role: "cajero" as const },
@@ -169,24 +206,46 @@ const seed = async () => {
   }
 
   console.log("");
-  console.log("🎉 Seeder completado exitosamente!");
-  console.log("");
-  console.log("🔐 Usuarios de prueba:");
-  for (const u of testUsers) {
-    console.log(`   • ${u.email} / ${u.password} (${u.role})`);
-  }
-  console.log(`   📦 Productos por categoría:`);
+  console.log("═══════════════════════════════════════");
+  console.log("        RESUMEN DE DATOS SEMBRADOS");
+  console.log("═══════════════════════════════════════");
+  console.log(`   📂 ${categories.length} categorías`);
+  console.log(`   🏢 ${suppliers.length} proveedores`);
+  console.log(`   📦 ${products.length} productos`);
+  console.log(`   👤 ${testUsers.length} usuarios`);
+  console.log("───────────────────────────────────────");
 
-  const counts = await prisma.product.groupBy({
+  const prodCounts = await prisma.product.groupBy({
     by: ["category_id"],
     _count: { id: true },
     where: { deleted_at: null },
   });
 
-  for (const c of counts) {
+  console.log("   📦 Productos por categoría:");
+  for (const c of prodCounts) {
     const cat = await prisma.category.findUnique({ where: { id: c.category_id! } });
     if (cat) console.log(`      • ${cat.name}: ${c._count.id} productos`);
   }
+
+  console.log("   🏢 Productos por proveedor:");
+  for (const s of suppliers) {
+    const supplierRecord = await prisma.supplier.findFirst({ where: { name: s.name } });
+    if (supplierRecord) {
+      const productCount = await prisma.product.count({
+        where: { supplier_id: supplierRecord.id, deleted_at: null },
+      });
+      console.log(`      • ${s.name}: ${productCount} productos`);
+    }
+  }
+
+  console.log("═══════════════════════════════════════");
+  console.log("");
+  console.log("🔐 Usuarios de prueba:");
+  for (const u of testUsers) {
+    console.log(`   • ${u.email} / ${u.password} (${u.role})`);
+  }
+  console.log("");
+  console.log("🎉 Seeder completado exitosamente!");
 };
 
 seed()
