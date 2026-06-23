@@ -248,7 +248,7 @@ export default function Inventory() {
               {movements.length > 0 ? (
                 movements.map((m) => (
                   <tr key={m.id}>
-                    <td className={styles.tdProduct}>{m.product_name ?? m.product_id.slice(0, 8)}</td>
+                    <td className={styles.tdProduct}>{m.product_name ?? "—"}</td>
                     <td className={styles.tdLeft}>
                       <span className={`${styles.movementBadge} ${styles[`movement_${m.movement_type}`] ?? ""}`}>
                         {m.movement_type === "entrada" && <ArrowDownRight size={14} />}

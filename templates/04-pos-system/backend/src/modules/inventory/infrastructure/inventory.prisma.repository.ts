@@ -47,7 +47,7 @@ export const InventoryRepository: IInventoryRepository = {
     const limit = params?.limit || 50
     const skip = (page - 1) * limit
 
-    const [movements, total] = await Promise.all([
+    const [rawMovements, total] = await Promise.all([
       prisma.inventory_movement.findMany({
         where,
         include: { product: { select: { name: true } } },
@@ -59,7 +59,7 @@ export const InventoryRepository: IInventoryRepository = {
     ])
 
     return {
-      movements: movements.map(mapToEntity),
+      movements: rawMovements.map(m => ({ ...mapToEntity(m), product: m.product })),
       total,
       page,
       limit,
