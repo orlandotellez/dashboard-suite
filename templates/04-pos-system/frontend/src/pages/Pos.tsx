@@ -82,10 +82,6 @@ export default function Pos() {
     }
   }
 
-  function setQty(id: string, q: number) {
-    usePosStore.getState().setQty(id, q);
-  }
-
   const totals = useMemo(() => {
     const subtotal = cart.reduce((s, x) => s + x.price * x.quantity, 0);
     const tax = cart.reduce((s, x) => s + x.price * x.quantity * (Number(x.tax_rate) / 100), 0);
