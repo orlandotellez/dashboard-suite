@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Minus, Plus, Trash2, X, ScanBarcode, Wrench, PackagePlus, CheckCircle } from "lucide-react";
 import { productsApi, type Product } from "@/api/products";
 import { servicesApi, type Service } from "@/api/services";
@@ -29,6 +29,24 @@ export default function Pos() {
     received: string;
     discountPct: number;
   } | null>(null);
+
+  const [dialog, setDialog] = useState<{
+    message: string;
+    variant: "alert" | "confirm";
+    onConfirm?: () => void;
+  } | null>(null);
+
+  const showAlert = useCallback((message: string) => setDialog({ message, variant: "alert" }), []);
+  const showConfirm = useCallback((message: string, onConfirm: () => void) => setDialog({ message, variant: "confirm", onConfirm }), []);
+
+  useEffect(() => {
+    if (!dialog) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setDialog(null);
+    };
+    document.addEventListener("keydown", handler);
+    return () => document.removeEventListener("keydown", handler);
+  }, [dialog]);
 
   const updateServiceProductQty = usePosStore((s) => s.updateServiceProductQty);
   const removeServiceProduct = usePosStore((s) => s.removeServiceProduct);
@@ -125,19 +143,24 @@ export default function Pos() {
       const product = result.data as Product;
       // Stock validation
       if (product.stock <= 0) {
-        alert(`"${product.name}" no tiene stock disponible`);
+        showAlert(`"${product.name}" no tiene stock disponible`);
         return;
       }
       // Check if already in cart — validate combined qty doesn't exceed stock
       const inCart = cart.find((x) => x._type === "product" && x.id === product.id) as ProductCartItem | undefined;
       const newTotalQty = (inCart?.quantity ?? 0) + 1;
       if (newTotalQty > product.stock) {
-        alert(`Stock insuficiente para "${product.name}": disponible ${product.stock}, ya tienes ${inCart?.quantity ?? 0} en el carrito`);
+        showAlert(`Stock insuficiente para "${product.name}": disponible ${product.stock}, ya tienes ${inCart?.quantity ?? 0} en el carrito`);
         return;
       }
       if (product.stock <= product.low_stock_threshold) {
-        const ok = confirm(`"${product.name}" tiene stock bajo (${product.stock} unidades). ¿Agregar al carrito de todas formas?`);
-        if (!ok) return;
+        showConfirm(`"${product.name}" tiene stock bajo (${product.stock} unidades). ¿Agregar al carrito de todas formas?`, () => {
+          usePosStore.getState().addToCart(product);
+          setScan("");
+          setShowResults(false);
+          scanRef.current?.focus();
+        });
+        return;
       }
       usePosStore.getState().addToCart(product);
     } else {
@@ -160,11 +183,11 @@ export default function Pos() {
     if (item._type === "product" && newQty > item.quantity) {
       const prod = item as ProductCartItem;
       if (prod.stock <= 0) {
-        alert(`"${prod.name}" no tiene stock disponible`);
+        showAlert(`"${prod.name}" no tiene stock disponible`);
         return;
       }
       if (newQty > prod.stock) {
-        alert(`Stock insuficiente para "${prod.name}": disponible ${prod.stock}, solicitado ${newQty}`);
+        showAlert(`Stock insuficiente para "${prod.name}": disponible ${prod.stock}, solicitado ${newQty}`);
         return;
       }
     }
@@ -203,7 +226,7 @@ export default function Pos() {
     if (!cart.length || checkingOut) return;
 
     if ((payment === "efectivo" || manualAmount) && Number(received || 0) < totals.total) {
-      alert(`El monto recibido ($${money(Number(received || 0))}) es menor al total ($${money(totals.total)}).`);
+      showAlert(`El monto recibido (${money(Number(received || 0))}) es menor al total (${money(totals.total)}).`);
       setCheckingOut(false);
       return;
     }
@@ -271,7 +294,7 @@ export default function Pos() {
       });
     } catch (err) {
       console.error("Error al crear venta:", err);
-      alert("Error al procesar la venta. Intenta de nuevo.");
+      showAlert("Error al procesar la venta. Intenta de nuevo.");
       setCheckingOut(false);
     }
   }
@@ -443,7 +466,7 @@ export default function Pos() {
                                         className={styles.spAddResultItem}
                                         onClick={() => {
                                           if (p.stock <= 0) {
-                                            alert(`"${p.name}" no tiene stock disponible`);
+                                            showAlert(`"${p.name}" no tiene stock disponible`);
                                             return;
                                           }
                                           addServiceProduct((x as ServiceCartItem).service_id, p, 1);
@@ -721,6 +744,33 @@ export default function Pos() {
                 className={styles.completedCloseBtn}
               >
                 Cerrar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {dialog && (
+        <div className={styles.dialogOverlay} onClick={() => dialog.variant === "alert" && setDialog(null)}>
+          <div className={styles.dialogModal} onClick={(e) => e.stopPropagation()}>
+            <p className={styles.dialogMessage}>{dialog.message}</p>
+            <div className={styles.dialogActions}>
+              {dialog.variant === "confirm" && (
+                <button
+                  className={`${styles.dialogBtn} ${styles.dialogBtnCancel}`}
+                  onClick={() => setDialog(null)}
+                >
+                  Cancelar
+                </button>
+              )}
+              <button
+                className={`${styles.dialogBtn} ${styles.dialogBtnConfirm}`}
+                onClick={() => {
+                  dialog.onConfirm?.();
+                  setDialog(null);
+                }}
+              >
+                {dialog.variant === "alert" ? "Aceptar" : "Sí, continuar"}
               </button>
             </div>
           </div>
