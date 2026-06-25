@@ -308,8 +308,6 @@ export default function Sales() {
 }
 
 function printSaleTicket(sale: Sale, storeName: string, storeAddress?: string, storePhone?: string) {
-  const w = window.open("", "_blank", "width=320,height=600");
-  if (!w) return;
   const date = new Date(sale.created_at).toLocaleString("es-MX");
 
   function renderServiceItem(svc: SaleServiceItem): string {
@@ -336,7 +334,8 @@ function printSaleTicket(sale: Sale, storeName: string, storeAddress?: string, s
   ).join("");
   const serviceRows = (sale.service_items ?? []).map(renderServiceItem).join("");
   const rows = productRows + serviceRows;
-  w.document.write(`
+
+  const html = `
     <html><head><title>Ticket</title>
     <style>body{font-family:ui-monospace,monospace;font-size:12px;padding:12px;max-width:300px}strong{font-size:14px;display:block;text-align:center;margin-bottom:4px}.m{color:#666;text-align:center;font-size:11px;margin-bottom:2px}table{width:100%;margin:12px 0;border-collapse:collapse}td{padding:2px 0;vertical-align:top}.line{border-top:1px dashed #999;margin:8px 0}.tot{display:flex;justify-content:space-between}.big{font-size:16px;font-weight:bold;margin:8px 0}.f{color:#666;text-align:center;font-size:11px;margin-top:12px}</style></head><body>
     <strong>${storeName}</strong>
@@ -355,8 +354,22 @@ function printSaleTicket(sale: Sale, storeName: string, storeAddress?: string, s
     ${sale.change_given != null && sale.change_given > 0 ? `<div class="tot"><span>Cambio</span><span>${money(sale.change_given)}</span></div>` : ""}
     <div class="line"></div>
     <div class="f">¡Gracias por su compra!</div>
-    <script>window.print();</script>
     </body></html>
-  `);
-  w.document.close();
+  `;
+
+  const iframe = document.createElement("iframe");
+  iframe.style.position = "fixed";
+  iframe.style.top = "-9999px";
+  iframe.style.left = "-9999px";
+  iframe.style.width = "1px";
+  iframe.style.height = "1px";
+  iframe.onload = () => {
+    setTimeout(() => {
+      iframe.contentWindow?.print();
+      setTimeout(() => document.body.removeChild(iframe), 1000);
+    }, 500);
+  };
+  document.body.appendChild(iframe);
+  iframe.contentDocument?.write(html);
+  iframe.contentDocument?.close();
 }
