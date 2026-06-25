@@ -700,15 +700,13 @@
 .completedTicket {
   padding: 16px 24px;
   font-family: ui-monospace, monospace;
-  font-size: 12px;
+  font-size: 14px;
   color: var(--foreground);
-  border: 2px dashed var(--border);
-  border-radius: 8px;
   margin: 0 24px 16px;
 }
 
 .completedStoreName {
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 600;
   text-align: center;
   margin-bottom: 4px;
@@ -718,19 +716,19 @@
 .completedPhone {
   text-align: center;
   color: var(--muted-foreground);
-  font-size: 11px;
+  font-size: 12px;
 }
 
 .completedDate {
   text-align: center;
   color: var(--muted-foreground);
-  font-size: 11px;
+  font-size: 12px;
 }
 
 .completedTicketId {
   text-align: center;
   color: var(--muted-foreground);
-  font-size: 11px;
+  font-size: 12px;
 }
 
 .completedDivider {
@@ -741,7 +739,7 @@
 .completedFooter {
   text-align: center;
   color: var(--muted-foreground);
-  font-size: 11px;
+  font-size: 12px;
   margin-top: 8px;
 }
 
