@@ -749,8 +749,6 @@ function printTicket(
   storeFooter: string,
   discountPct: number
 ) {
-  const w = window.open("", "_blank", "width=320,height=600");
-  if (!w) return;
   const date = new Date().toLocaleString("es-MX");
   const rows = cart.map((x) => {
     if (x._type === "product") {
@@ -788,7 +786,8 @@ function printTicket(
 
     return `<tr><td>${svcQty}× ${svc.name}</td><td style="text-align:right">${money(baseTotal)}</td></tr>${includedRow}${additiveRows}<tr><td style="padding-left:8px;font-size:10px;border-top:1px dashed #ccc">Total servicio</td><td style="text-align:right;font-size:10px;border-top:1px dashed #ccc">${money(lineTotal)}</td></tr>`;
   }).join("");
-  w.document.write(`
+
+  const html = `
     <html><head><title>Ticket</title>
     <style>body{font-family:ui-monospace,monospace;font-size:12px;padding:12px;max-width:300px}h2{font-size:14px;margin:0 0 4px;text-align:center}.m{color:#666;text-align:center;font-size:11px}table{width:100%;margin:12px 0;border-collapse:collapse}td{padding:2px 0;vertical-align:top}.line{border-top:1px dashed #999;margin:8px 0}.tot{display:flex;justify-content:space-between}.big{font-size:16px;font-weight:bold;margin:8px 0}</style></head><body>
     <h2>${storeName}</h2>
@@ -807,8 +806,24 @@ function printTicket(
     ${payment === "efectivo" || received ? `<div class="tot"><span>Cambio</span><span>${money(totals.change)}</span></div>` : ""}
     <div class="line"></div>
     <div class="m">${storeFooter || "¡Gracias por su compra!"}</div>
-    <script>window.print();</script>
     </body></html>
-  `);
-  w.document.close();
+  `;
+
+  // Usar un iframe oculto en vez de window.open (evita bloqueo de popups)
+  const iframe = document.createElement("iframe");
+  iframe.style.position = "fixed";
+  iframe.style.top = "-9999px";
+  iframe.style.left = "-9999px";
+  iframe.style.width = "1px";
+  iframe.style.height = "1px";
+  iframe.onload = () => {
+    setTimeout(() => {
+      iframe.contentWindow?.print();
+      // Remover el iframe después de imprimir o al cancelar
+      setTimeout(() => document.body.removeChild(iframe), 1000);
+    }, 500);
+  };
+  document.body.appendChild(iframe);
+  iframe.contentDocument?.write(html);
+  iframe.contentDocument?.close();
 }
