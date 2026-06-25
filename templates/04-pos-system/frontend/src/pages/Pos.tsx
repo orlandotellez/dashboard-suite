@@ -690,19 +690,15 @@ export default function Pos() {
                 <span>TOTAL</span>
                 <span>{money(completedSale.totals.total)}</span>
               </div>
-              {(completedSale.payment === "efectivo" || completedSale.received) && (
-                <React.Fragment>
-                  <div className={styles.ctotRow}>
-                    <span>Pago ({completedSale.payment})</span>
-                    <span>{money(Number(completedSale.received || 0))}</span>
-                  </div>
-                  {completedSale.totals.change > 0 && (
-                    <div className={styles.ctotRow}>
-                      <span>Cambio</span>
-                      <span>{money(completedSale.totals.change)}</span>
-                    </div>
-                  )}
-                </React.Fragment>
+              <div className={styles.ctotRow}>
+                <span>Pago ({completedSale.payment})</span>
+                <span>{money(completedSale.payment === "efectivo" || completedSale.received ? Number(completedSale.received || 0) : completedSale.totals.total)}</span>
+              </div>
+              {completedSale.totals.change > 0 && (
+                <div className={styles.ctotRow}>
+                  <span>Cambio</span>
+                  <span>{money(completedSale.totals.change)}</span>
+                </div>
               )}
             </div>
 
