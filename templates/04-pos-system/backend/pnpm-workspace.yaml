@@ -1,16 +1,9 @@
+packages:
+  - "."
+
 onlyBuiltDependencies:
-  - '-'
-  - '3'
-  - '@prisma/client'
-  - '@prisma/engines'
-  - b
+  - "@prisma/client"
+  - "@prisma/engines"
   - bcrypt
-  - e
   - esbuild
-  - i
-  - l
   - prisma
-  - q
-  - r
-  - s
-  - t
