@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { Minus, Plus, Trash2, X, ScanBarcode } from "lucide-react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { Minus, Plus, Trash2, X, ScanBarcode, Wrench, PackagePlus, CheckCircle } from "lucide-react";
 import { productsApi, type Product } from "@/api/products";
+import { servicesApi, type Service } from "@/api/services";
 import { salesApi, type CreateSalePayload } from "@/api/sales";
 import { settingsApi } from "@/api/settings";
-import { usePosStore } from "@/store/posStore";
+import { usePosStore, type CartItem, type ProductCartItem, type ServiceCartItem } from "@/store/posStore";
 import { money } from "@/lib/format";
 import styles from "./Pos.module.css";
 
@@ -12,9 +13,27 @@ export default function Pos() {
   const searchWrapperRef = useRef<HTMLDivElement>(null);
   const [scan, setScan] = useState("");
   const [products, setProducts] = useState<Product[]>([]);
+  const [services, setServices] = useState<Service[]>([]);
   const [storeName, setStoreName] = useState("");
+  const [storeAddress, setStoreAddress] = useState("");
+  const [storePhone, setStorePhone] = useState("");
   const [storeFooter, setStoreFooter] = useState("");
   const [showResults, setShowResults] = useState(false);
+  const [addingToService, setAddingToService] = useState<string | null>(null);
+  const [serviceProductSearch, setServiceProductSearch] = useState("");
+  const [completedSale, setCompletedSale] = useState<{
+    saleId: string;
+    cart: CartItem[];
+    totals: { subtotal: number; tax: number; discount: number; total: number; change: number };
+    payment: string;
+    received: string;
+    discountPct: number;
+  } | null>(null);
+
+  const updateServiceProductQty = usePosStore((s) => s.updateServiceProductQty);
+  const removeServiceProduct = usePosStore((s) => s.removeServiceProduct);
+  const addServiceProduct = usePosStore((s) => s.addServiceProduct);
+  const toggleServiceProductAffectsPrice = usePosStore((s) => s.toggleServiceProductAffectsPrice);
 
   const cart = usePosStore((s) => s.cart);
   const discountPct = usePosStore((s) => s.discountPct);
@@ -31,14 +50,20 @@ export default function Pos() {
   useEffect(() => {
     productsApi.list({ active: true, limit: 100 })
       .then((res) => setProducts(res.products))
-      .catch(() => {});
+      .catch(() => { });
+
+    servicesApi.list({ active: true, limit: 100 })
+      .then((res) => setServices(res.services))
+      .catch(() => { });
 
     settingsApi.get()
       .then((res) => {
         setStoreName(res.name);
+        setStoreAddress(res.address ?? "");
+        setStorePhone(res.phone ?? "");
         setStoreFooter(res.ticket_footer ?? "");
       })
-      .catch(() => {});
+      .catch(() => { });
   }, []);
 
   useEffect(() => { scanRef.current?.focus(); }, []);
@@ -53,22 +78,95 @@ export default function Pos() {
     return () => document.removeEventListener("mousedown", handleClick);
   }, []);
 
+  interface SearchResult {
+    _type: "product" | "service";
+    id: string;
+    name: string;
+    barcode?: string;
+    price: number;
+    data: Product | Service;
+  }
+
   const searchResults = useMemo(() => {
     const term = scan.trim().toLowerCase();
     if (!term) return [];
-    return products
-      .filter((p) => p.active && (
+    const results: SearchResult[] = [];
+
+    // Products
+    for (const p of products) {
+      if (!p.active) continue;
+      if (
         (p.barcode && p.barcode.toLowerCase().includes(term)) ||
         p.name.toLowerCase().includes(term)
-      ))
-      .slice(0, 15);
-  }, [scan, products]);
+      ) {
+        results.push({ _type: "product", id: p.id, name: p.name, barcode: p.barcode, price: p.price, data: p });
+        if (results.length >= 15) break;
+      }
+    }
 
-  function addToCart(product: Product) {
-    usePosStore.getState().addToCart(product);
+    // Services (only if products didn't fill all slots)
+    if (results.length < 15) {
+      for (const s of services) {
+        if (!s.is_active) continue;
+        if (s.name.toLowerCase().includes(term)) {
+          results.push({ _type: "service", id: s.id, name: s.name, barcode: undefined, price: s.base_price, data: s });
+          if (results.length >= 15) break;
+        }
+      }
+    }
+
+    return results;
+  }, [scan, products, services]);
+
+  function addToCart(result: SearchResult) {
+    if (result._type === "product") {
+      const product = result.data as Product;
+      // Stock validation
+      if (product.stock <= 0) {
+        alert(`"${product.name}" no tiene stock disponible`);
+        return;
+      }
+      // Check if already in cart — validate combined qty doesn't exceed stock
+      const inCart = cart.find((x) => x._type === "product" && x.id === product.id) as ProductCartItem | undefined;
+      const newTotalQty = (inCart?.quantity ?? 0) + 1;
+      if (newTotalQty > product.stock) {
+        alert(`Stock insuficiente para "${product.name}": disponible ${product.stock}, ya tienes ${inCart?.quantity ?? 0} en el carrito`);
+        return;
+      }
+      if (product.stock <= product.low_stock_threshold) {
+        const ok = confirm(`"${product.name}" tiene stock bajo (${product.stock} unidades). ¿Agregar al carrito de todas formas?`);
+        if (!ok) return;
+      }
+      usePosStore.getState().addToCart(product);
+    } else {
+      const service = result.data as Service;
+      usePosStore.getState().addToCart({
+        id: service.id,
+        service_id: service.id,
+        name: service.name,
+        base_price: service.base_price,
+        products: service.products,
+      });
+    }
     setScan("");
     setShowResults(false);
     scanRef.current?.focus();
+  }
+
+  function handleSetQty(item: CartItem, newQty: number) {
+    // For products, validate stock when increasing quantity
+    if (item._type === "product" && newQty > item.quantity) {
+      const prod = item as ProductCartItem;
+      if (prod.stock <= 0) {
+        alert(`"${prod.name}" no tiene stock disponible`);
+        return;
+      }
+      if (newQty > prod.stock) {
+        alert(`Stock insuficiente para "${prod.name}": disponible ${prod.stock}, solicitado ${newQty}`);
+        return;
+      }
+    }
+    setQty(item.id, newQty);
   }
 
   function handleSubmit(e: React.FormEvent) {
@@ -83,8 +181,16 @@ export default function Pos() {
   }
 
   const totals = useMemo(() => {
-    const subtotal = cart.reduce((s, x) => s + x.price * x.quantity, 0);
-    const tax = 0; // IVA ya incluido en el precio del producto
+    const subtotal = cart.reduce((s, x) => {
+      if (x._type === "product") return s + x.price * x.quantity;
+      // Service: base price + products that affect price (× service qty)
+      const svc = x as ServiceCartItem;
+      const additivePerInstance = svc.products
+        .filter((sp) => sp.affects_price)
+        .reduce((sum, sp) => sum + sp.unit_price * sp.quantity, 0);
+      return s + (svc.base_price + additivePerInstance) * svc.quantity;
+    }, 0);
+    const tax = 0;
     const discount = subtotal * (discountPct / 100);
     const total = subtotal - discount;
     const change = payment === "efectivo" && received ? Math.max(0, Number(received) - total) : 0;
@@ -103,34 +209,93 @@ export default function Pos() {
     setCheckingOut(true);
 
     try {
+      const items = cart
+        .filter((x): x is ProductCartItem => x._type === "product")
+        .map((item) => ({
+          product_id: item.id,
+          product_name: item.name,
+          quantity: item.quantity,
+          unit_price: item.price,
+          tax_rate: 0,
+          line_total: item.price * item.quantity,
+        }));
+
+      const serviceItems = cart
+        .filter((x): x is ServiceCartItem => x._type === "service")
+        .map((item) => {
+          const svcQty = item.quantity;
+          const customProducts = item.products.map((sp) => ({
+            product_id: sp.product_id,
+            product_name: sp.product_name,
+            quantity: sp.quantity * svcQty, // multiplicar por la cantidad de servicios
+            unit_price: sp.unit_price,
+            line_total: sp.unit_price * sp.quantity * svcQty,
+            affects_price: sp.affects_price,
+          }));
+          const additiveTotal = customProducts
+            .filter((p) => p.affects_price)
+            .reduce((s, p) => s + p.line_total, 0);
+          return {
+            service_id: item.service_id,
+            service_name: item.name,
+            base_price: item.base_price,
+            line_total: item.base_price * svcQty + additiveTotal,
+            products: customProducts,
+          };
+        });
+
       const payload: CreateSalePayload = {
         subtotal: totals.subtotal,
-        tax_total: 0, // IVA ya incluido en precio del producto
+        tax_total: 0,
         discount: totals.discount,
         total: totals.total,
         payment_method: payment as "efectivo" | "tarjeta" | "transferencia",
         amount_received: payment === "efectivo" ? Number(received || 0) : undefined,
         change_given: payment === "efectivo" ? totals.change : undefined,
-        items: cart.map((item) => ({
-          product_id: item.id,
-          product_name: item.name,
-          quantity: item.quantity,
-          unit_price: item.price,
-          tax_rate: 0, // IVA ya incluido
-          line_total: item.price * item.quantity,
-        })),
+        items: items.length > 0 ? items : undefined,
+        service_items: serviceItems.length > 0 ? serviceItems : undefined,
       };
 
       const sale = await salesApi.create(payload);
-      printTicket(sale.id, cart, totals, payment, received, storeName, storeFooter, discountPct);
-      clearCart();
+      setCompletedSale({
+        saleId: sale.id,
+        cart: [...cart],
+        totals: { ...totals },
+        payment,
+        received,
+        discountPct,
+      });
     } catch (err) {
       console.error("Error al crear venta:", err);
       alert("Error al procesar la venta. Intenta de nuevo.");
-    } finally {
       setCheckingOut(false);
-      scanRef.current?.focus();
     }
+  }
+
+  function handlePrintTicket(saleId: string) {
+    if (!completedSale) return;
+    printTicket(saleId, completedSale.cart, completedSale.totals, completedSale.payment, completedSale.received, storeName, storeAddress, storePhone, storeFooter, completedSale.discountPct);
+    finalizeSale();
+  }
+
+  function finalizeSale() {
+    setCompletedSale(null);
+    clearCart();
+    setCheckingOut(false);
+    scanRef.current?.focus();
+  }
+
+  function getItemPrice(item: CartItem): number {
+    if (item._type === "product") return item.price;
+    const svc = item as ServiceCartItem;
+    const additivePerInstance = svc.products
+      .filter((sp) => sp.affects_price)
+      .reduce((sum, sp) => sum + sp.unit_price * sp.quantity, 0);
+    return svc.base_price + additivePerInstance;
+  }
+
+  function getItemSubtotal(item: CartItem): number {
+    return getItemPrice(item) * item.quantity;
   }
 
   return (
@@ -152,15 +317,30 @@ export default function Pos() {
           </form>
           {showResults && searchResults.length > 0 && (
             <div className={styles.searchResults}>
-              {searchResults.map((p) => (
-                <button key={p.id} className={styles.searchResultItem} onClick={() => addToCart(p)}>
-                  <div className={styles.searchResultLeft}>
-                    <span className={styles.searchResultName}>{p.name}</span>
-                    {p.barcode && <span className={styles.searchResultCode}>{p.barcode}</span>}
-                  </div>
-                  <span className={styles.searchResultPrice}>{money(p.price)}</span>
-                </button>
-              ))}
+              {searchResults.map((r) => {
+                const isOutOfStock = r._type === "product" && (r.data as Product).stock <= 0;
+                const isLowStock = r._type === "product" && (r.data as Product).stock > 0 && (r.data as Product).stock <= (r.data as Product).low_stock_threshold;
+                return (
+                  <button
+                    key={`${r._type}-${r.id}`}
+                    className={`${styles.searchResultItem} ${isOutOfStock ? styles.searchResultItemDisabled : ""}`}
+                    onClick={() => !isOutOfStock && addToCart(r)}
+                    disabled={isOutOfStock}
+                  >
+                    <div className={styles.searchResultLeft}>
+                      <span className={styles.searchResultName}>
+                        {r._type === "service" && <Wrench size={12} style={{ display: "inline", marginRight: 4, verticalAlign: "middle", opacity: 0.6 }} />}
+                        {r.name}
+                      </span>
+                      {r.barcode && <span className={styles.searchResultCode}>{r.barcode}</span>}
+                      {r._type === "product" && isOutOfStock && <span className={styles.searchResultCode}>Sin stock</span>}
+                      {r._type === "product" && isLowStock && <span className={styles.searchResultCodeLowStock}>Stock bajo</span>}
+                      {r._type === "service" && <span className={styles.searchResultCode}>Servicio</span>}
+                    </div>
+                    <span className={styles.searchResultPrice}>{money(r.price)}</span>
+                  </button>
+                );
+              })}
             </div>
           )}
         </div>
@@ -169,13 +349,13 @@ export default function Pos() {
           {cart.length === 0 ? (
             <div className={styles.emptyCart}>
               <ScanBarcode size={40} className={styles.emptyCartIcon} />
-              <span>Escanea un producto para empezar</span>
+              <span>Escanea un producto o busca un servicio</span>
             </div>
           ) : (
             <table className={styles.cartTable}>
               <thead className={styles.tableHead}>
                 <tr>
-                  <th className={styles.thLeft}>Producto</th>
+                  <th className={styles.thLeft}>Producto / Servicio</th>
                   <th className={styles.thCenter}>Cantidad</th>
                   <th className={styles.thRight}>Precio</th>
                   <th className={styles.thRight}>Subtotal</th>
@@ -186,22 +366,134 @@ export default function Pos() {
                 {cart.map((x) => (
                   <tr key={x.id}>
                     <td className={styles.tdProduct}>
-                      <div className={styles.productName}>{x.name}</div>
-                      <div className={styles.productBarcode}>{x.barcode}</div>
+                      <div className={styles.productName}>
+                        {x._type === "service" && <Wrench size={12} style={{ display: "inline", marginRight: 4, verticalAlign: "middle", opacity: 0.5 }} />}
+                        {x.name}
+                      </div>
+                      {x._type === "product" && (x as ProductCartItem).barcode && (
+                        <div className={styles.productBarcode}>{(x as ProductCartItem).barcode}</div>
+                      )}
+                      {x._type === "service" && (
+                        <div className={styles.serviceProducts}>
+                          <div className={styles.serviceBasePrice}>Base: {money((x as ServiceCartItem).base_price)}</div>
+                          {(x as ServiceCartItem).products.map((sp) => (
+                            <div key={sp.product_id} className={styles.serviceProductItem}>
+                              <span className={styles.spName}>{sp.product_name}</span>
+                              <div className={styles.spControls}>
+                                <button
+                                  onClick={() => toggleServiceProductAffectsPrice((x as ServiceCartItem).service_id, sp.product_id)}
+                                  className={`${styles.spPriceToggle} ${sp.affects_price ? styles.spPriceToggleOn : ""}`}
+                                  title={sp.affects_price ? "Suma al precio" : "No suma al precio"}
+                                >
+                                  $
+                                </button>
+                                <button
+                                  onClick={() => updateServiceProductQty((x as ServiceCartItem).service_id, sp.product_id, sp.quantity - 1)}
+                                  className={styles.spQtyBtn}
+                                  title="Quitar uno"
+                                >
+                                  <Minus size={10} />
+                                </button>
+                                <span className={styles.spQty}>{sp.quantity}</span>
+                                <button
+                                  onClick={() => updateServiceProductQty((x as ServiceCartItem).service_id, sp.product_id, sp.quantity + 1)}
+                                  className={styles.spQtyBtn}
+                                  title="Agregar uno"
+                                >
+                                  <Plus size={10} />
+                                </button>
+                                <button
+                                  onClick={() => removeServiceProduct((x as ServiceCartItem).service_id, sp.product_id)}
+                                  className={styles.spRemoveBtn}
+                                  title="Quitar producto"
+                                >
+                                  <X size={10} />
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+                          <div className={styles.serviceProductAdd}>
+                            {addingToService === (x as ServiceCartItem).service_id ? (
+                              <div className={styles.spAddPopover}>
+                                <input
+                                  value={serviceProductSearch}
+                                  onChange={(e) => setServiceProductSearch(e.target.value)}
+                                  placeholder="Buscar producto..."
+                                  className={styles.spAddInput}
+                                  autoFocus
+                                />
+                                <div className={styles.spAddResults}>
+                                  {products
+                                    .filter(
+                                      (p) =>
+                                        p.active &&
+                                        !(x as ServiceCartItem).products.find((sp) => sp.product_id === p.id) &&
+                                        (serviceProductSearch === "" ||
+                                          p.name.toLowerCase().includes(serviceProductSearch.toLowerCase()))
+                                    )
+                                    .slice(0, 8)
+                                    .map((p) => (
+                                      <button
+                                        key={p.id}
+                                        type="button"
+                                        className={styles.spAddResultItem}
+                                        onClick={() => {
+                                          if (p.stock <= 0) {
+                                            alert(`"${p.name}" no tiene stock disponible`);
+                                            return;
+                                          }
+                                          addServiceProduct((x as ServiceCartItem).service_id, p, 1);
+                                          setServiceProductSearch("");
+                                          setAddingToService(null);
+                                        }}
+                                      >
+                                        {p.name}
+                                      </button>
+                                    ))}
+                                  {products.filter(
+                                    (p) =>
+                                      p.active &&
+                                      !(x as ServiceCartItem).products.find((sp) => sp.product_id === p.id) &&
+                                      (serviceProductSearch === "" ||
+                                        p.name.toLowerCase().includes(serviceProductSearch.toLowerCase()))
+                                  ).length === 0 && (
+                                      <div className={styles.spAddEmpty}>Sin resultados</div>
+                                    )}
+                                </div>
+                                <button
+                                  type="button"
+                                  className={styles.spAddCancel}
+                                  onClick={() => { setAddingToService(null); setServiceProductSearch(""); }}
+                                >
+                                  Cancelar
+                                </button>
+                              </div>
+                            ) : (
+                              <button
+                                type="button"
+                                className={styles.spAddBtn}
+                                onClick={() => setAddingToService((x as ServiceCartItem).service_id)}
+                              >
+                                <PackagePlus size={12} /> Agregar producto
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      )}
                     </td>
                     <td className={styles.tdQty}>
                       <div className={styles.qtyControls}>
-                        <button onClick={() => setQty(x.id, x.quantity - 1)} className={styles.qtyBtn}>
+                        <button onClick={() => handleSetQty(x, x.quantity - 1)} className={styles.qtyBtn}>
                           <Minus size={14} />
                         </button>
                         <span className={styles.qtyValue}>{x.quantity}</span>
-                        <button onClick={() => setQty(x.id, x.quantity + 1)} className={styles.qtyBtn}>
+                        <button onClick={() => handleSetQty(x, x.quantity + 1)} className={styles.qtyBtn}>
                           <Plus size={14} />
                         </button>
                       </div>
                     </td>
-                    <td className={styles.tdRight}>{money(x.price)}</td>
-                    <td className={styles.tdRightBold}>{money(x.price * x.quantity)}</td>
+                    <td className={styles.tdRight}>{money(getItemPrice(x))}</td>
+                    <td className={styles.tdRightBold}>{money(getItemSubtotal(x))}</td>
                     <td className={styles.tdAction}>
                       <button onClick={() => setQty(x.id, 0)} className={styles.deleteBtn}>
                         <Trash2 size={14} />
@@ -287,6 +579,127 @@ export default function Pos() {
           </button>
         )}
       </div>
+
+      {/* Sale completion modal */}
+      {completedSale && (
+        <div className={styles.completedOverlay} onClick={() => { }}>
+          <div className={styles.completedModal} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.completedHeader}>
+              <div className={styles.completedIcon}>
+                <CheckCircle />
+              </div>
+              <h2 className={styles.completedTitle}>Venta realizada exitosamente</h2>
+            </div>
+
+            <div className={styles.completedTicket}>
+              <div className={styles.completedStoreName}>{storeName}</div>
+              {storeAddress && <div className={styles.completedAddress}>{storeAddress}</div>}
+              {storePhone && <div className={styles.completedPhone}>{storePhone}</div>}
+              <div className={styles.completedDate}>{new Date().toLocaleString("es-MX")}</div>
+              <div className={styles.completedTicketId}>Ticket: {completedSale.saleId.slice(0, 8)}</div>
+
+              <div className={styles.completedDivider} />
+
+              <table className={styles.completedTable}>
+                <tbody>
+                  {completedSale.cart.map((x) => {
+                    if (x._type === "product") {
+                      const prod = x as ProductCartItem;
+                      return (
+                        <tr key={x.id}>
+                          <td className={styles.ctdLeft}>{x.quantity}× {x.name}</td>
+                          <td className={styles.ctdRight}>{money(prod.price * x.quantity)}</td>
+                        </tr>
+                      );
+                    }
+                    const svc = x as ServiceCartItem;
+                    const svcQty = svc.quantity;
+                    const baseTotal = svc.base_price * svcQty;
+                    const additivePerInstance = svc.products
+                      .filter((sp) => sp.affects_price)
+                      .reduce((s, sp) => s + sp.unit_price * sp.quantity, 0);
+                    const additiveTotal = additivePerInstance * svcQty;
+                    return (
+                      <React.Fragment key={x.id}>
+                        <tr>
+                          <td className={styles.ctdLeft}>{svcQty}× {svc.name}</td>
+                          <td className={styles.ctdRight}>{money(baseTotal)}</td>
+                        </tr>
+                        {svc.products
+                          .filter((sp) => sp.quantity > 0 && !sp.affects_price)
+                          .map((sp) => (
+                            <tr key={`${x.id}-inc-${sp.product_id}`}>
+                              <td className={styles.ctdSub} colSpan={2}>{sp.product_name} × {sp.quantity * svcQty}</td>
+                            </tr>
+                          ))}
+                        {svc.products
+                          .filter((sp) => sp.quantity > 0 && sp.affects_price)
+                          .map((sp) => (
+                            <tr key={`${x.id}-add-${sp.product_id}`}>
+                              <td className={styles.ctdSub}>+ {sp.product_name} × {sp.quantity * svcQty}</td>
+                              <td className={styles.ctdRightSub}>{money(sp.unit_price * sp.quantity * svcQty)}</td>
+                            </tr>
+                          ))}
+                        {additiveTotal > 0 && (
+                          <tr key={`${x.id}-total`}>
+                            <td className={styles.ctdTotalLine}>Total servicio</td>
+                            <td className={styles.ctdRightTotalLine}>{money(baseTotal + additiveTotal)}</td>
+                          </tr>
+                        )}
+                      </React.Fragment>
+                    );
+                  })}
+                </tbody>
+              </table>
+
+              <div className={styles.completedDivider} />
+
+              <div className={styles.ctotRow}>
+                <span>Subtotal</span>
+                <span>{money(completedSale.totals.subtotal)}</span>
+              </div>
+              {completedSale.discountPct > 0 && (
+                <div className={styles.ctotRow}>
+                  <span>Descuento ({completedSale.discountPct}%)</span>
+                  <span>−{money(completedSale.totals.discount)}</span>
+                </div>
+              )}
+              <div className={`${styles.ctotRow} ${styles.ctotTotal}`}>
+                <span>TOTAL</span>
+                <span>{money(completedSale.totals.total)}</span>
+              </div>
+              {completedSale.payment === "efectivo" && (
+                <React.Fragment>
+                  <div className={styles.ctotRow}>
+                    <span>Pago ({completedSale.payment})</span>
+                    <span>{money(Number(completedSale.received || 0))}</span>
+                  </div>
+                  <div className={styles.ctotRow}>
+                    <span>Cambio</span>
+                    <span>{money(completedSale.totals.change)}</span>
+                  </div>
+                </React.Fragment>
+              )}
+            </div>
+
+            <div className={styles.completedActions}>
+              <button
+                onClick={() => handlePrintTicket(completedSale.saleId)}
+                className={styles.completedPrintBtn}
+                autoFocus
+              >
+                Imprimir
+              </button>
+              <button
+                onClick={finalizeSale}
+                className={styles.completedCloseBtn}
+              >
+                Cerrar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -300,17 +713,63 @@ function Row({ label, value }: { label: string; value: string }) {
   );
 }
 
-function printTicket(saleId: string, cart: Array<{ name: string; price: number; quantity: number }>, totals: any, payment: string, received: string, storeName: string, storeFooter: string, discountPct: number) {
+function printTicket(
+  saleId: string,
+  cart: CartItem[],
+  totals: any,
+  payment: string,
+  received: string,
+  storeName: string,
+  storeAddress: string,
+  storePhone: string,
+  storeFooter: string,
+  discountPct: number
+) {
   const w = window.open("", "_blank", "width=320,height=600");
   if (!w) return;
   const date = new Date().toLocaleString("es-MX");
-  const rows = cart.map((x) =>
-    `<tr><td>${x.quantity}× ${x.name}</td><td style="text-align:right">${money(x.price * x.quantity)}</td></tr>`
-  ).join("");
+  const rows = cart.map((x) => {
+    if (x._type === "product") {
+      const lineTotal = (x as ProductCartItem).price * x.quantity;
+      return `<tr><td>${x.quantity}× ${x.name}</td><td style="text-align:right">${money(lineTotal)}</td></tr>`;
+    }
+    const svc = x as ServiceCartItem;
+    const svcQty = svc.quantity;
+    const baseTotal = svc.base_price * svcQty;
+    const additivePerInstance = svc.products
+      .filter((sp) => sp.affects_price)
+      .reduce((s, sp) => s + sp.unit_price * sp.quantity, 0);
+    const additiveTotal = additivePerInstance * svcQty;
+    const lineTotal = baseTotal + additiveTotal;
+
+    // Rows for each additive product
+    const additiveRows = svc.products
+      .filter((sp) => sp.affects_price && sp.quantity > 0)
+      .map((sp) => {
+        const totalQty = sp.quantity * svcQty;
+        const spTotal = sp.unit_price * totalQty;
+        return `<tr><td style="padding-left:8px;font-size:10px">+ ${sp.product_name} × ${totalQty}</td><td style="text-align:right;font-size:10px">${money(spTotal)}</td></tr>`;
+      })
+      .join("");
+
+    // Included products text (comma-separated, no prices)
+    const included = svc.products
+      .filter((sp) => !sp.affects_price && sp.quantity > 0)
+      .map((sp) => `${sp.product_name} × ${sp.quantity * svcQty}`)
+      .join(", ");
+
+    const includedRow = included
+      ? `<tr><td style="padding-left:8px;font-size:10px;color:#888" colspan="2">Incluye: ${included}</td></tr>`
+      : "";
+
+    return `<tr><td>${svcQty}× ${svc.name}</td><td style="text-align:right">${money(baseTotal)}</td></tr>${includedRow}${additiveRows}<tr><td style="padding-left:8px;font-size:10px;border-top:1px dashed #ccc">Total servicio</td><td style="text-align:right;font-size:10px;border-top:1px dashed #ccc">${money(lineTotal)}</td></tr>`;
+  }).join("");
   w.document.write(`
     <html><head><title>Ticket</title>
     <style>body{font-family:ui-monospace,monospace;font-size:12px;padding:12px;max-width:300px}h2{font-size:14px;margin:0 0 4px;text-align:center}.m{color:#666;text-align:center;font-size:11px}table{width:100%;margin:12px 0;border-collapse:collapse}td{padding:2px 0;vertical-align:top}.line{border-top:1px dashed #999;margin:8px 0}.tot{display:flex;justify-content:space-between}.big{font-size:16px;font-weight:bold;margin:8px 0}</style></head><body>
     <h2>${storeName}</h2>
+    ${storeAddress ? `<div class="m">${storeAddress}</div>` : ""}
+    ${storePhone ? `<div class="m">${storePhone}</div>` : ""}
     <div class="m">${date}</div>
     <div class="m">Ticket: ${saleId.slice(0, 8)}</div>
     <div class="line"></div>

@@ -8,6 +8,25 @@ export interface ISaleItemResponse {
   line_total: number
 }
 
+export interface ISaleServiceProductResponse {
+  id: string
+  product_id: string
+  product_name: string
+  quantity: number
+  unit_price: number
+  line_total: number
+  affects_price: boolean
+}
+
+export interface ISaleServiceResponse {
+  id: string
+  service_id: string
+  service_name: string
+  base_price: number
+  line_total: number
+  products: ISaleServiceProductResponse[]
+}
+
 export interface ISaleResponse {
   id: string
   subtotal: number
@@ -20,6 +39,7 @@ export interface ISaleResponse {
   user_id: string
   created_at: string
   items?: ISaleItemResponse[]
+  service_items?: ISaleServiceResponse[]
 }
 
 export interface ISaleListResponse {

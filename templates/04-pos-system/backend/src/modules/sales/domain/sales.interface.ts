@@ -1,7 +1,7 @@
-import type { ISaleEntity, ISaleItemEntity, CreateSaleData } from "./sales.entities"
+import type { ISaleEntity, ISaleItemEntity, CreateSaleData, CreateSaleServiceItemProductData } from "./sales.entities"
 
 export interface ISaleRepository {
-  create(data: CreateSaleData): Promise<ISaleEntity>
+  create(data: CreateSaleData, serviceProductsToDeduct?: { product_id: string; quantity: number }[], customServiceProducts?: Map<string, CreateSaleServiceItemProductData[]>): Promise<ISaleEntity>
   findById(id: string): Promise<ISaleEntity | null>
   findAll(params?: { startDate?: Date; endDate?: Date; userId?: string; paymentMethod?: string; page?: number; limit?: number }): Promise<{ sales: ISaleEntity[]; total: number }>
   getReport(params?: { startDate?: Date; endDate?: Date }): Promise<{

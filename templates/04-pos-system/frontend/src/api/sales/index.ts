@@ -14,6 +14,25 @@ export interface SaleItem {
   line_total: number;
 }
 
+export interface SaleServiceProduct {
+  id: string;
+  product_id: string;
+  product_name: string;
+  quantity: number;
+  unit_price: number;
+  line_total: number;
+  affects_price?: boolean;
+}
+
+export interface SaleServiceItem {
+  id: string;
+  service_id: string;
+  service_name: string;
+  base_price: number;
+  line_total: number;
+  products: SaleServiceProduct[];
+}
+
 export interface Sale {
   id: string;
   subtotal: number;
@@ -26,6 +45,7 @@ export interface Sale {
   user_id: string;
   created_at: string;
   items?: SaleItem[];
+  service_items?: SaleServiceItem[];
 }
 
 export interface SaleListResponse {
@@ -63,6 +83,23 @@ export interface CreateSaleItemPayload {
   line_total: number;
 }
 
+export interface CreateSaleServiceItemProductPayload {
+  product_id: string;
+  product_name: string;
+  quantity: number;
+  unit_price: number;
+  line_total: number;
+  affects_price?: boolean;
+}
+
+export interface CreateSaleServiceItemPayload {
+  service_id: string;
+  service_name: string;
+  base_price: number;
+  line_total: number;
+  products?: CreateSaleServiceItemProductPayload[];
+}
+
 export interface CreateSalePayload {
   subtotal: number;
   tax_total: number;
@@ -71,7 +108,8 @@ export interface CreateSalePayload {
   payment_method: "efectivo" | "tarjeta" | "transferencia";
   amount_received?: number;
   change_given?: number;
-  items: CreateSaleItemPayload[];
+  items?: CreateSaleItemPayload[];
+  service_items?: CreateSaleServiceItemPayload[];
 }
 
 // ---------------------------------------------------------------------------

@@ -1,4 +1,5 @@
-import { NotFoundError } from "@/core/errors/AppError"
+import { NotFoundError, BadRequestError } from "@/core/errors/AppError"
+import { prisma } from "@/config/prisma"
 import type { ISaleRepository } from "../domain/sales.interface"
 import type { ISaleResponse, ISaleListResponse, ISaleReport, IRevenueTrendItem, IRevenueTrendQuery } from "../domain/sales.types"
 import type { CreateSaleData } from "../domain/sales.entities"
@@ -24,16 +25,139 @@ function mapSaleToResponse(sale: any): ISaleResponse {
       tax_rate: Number(item.tax_rate),
       line_total: Number(item.line_total),
     })),
+    service_items: sale.service_items?.map((si: any) => ({
+      id: si.id,
+      service_id: si.service_id,
+      service_name: si.service_name,
+      base_price: Number(si.base_price),
+      line_total: Number(si.line_total),
+      products: si.products?.map((sp: any) => ({
+        id: sp.id,
+        product_id: sp.product_id,
+        product_name: sp.product_name,
+        quantity: sp.quantity,
+        unit_price: Number(sp.unit_price),
+        line_total: Number(sp.line_total),
+        affects_price: sp.affects_price ?? false,
+      })) || [],
+    })),
   }
 }
 
 export const createSaleService = (repository: ISaleRepository) => ({
   create: async (data: CreateSaleData): Promise<ISaleResponse> => {
-    const sale = await repository.create({
-      ...data,
-      tax_total: 0,
-      items: data.items.map(item => ({ ...item, tax_rate: 0 })),
-    })
+    // Build a unified product quantity map for stock validation
+    // (regular items + service products all go into the same map)
+    const productQtyMap = new Map<string, { name: string; price: number; quantity: number; stock: number }>()
+    let serviceProductsToDeduct: { product_id: string; quantity: number }[] = []
+    let customServiceProducts: Map<string, { product_id: string; product_name: string; quantity: number; unit_price: number; line_total: number }[]> | undefined
+
+    // 1. Add regular product items to the map
+    if (data.items && data.items.length > 0) {
+      const productIds = data.items.map((i) => i.product_id)
+      const dbProducts = await prisma.product.findMany({
+        where: { id: { in: productIds } },
+        select: { id: true, name: true, price: true, stock: true },
+      })
+      const dbProductMap = new Map(dbProducts.map((p) => [p.id, p]))
+      for (const item of data.items) {
+        const dbProd = dbProductMap.get(item.product_id)
+        if (!dbProd) throw new NotFoundError(`Product ${item.product_id} not found`)
+        const existing = productQtyMap.get(item.product_id) || {
+          name: dbProd.name,
+          price: Number(dbProd.price),
+          quantity: 0,
+          stock: dbProd.stock,
+        }
+        existing.quantity += item.quantity
+        productQtyMap.set(item.product_id, existing)
+      }
+    }
+
+    // 2. If service_items exist, resolve the associated products
+    if (data.service_items && data.service_items.length > 0) {
+      customServiceProducts = new Map()
+
+      const itemsWithCustomProducts = data.service_items.filter((si) => si.products && si.products.length > 0)
+      const itemsWithoutCustom = data.service_items.filter((si) => !si.products || si.products.length === 0)
+
+      // 2a. Process items with CUSTOM products
+      if (itemsWithCustomProducts.length > 0) {
+        const customProductIds = itemsWithCustomProducts.flatMap((si) =>
+          si.products!.map((sp) => sp.product_id)
+        )
+        const dbProducts = await prisma.product.findMany({
+          where: { id: { in: customProductIds } },
+          select: { id: true, name: true, price: true, stock: true },
+        })
+        const dbProductMap = new Map(dbProducts.map((p) => [p.id, p]))
+
+        for (const si of itemsWithCustomProducts) {
+          const sps: { product_id: string; product_name: string; quantity: number; unit_price: number; line_total: number }[] = []
+          for (const sp of si.products!) {
+            const dbProd = dbProductMap.get(sp.product_id)
+            if (!dbProd) throw new NotFoundError(`Product ${sp.product_id} not found`)
+
+            const existing = productQtyMap.get(sp.product_id) || {
+              name: dbProd.name,
+              price: Number(dbProd.price),
+              quantity: 0,
+              stock: dbProd.stock,
+            }
+            existing.quantity += sp.quantity
+            productQtyMap.set(sp.product_id, existing)
+            sps.push(sp)
+          }
+          customServiceProducts.set(si.service_id, sps)
+        }
+      }
+
+      // 2b. Process items WITHOUT custom products (auto-lookup from service_product)
+      if (itemsWithoutCustom.length > 0) {
+        const serviceIds = itemsWithoutCustom.map((si) => si.service_id)
+        const serviceProducts = await prisma.service_product.findMany({
+          where: { service_id: { in: serviceIds } },
+          include: { product: { select: { id: true, name: true, price: true, stock: true } } },
+        })
+
+        for (const sp of serviceProducts) {
+          const existing = productQtyMap.get(sp.product_id) || {
+            name: sp.product.name,
+            price: Number(sp.product.price),
+            quantity: 0,
+            stock: sp.product.stock,
+          }
+          existing.quantity += sp.quantity
+          productQtyMap.set(sp.product_id, existing)
+        }
+      }
+
+      if (productQtyMap.size === 0) {
+        throw new BadRequestError("No products found for the selected services")
+      }
+
+      serviceProductsToDeduct = Array.from(productQtyMap.entries()).map(([product_id, info]) => ({
+        product_id,
+        quantity: info.quantity,
+      }))
+    }
+
+    // 3. Unified stock validation across ALL products (regular + service)
+    if (productQtyMap.size > 0) {
+      const insufficientStock: string[] = []
+      for (const [prodId, info] of productQtyMap) {
+        if (info.stock < info.quantity) {
+          insufficientStock.push(`${info.name} (disponible: ${info.stock}, requerido: ${info.quantity})`)
+        }
+      }
+      if (insufficientStock.length > 0) {
+        throw new BadRequestError(
+          `Insufficient stock for: ${insufficientStock.join(", ")}`
+        )
+      }
+    }
+
+    const sale = await repository.create(data, serviceProductsToDeduct, customServiceProducts)
     return mapSaleToResponse(sale)
   },
 

@@ -1,7 +1,12 @@
-import type { ISaleEntity, ISaleItemEntity } from "../../domain/sales.entities"
-import type { sale, sale_item } from "@prisma/client"
+import type { ISaleEntity, ISaleItemEntity, ISaleServiceEntity, ISaleServiceProductEntity } from "../../domain/sales.entities"
+import type { sale, sale_item, sale_service, sale_service_product } from "@prisma/client"
 
-export function mapPrismaSaleToEntity(sale: sale & { items?: sale_item[] }): ISaleEntity {
+type SaleWithRelations = sale & {
+  items?: sale_item[]
+  service_items?: (sale_service & { products?: sale_service_product[] })[]
+}
+
+export function mapPrismaSaleToEntity(sale: SaleWithRelations): ISaleEntity {
   return {
     id: sale.id,
     subtotal: sale.subtotal,
@@ -15,6 +20,7 @@ export function mapPrismaSaleToEntity(sale: sale & { items?: sale_item[] }): ISa
     created_at: sale.created_at,
     updated_at: sale.updated_at,
     items: sale.items?.map(mapPrismaSaleItemToEntity),
+    service_items: sale.service_items?.map(mapPrismaSaleServiceToEntity),
   }
 }
 
@@ -30,5 +36,32 @@ export function mapPrismaSaleItemToEntity(item: sale_item): ISaleItemEntity {
     line_total: item.line_total,
     created_at: item.created_at,
     updated_at: item.updated_at,
+  }
+}
+
+export function mapPrismaSaleServiceToEntity(si: sale_service & { products?: sale_service_product[] }): ISaleServiceEntity {
+  return {
+    id: si.id,
+    sale_id: si.sale_id,
+    service_id: si.service_id,
+    service_name: si.service_name,
+    base_price: si.base_price,
+    line_total: si.line_total,
+    created_at: si.created_at,
+    products: si.products?.map(mapPrismaSaleServiceProductToEntity),
+  }
+}
+
+export function mapPrismaSaleServiceProductToEntity(sp: sale_service_product): ISaleServiceProductEntity {
+  return {
+    id: sp.id,
+    sale_service_id: sp.sale_service_id,
+    product_id: sp.product_id,
+    product_name: sp.product_name,
+    quantity: sp.quantity,
+    unit_price: sp.unit_price,
+    line_total: sp.line_total,
+    affects_price: sp.affects_price,
+    created_at: sp.created_at,
   }
 }

@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import { Search, Eye, X, ChevronLeft, ChevronRight, Printer } from "lucide-react";
-import { salesApi, type Sale } from "@/api/sales";
+import { salesApi, type Sale, type SaleServiceItem } from "@/api/sales";
 import { settingsApi } from "@/api/settings";
 import { money } from "@/lib/format";
 import styles from "./Sales.module.css";
@@ -16,6 +16,7 @@ export default function Sales() {
   const [selected, setSelected] = useState<Sale | null>(null);
   const [storeName, setStoreName] = useState("");
   const [storeAddress, setStoreAddress] = useState("");
+  const [storePhone, setStorePhone] = useState("");
 
   const LIMIT = 10;
   const totalPages = Math.max(1, Math.ceil(total / LIMIT));
@@ -24,6 +25,7 @@ export default function Sales() {
     settingsApi.get().then((res) => {
       setStoreName(res.name);
       if (res.address) setStoreAddress(res.address);
+      if (res.phone) setStorePhone(res.phone);
     }).catch(() => {});
   }, []);
 
@@ -113,7 +115,7 @@ export default function Sales() {
 
       {/* ─── Table ─── */}
       <div className={styles.tableCard}>
-        <table className={styles.table}>
+        <div className={styles.tableWrapper}><table className={styles.table}>
           <thead>
             <tr>
               <th className={styles.thLeft}>Fecha</th>
@@ -157,7 +159,7 @@ export default function Sales() {
               <tr><td colSpan={5} className={styles.empty}>Sin ventas</td></tr>
             )}
           </tbody>
-        </table>
+        </table></div>
 
         {totalPages > 1 && (
           <div className={styles.pagination}>
@@ -183,7 +185,7 @@ export default function Sales() {
             <div className={styles.modalHeader}>
               <h2 className={styles.modalTitle}>Ticket de venta</h2>
               <div className={styles.modalHeaderActions}>
-                <button onClick={() => printSaleTicket(selected, storeName, storeAddress)} className={styles.printBtn} title="Reimprimir">
+                <button onClick={() => printSaleTicket(selected, storeName, storeAddress, storePhone)} className={styles.printBtn} title="Reimprimir">
                   <Printer size={16} /> Reimprimir
                 </button>
                 <button onClick={() => setSelected(null)} className={styles.modalClose}>
@@ -196,6 +198,7 @@ export default function Sales() {
               <div className={styles.ticketHeader}>
                 <strong>{storeName || "Tienda"}</strong>
                 {storeAddress && <div className={styles.ticketAddress}>{storeAddress}</div>}
+                {storePhone && <div className={styles.ticketAddress}>{storePhone}</div>}
               </div>
               <div className={styles.ticketMeta}>
                 <div>{new Date(selected.created_at).toLocaleString("es-MX")}</div>
@@ -205,6 +208,7 @@ export default function Sales() {
 
               <table className={styles.ticketTable}>
                 <tbody>
+                  {/* Product items */}
                   {(selected.items ?? []).map((item) => (
                     <tr key={item.id}>
                       <td className={styles.ticketTdLeft}>
@@ -212,6 +216,46 @@ export default function Sales() {
                       </td>
                       <td className={styles.ticketTdRight}>{money(item.line_total)}</td>
                     </tr>
+                  ))}
+                  {/* Service items */}
+                  {(selected.service_items ?? []).map((svc) => (
+                    <Fragment key={svc.id}>
+                      <tr>
+                        <td className={styles.ticketTdLeft}>
+                          {svc.products.some((sp) => sp.affects_price)
+                            ? `${svc.products.reduce((s, sp) => s + (sp.affects_price ? sp.unit_price * sp.quantity : 0), 0) > 0 ? "1× " : ""}`
+                            : ""}
+                          {svc.service_name}
+                        </td>
+                        <td className={styles.ticketTdRight}>{money(svc.base_price)}</td>
+                      </tr>
+                      {/* Included products (no price) */}
+                      {svc.products
+                        .filter((sp) => sp.quantity > 0 && !sp.affects_price)
+                        .map((sp) => (
+                          <tr key={`${svc.id}-inc-${sp.id}`}>
+                            <td className={styles.ticketTdSub} colSpan={2}>
+                              Incluye: {sp.product_name} × {sp.quantity}
+                            </td>
+                          </tr>
+                        ))}
+                      {/* Additive products (with price) */}
+                      {svc.products
+                        .filter((sp) => sp.quantity > 0 && sp.affects_price)
+                        .map((sp) => (
+                          <tr key={`${svc.id}-add-${sp.id}`}>
+                            <td className={styles.ticketTdSub}>+ {sp.product_name} × {sp.quantity}</td>
+                            <td className={styles.ticketTdRightSub}>{money(sp.unit_price * sp.quantity)}</td>
+                          </tr>
+                        ))}
+                      {/* Service total line */}
+                      {svc.products.some((sp) => sp.affects_price) && (
+                        <tr>
+                          <td className={styles.ticketTdTotalLine}>Total servicio</td>
+                          <td className={styles.ticketTdRightTotalLine}>{money(svc.line_total)}</td>
+                        </tr>
+                      )}
+                    </Fragment>
                   ))}
                 </tbody>
               </table>
@@ -262,18 +306,41 @@ export default function Sales() {
   );
 }
 
-function printSaleTicket(sale: Sale, storeName: string, storeAddress?: string) {
+function printSaleTicket(sale: Sale, storeName: string, storeAddress?: string, storePhone?: string) {
   const w = window.open("", "_blank", "width=320,height=600");
   if (!w) return;
   const date = new Date(sale.created_at).toLocaleString("es-MX");
-  const rows = (sale.items ?? []).map((item) =>
+
+  function renderServiceItem(svc: SaleServiceItem): string {
+    const additiveTotal = svc.products
+      .filter((sp) => sp.affects_price)
+      .reduce((s, sp) => s + sp.unit_price * sp.quantity, 0);
+    const baseRow = `<tr><td>${svc.service_name}</td><td style="text-align:right">${money(svc.base_price)}</td></tr>`;
+    const includedRows = svc.products
+      .filter((sp) => sp.quantity > 0 && !sp.affects_price)
+      .map((sp) => `<tr><td style="padding-left:8px;font-size:10px" colspan="2">Incluye: ${sp.product_name} × ${sp.quantity}</td></tr>`)
+      .join("");
+    const additiveRows = svc.products
+      .filter((sp) => sp.quantity > 0 && sp.affects_price)
+      .map((sp) => `<tr><td style="padding-left:8px;font-size:10px">+ ${sp.product_name} × ${sp.quantity}</td><td style="text-align:right;font-size:10px">${money(sp.unit_price * sp.quantity)}</td></tr>`)
+      .join("");
+    const totalRow = additiveTotal > 0
+      ? `<tr><td style="padding-left:8px;font-size:10px;border-top:1px dashed #ccc">Total servicio</td><td style="text-align:right;font-size:10px;border-top:1px dashed #ccc">${money(svc.line_total)}</td></tr>`
+      : "";
+    return baseRow + includedRows + additiveRows + totalRow;
+  }
+
+  const productRows = (sale.items ?? []).map((item) =>
     `<tr><td>${item.quantity}× ${item.product_name}</td><td style="text-align:right">${money(item.line_total)}</td></tr>`
   ).join("");
+  const serviceRows = (sale.service_items ?? []).map(renderServiceItem).join("");
+  const rows = productRows + serviceRows;
   w.document.write(`
     <html><head><title>Ticket</title>
     <style>body{font-family:ui-monospace,monospace;font-size:12px;padding:12px;max-width:300px}strong{font-size:14px;display:block;text-align:center;margin-bottom:4px}.m{color:#666;text-align:center;font-size:11px;margin-bottom:2px}table{width:100%;margin:12px 0;border-collapse:collapse}td{padding:2px 0;vertical-align:top}.line{border-top:1px dashed #999;margin:8px 0}.tot{display:flex;justify-content:space-between}.big{font-size:16px;font-weight:bold;margin:8px 0}.f{color:#666;text-align:center;font-size:11px;margin-top:12px}</style></head><body>
     <strong>${storeName}</strong>
     ${storeAddress ? `<div class="m">${storeAddress}</div>` : ""}
+    ${storePhone ? `<div class="m">${storePhone}</div>` : ""}
     <div class="m">${date}</div>
     <div class="m">Ticket: ${sale.id.slice(0, 8)}</div>
     <div class="line"></div>

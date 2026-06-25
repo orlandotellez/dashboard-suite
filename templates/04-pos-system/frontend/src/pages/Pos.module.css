@@ -87,6 +87,20 @@
   outline-offset: -2px;
 }
 
+.searchResultItemDisabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.searchResultItemDisabled:hover {
+  background: none;
+}
+
+.searchResultCodeLowStock {
+  font-size: 12px;
+  color: var(--warning, #eab308);
+}
+
 .searchResultLeft {
   display: flex;
   flex-direction: column;
@@ -189,6 +203,199 @@
   font-size: 12px;
   color: var(--muted-foreground);
   margin-top: 2px;
+}
+
+.serviceProducts {
+  margin-top: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.serviceBasePrice {
+  font-size: 11px;
+  color: var(--muted-foreground);
+  padding: 2px 0 4px 8px;
+  border-left: 2px solid var(--border);
+  font-weight: 500;
+}
+
+.serviceProductItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+  font-size: 11px;
+  color: var(--muted-foreground);
+  padding: 2px 0 2px 8px;
+  border-left: 2px solid var(--border);
+}
+
+.spName {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.spControls {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.spQtyBtn {
+  padding: 2px;
+  border: none;
+  border-radius: 3px;
+  background: none;
+  cursor: pointer;
+  color: var(--muted-foreground);
+  line-height: 1;
+}
+
+.spQtyBtn:hover {
+  background: var(--accent);
+  color: var(--foreground);
+}
+
+.spQty {
+  width: 20px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  font-size: 11px;
+}
+
+.spRemoveBtn {
+  padding: 2px;
+  border: none;
+  border-radius: 3px;
+  background: none;
+  cursor: pointer;
+  color: var(--muted-foreground);
+  line-height: 1;
+  margin-left: 2px;
+}
+
+.spRemoveBtn:hover {
+  background: var(--destructive);
+  color: white;
+}
+
+.spPriceToggle {
+  padding: 1px 4px;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  background: none;
+  cursor: pointer;
+  color: var(--muted-foreground);
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1.2;
+  font-family: inherit;
+}
+
+.spPriceToggle:hover {
+  border-color: var(--muted-foreground);
+}
+
+.spPriceToggleOn {
+  background: var(--foreground);
+  color: var(--background);
+  border-color: var(--foreground);
+}
+
+.serviceProductAdd {
+  margin-top: 4px;
+  padding-left: 8px;
+}
+
+.spAddBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border: 1px dashed var(--border);
+  border-radius: 4px;
+  background: none;
+  cursor: pointer;
+  font-size: 11px;
+  color: var(--muted-foreground);
+}
+
+.spAddBtn:hover {
+  border-color: var(--ring);
+  color: var(--foreground);
+  background: var(--accent);
+}
+
+.spAddPopover {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.spAddInput {
+  width: 100%;
+  padding: 4px 8px;
+  border: 1px solid var(--input);
+  border-radius: 4px;
+  background: var(--background);
+  color: var(--foreground);
+  font-size: 12px;
+  outline: none;
+}
+
+.spAddInput:focus {
+  border-color: var(--ring);
+}
+
+.spAddResults {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  max-height: 160px;
+  overflow-y: auto;
+}
+
+.spAddResultItem {
+  display: block;
+  width: 100%;
+  padding: 4px 8px;
+  border: none;
+  border-radius: 3px;
+  background: none;
+  cursor: pointer;
+  text-align: left;
+  font-size: 11px;
+  color: var(--foreground);
+}
+
+.spAddResultItem:hover {
+  background: var(--accent);
+}
+
+.spAddEmpty {
+  font-size: 11px;
+  color: var(--muted-foreground);
+  padding: 4px 8px;
+}
+
+.spAddCancel {
+  padding: 2px 8px;
+  border: none;
+  border-radius: 3px;
+  background: none;
+  cursor: pointer;
+  font-size: 10px;
+  color: var(--muted-foreground);
+  align-self: flex-start;
+}
+
+.spAddCancel:hover {
+  color: var(--foreground);
 }
 
 .tdQty {
@@ -447,4 +654,184 @@
 
 .clearCart:hover {
   color: var(--foreground);
+}
+
+/* ─── Sale completion modal ─── */
+
+.completedOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: 24px;
+}
+
+.completedModal {
+  background: var(--background);
+  border-radius: 12px;
+  max-width: 400px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.completedHeader {
+  text-align: center;
+  padding: 24px 24px 0;
+}
+
+.completedIcon {
+  font-size: 32px;
+  margin-bottom: 8px;
+}
+
+.completedTitle {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--foreground);
+  margin: 0;
+}
+
+.completedTicket {
+  padding: 16px 24px;
+  font-family: ui-monospace, monospace;
+  font-size: 12px;
+  color: var(--foreground);
+}
+
+.completedStoreName {
+  font-size: 14px;
+  font-weight: 600;
+  text-align: center;
+  margin-bottom: 4px;
+}
+
+.completedAddress,
+.completedPhone {
+  text-align: center;
+  color: var(--muted-foreground);
+  font-size: 11px;
+}
+
+.completedDate {
+  text-align: center;
+  color: var(--muted-foreground);
+  font-size: 11px;
+}
+
+.completedTicketId {
+  text-align: center;
+  color: var(--muted-foreground);
+  font-size: 11px;
+}
+
+.completedDivider {
+  border-top: 1px dashed var(--border);
+  margin: 10px 0;
+}
+
+.completedTable {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.ctdLeft {
+  padding: 2px 4px 2px 0;
+  vertical-align: top;
+}
+
+.ctdRight {
+  padding: 2px 0 2px 4px;
+  text-align: right;
+  vertical-align: top;
+  font-variant-numeric: tabular-nums;
+}
+
+.ctdSub {
+  padding: 1px 4px 1px 12px;
+  font-size: 10px;
+  color: var(--muted-foreground);
+  vertical-align: top;
+}
+
+.ctdRightSub {
+  padding: 1px 0 1px 4px;
+  text-align: right;
+  font-size: 10px;
+  color: var(--muted-foreground);
+  font-variant-numeric: tabular-nums;
+}
+
+.ctdTotalLine {
+  padding: 4px 4px 4px 8px;
+  font-size: 10px;
+  border-top: 1px dashed var(--border);
+  font-weight: 500;
+}
+
+.ctdRightTotalLine {
+  padding: 4px 0 4px 4px;
+  text-align: right;
+  font-size: 10px;
+  border-top: 1px dashed var(--border);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+.ctotRow {
+  display: flex;
+  justify-content: space-between;
+  padding: 2px 0;
+  font-size: 12px;
+}
+
+.ctotTotal {
+  font-weight: 700;
+  font-size: 14px;
+  padding: 6px 0;
+}
+
+.completedActions {
+  display: flex;
+  gap: 8px;
+  padding: 0 24px 24px;
+}
+
+.completedPrintBtn {
+  flex: 1;
+  height: 44px;
+  border: none;
+  border-radius: 6px;
+  background: var(--foreground);
+  color: var(--background);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.completedPrintBtn:hover {
+  opacity: 0.85;
+}
+
+.completedCloseBtn {
+  flex: 1;
+  height: 44px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: none;
+  color: var(--foreground);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.completedCloseBtn:hover {
+  background: var(--accent);
 }
