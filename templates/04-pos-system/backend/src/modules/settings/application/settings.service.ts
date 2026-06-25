@@ -1,8 +1,8 @@
 import type { ISettingsRepository } from "../domain/settings.interface"
 import type { ISettingsResponse } from "../domain/settings.types"
-import type { UpdateSettingsData } from "../domain/settings.entities"
+import type { UpdateSettingsData, ISettingsEntity } from "../domain/settings.entities"
 
-function mapSettingsToResponse(settings: any): ISettingsResponse {
+function mapSettingsToResponse(settings: ISettingsEntity): ISettingsResponse {
   return {
     name: settings.name,
     address: settings.address || undefined,

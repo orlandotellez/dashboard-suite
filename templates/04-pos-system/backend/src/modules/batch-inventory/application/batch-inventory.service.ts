@@ -5,8 +5,29 @@ import type { IProductRepository } from "../../products/domain/products.interfac
 import type { IBatchResponse, IBatchListResponse } from "../domain/batch-inventory.types"
 import type { CreateBatchData } from "../domain/batch-inventory.entities"
 
-function mapBatchToResponse(batch: any): IBatchResponse {
-  const items = (batch.items || []).map((item: any) => ({
+interface RichBatchItem {
+  id: string
+  product_id: string
+  quantity: number
+  unit_cost?: unknown
+  notes?: string | null
+  product?: { name: string }
+}
+
+interface RichBatch {
+  id: string
+  movement_type: string
+  supplier_id?: string | null
+  notes?: string | null
+  user_id: string
+  created_at: Date
+  items?: RichBatchItem[]
+  supplier?: { name: string } | null
+  user?: { name: string } | null
+}
+
+function mapBatchToResponse(batch: RichBatch): IBatchResponse {
+  const items = (batch.items || []).map((item: RichBatchItem) => ({
     id: item.id,
     product_id: item.product_id,
     product_name: item.product?.name,
@@ -16,7 +37,7 @@ function mapBatchToResponse(batch: any): IBatchResponse {
   }))
 
   const total_items = items.length
-  const total_quantity = items.reduce((sum: number, i: any) => sum + i.quantity, 0)
+  const total_quantity = items.reduce((sum: number, i: { quantity: number }) => sum + i.quantity, 0)
 
   return {
     id: batch.id,
@@ -114,12 +135,7 @@ export const createBatchInventoryService = (
   },
 
   getById: async (id: string): Promise<IBatchResponse> => {
-    const batch = await batchInventoryRepository.findById(id)
-    if (!batch) {
-      throw new NotFoundError("Batch not found")
-    }
-
-    const full = await prisma.inventory_batch.findUnique({
+    const batch = await prisma.inventory_batch.findUnique({
       where: { id },
       include: {
         items: {
@@ -130,34 +146,41 @@ export const createBatchInventoryService = (
       },
     })
 
-    if (!full) throw new NotFoundError("Batch not found")
-    return mapBatchToResponse(full)
+    if (!batch) throw new NotFoundError("Batch not found")
+    return mapBatchToResponse(batch)
   },
 
   list: async (params?: { movement_type?: string; supplier_id?: string; page?: number; limit?: number }): Promise<IBatchListResponse> => {
-    const result = await batchInventoryRepository.findAll(params)
+    const where: { movement_type?: string; supplier_id?: string } = {}
+    if (params?.movement_type) where.movement_type = params.movement_type
+    if (params?.supplier_id) where.supplier_id = params.supplier_id
 
-    const batches = await Promise.all(
-      result.batches.map(async (b) => {
-        const full = await prisma.inventory_batch.findUnique({
-          where: { id: b.id },
-          include: {
-            items: {
-              include: { product: { select: { name: true } } },
-            },
-            supplier: { select: { name: true } },
-            user: { select: { name: true } },
+    const page = params?.page || 1
+    const limit = params?.limit || 50
+    const skip = (page - 1) * limit
+
+    const [batches, total] = await Promise.all([
+      prisma.inventory_batch.findMany({
+        where,
+        include: {
+          items: {
+            include: { product: { select: { name: true } } },
           },
-        })
-        return full ? mapBatchToResponse(full) : mapBatchToResponse(b)
-      })
-    )
+          supplier: { select: { name: true } },
+          user: { select: { name: true } },
+        },
+        skip,
+        take: limit,
+        orderBy: { created_at: "desc" },
+      }),
+      prisma.inventory_batch.count({ where }),
+    ])
 
     return {
-      batches,
-      total: result.total,
-      page: result.page,
-      limit: result.limit,
+      batches: batches.map((b) => mapBatchToResponse(b as unknown as RichBatch)),
+      total,
+      page,
+      limit,
     }
   },
 })

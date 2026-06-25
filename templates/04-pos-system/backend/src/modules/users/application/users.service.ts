@@ -3,8 +3,9 @@ import { hashPassword } from "@/core/utils/crypto.utils"
 import type { IUserRepository } from "../domain/users.interface"
 import type { IUserResponse, IUserListResponse } from "../domain/users.types"
 import type { CreateUserData, UpdateUserData } from "../domain/users.entities"
+import type { IUserEntity } from "../domain/users.entities"
 
-function mapUserToResponse(user: any): IUserResponse {
+function mapUserToResponse(user: IUserEntity): IUserResponse {
   return {
     id: user.id,
     name: user.name,

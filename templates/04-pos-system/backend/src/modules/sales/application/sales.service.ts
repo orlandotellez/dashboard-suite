@@ -2,9 +2,18 @@ import { NotFoundError, BadRequestError } from "@/core/errors/AppError"
 import { prisma } from "@/config/prisma"
 import type { ISaleRepository } from "../domain/sales.interface"
 import type { ISaleResponse, ISaleListResponse, ISaleReport, IRevenueTrendItem, IRevenueTrendQuery } from "../domain/sales.types"
-import type { CreateSaleData } from "../domain/sales.entities"
+import type { CreateSaleData, ISaleEntity, ISaleItemEntity, ISaleServiceEntity, ISaleServiceProductEntity } from "../domain/sales.entities"
 
-function mapSaleToResponse(sale: any): ISaleResponse {
+/** Extended sale entity that includes nested item/service relations */
+interface RichSaleService extends ISaleServiceEntity {
+  products?: ISaleServiceProductEntity[]
+}
+interface RichSale extends ISaleEntity {
+  items?: ISaleItemEntity[]
+  service_items?: RichSaleService[]
+}
+
+function mapSaleToResponse(sale: RichSale): ISaleResponse {
   return {
     id: sale.id,
     subtotal: Number(sale.subtotal),
@@ -16,7 +25,7 @@ function mapSaleToResponse(sale: any): ISaleResponse {
     change_given: sale.change_given ? Number(sale.change_given) : undefined,
     user_id: sale.user_id,
     created_at: sale.created_at instanceof Date ? sale.created_at.toISOString() : sale.created_at,
-    items: sale.items?.map((item: any) => ({
+    items: sale.items?.map((item: ISaleItemEntity) => ({
       id: item.id,
       product_id: item.product_id,
       product_name: item.product_name,
@@ -25,13 +34,13 @@ function mapSaleToResponse(sale: any): ISaleResponse {
       tax_rate: Number(item.tax_rate),
       line_total: Number(item.line_total),
     })),
-    service_items: sale.service_items?.map((si: any) => ({
+    service_items: sale.service_items?.map((si: RichSaleService) => ({
       id: si.id,
       service_id: si.service_id,
       service_name: si.service_name,
       base_price: Number(si.base_price),
       line_total: Number(si.line_total),
-      products: si.products?.map((sp: any) => ({
+      products: si.products?.map((sp: ISaleServiceProductEntity) => ({
         id: sp.id,
         product_id: sp.product_id,
         product_name: sp.product_name,

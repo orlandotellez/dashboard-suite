@@ -3,14 +3,33 @@ import type { IServiceRepository } from "../domain/services.interface"
 import type { IServiceResponse, IServiceListResponse, IServiceProductResponse } from "../domain/services.types"
 import type { CreateServiceData, UpdateServiceData } from "../domain/services.entities"
 
-function mapServiceToResponse(service: any): IServiceResponse {
+interface RichServiceProduct {
+  id: string
+  product_id: string
+  quantity: number
+  product?: { id: string; name: string; price: unknown }
+}
+
+interface RichService {
+  id: string
+  name: string
+  description?: string | null
+  base_price: unknown
+  is_active: boolean
+  created_at: Date
+  updated_at: Date
+  deleted_at?: Date | null
+  service_products?: RichServiceProduct[]
+}
+
+function mapServiceToResponse(service: RichService): IServiceResponse {
   return {
     id: service.id,
     name: service.name,
     description: service.description || undefined,
     base_price: Number(service.base_price),
     is_active: service.is_active,
-    products: (service.service_products || []).map((sp: any) => ({
+    products: (service.service_products || []).map((sp: RichServiceProduct) => ({
       id: sp.id,
       product_id: sp.product_id,
       product_name: sp.product?.name || "Unknown",

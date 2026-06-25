@@ -1,9 +1,15 @@
 import { NotFoundError, ConflictError } from "@/core/errors/AppError"
 import type { IProductRepository } from "../domain/products.interface"
 import type { IProductResponse, IProductListResponse, IProductCategory } from "../domain/products.types"
-import type { CreateProductData, UpdateProductData } from "../domain/products.entities"
+import type { CreateProductData, UpdateProductData, IProductEntity } from "../domain/products.entities"
 
-function mapProductToResponse(product: any): IProductResponse {
+/** Extended entity shape that includes joined category/supplier data from the Prisma query */
+interface RichProductEntity extends IProductEntity {
+  category?: { id: string; name: string } | null
+  supplier?: { id: string; name: string } | null
+}
+
+function mapProductToResponse(product: RichProductEntity): IProductResponse {
   return {
     id: product.id,
     barcode: product.barcode || undefined,

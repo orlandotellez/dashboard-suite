@@ -21,13 +21,14 @@ import type {
 } from "../domain/auth.types"
 import type { Role } from "@/types/auth"
 import { env } from "@/config/env"
+import type { IUserEntity } from "../domain/auth.entities"
 
 const ACCESS_TOKEN_EXPIRY = 15 * 60 * 1000
 const REFRESH_TOKEN_EXPIRY = 7 * 24 * 60 * 60 * 1000
 const VERIFICATION_CODE_EXPIRY = 15 * 60 * 1000
 const SESSION_EXPIRY = 7 * 24 * 60 * 60 * 1000
 
-function mapUserToResponse(user: any): IUserResponse {
+function mapUserToResponse(user: IUserEntity): IUserResponse {
   return {
     id: user.id,
     name: user.name,

@@ -2,13 +2,13 @@ import { NotFoundError, BadRequestError } from "@/core/errors/AppError"
 import type { IInventoryRepository } from "../domain/inventory.interface"
 import type { IProductRepository } from "../../products/domain/products.interface"
 import type { IInventoryMovementResponse, IInventoryMovementListResponse, IProductStockResponse } from "../domain/inventory.types"
-import type { CreateMovementData } from "../domain/inventory.entities"
+import type { CreateMovementData, IInventoryMovementEntity } from "../domain/inventory.entities"
 
-function mapMovementToResponse(movement: any, productName?: string): IInventoryMovementResponse {
+function mapMovementToResponse(movement: IInventoryMovementEntity, productName?: string): IInventoryMovementResponse {
   return {
     id: movement.id,
     product_id: movement.product_id,
-    product_name: productName || movement.product?.name,
+    product_name: productName || movement.product_name,
     movement_type: movement.movement_type,
     quantity: movement.quantity,
     note: movement.note || undefined,

@@ -3,7 +3,22 @@ import type { ISupplierRepository } from "../domain/suppliers.interface"
 import type { ISupplierResponse, ISupplierListResponse } from "../domain/suppliers.types"
 import type { CreateSupplierData, UpdateSupplierData } from "../domain/suppliers.entities"
 
-function mapSupplierToResponse(supplier: any): ISupplierResponse {
+interface RichSupplier {
+  id: string
+  name: string
+  contact_name?: string | null
+  email?: string | null
+  phone?: string | null
+  address?: string | null
+  notes?: string | null
+  is_active: boolean
+  created_at: Date
+  updated_at: Date
+  deleted_at?: Date | null
+  _count?: { products: number }
+}
+
+function mapSupplierToResponse(supplier: RichSupplier): ISupplierResponse {
   return {
     id: supplier.id,
     name: supplier.name,
