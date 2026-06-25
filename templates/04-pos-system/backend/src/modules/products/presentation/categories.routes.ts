@@ -1,6 +1,8 @@
-import type { FastifyInstance } from "fastify"
+import type { FastifyInstance, FastifyPluginOptions } from "fastify"
 import { categoriesController } from "./categories.controller"
 
-export const categoriesRoutes = async (fastify: FastifyInstance, _options: any) => {
-  fastify.get("/", categoriesController.list)
+const TAGS = ["Categories"]
+
+export const categoriesRoutes = async (fastify: FastifyInstance, _opts: FastifyPluginOptions) => {
+  fastify.get("/", { schema: { tags: TAGS } }, categoriesController.list)
 }

@@ -1,35 +1,68 @@
-import type { FastifyInstance } from "fastify"
+import type { FastifyInstance, FastifyPluginOptions } from "fastify"
 import { authController } from "./auth.controller"
 import { authGuard, adminGuard } from "@/core/guard/auth.guard"
+import { toJsonSchema } from "@/presentation/swagger-schema"
+import {
+  LoginPayloadDtoSchema,
+  RegisterPayloadDtoSchema,
+  RefreshTokenDtoSchema,
+  VerifyEmailDtoSchema,
+  ResendVerificationDtoSchema,
+  ForgotPasswordDtoSchema,
+  ResetPasswordDtoSchema,
+} from "./auth.dto"
 
-export const authRoutes = async (fastify: FastifyInstance, _options: any) => {
+const TAGS = ["Auth"]
+
+export const authRoutes = async (fastify: FastifyInstance, _opts: FastifyPluginOptions) => {
   // PUBLIC ROUTES
-  fastify.post("/register", { preHandler: [authGuard, adminGuard] }, authController.register)
-  fastify.post("/login", authController.login)
-  fastify.post("/refresh", authController.refresh)
-  fastify.post("/logout", authController.logout)
+  fastify.post("/register", {
+    schema: { tags: TAGS, body: toJsonSchema(RegisterPayloadDtoSchema) },
+    preHandler: [authGuard, adminGuard],
+  }, authController.register)
+
+  fastify.post("/login", {
+    schema: { tags: TAGS, body: toJsonSchema(LoginPayloadDtoSchema) },
+  }, authController.login)
+
+  fastify.post("/refresh", {
+    schema: { tags: TAGS, body: toJsonSchema(RefreshTokenDtoSchema) },
+  }, authController.refresh)
+
+  fastify.post("/logout", {
+    schema: { tags: TAGS, body: toJsonSchema(RefreshTokenDtoSchema) },
+  }, authController.logout)
 
   // Email Verification
-  fastify.post("/verify-email", authController.verifyEmail)
-  fastify.post("/resend-verification", authController.resendVerification)
+  fastify.post("/verify-email", {
+    schema: { tags: TAGS, body: toJsonSchema(VerifyEmailDtoSchema) },
+  }, authController.verifyEmail)
+
+  fastify.post("/resend-verification", {
+    schema: { tags: TAGS, body: toJsonSchema(ResendVerificationDtoSchema) },
+  }, authController.resendVerification)
 
   // Password Reset
-  fastify.post("/forgot-password", authController.forgotPassword)
-  fastify.post("/reset-password", authController.resetPassword)
+  fastify.post("/forgot-password", {
+    schema: { tags: TAGS, body: toJsonSchema(ForgotPasswordDtoSchema) },
+  }, authController.forgotPassword)
+
+  fastify.post("/reset-password", {
+    schema: { tags: TAGS, body: toJsonSchema(ResetPasswordDtoSchema) },
+  }, authController.resetPassword)
 
   // PROTECTED ROUTES
   fastify.get(
     "/sessions",
-    {
-      preHandler: authGuard
-    },
+    { schema: { tags: TAGS }, preHandler: authGuard },
     authController.getUserSessions
   )
 
   fastify.delete(
     "/sessions/:sessionId",
     {
-      preHandler: authGuard
+      schema: { tags: TAGS },
+      preHandler: authGuard,
     },
     authController.revokeSession
   )

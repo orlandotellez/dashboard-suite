@@ -4,6 +4,8 @@ import cors from "@fastify/cors"
 import compress from "@fastify/compress"
 import cookie from "@fastify/cookie"
 import rateLimit from "@fastify/rate-limit"
+import swagger from "@fastify/swagger"
+import swaggerUi from "@fastify/swagger-ui"
 import { ZodError } from "zod"
 import { AppError } from "./core/errors/AppError"
 import { env } from "./config/env"
@@ -48,6 +50,57 @@ export const buildApp = async () => {
 
   await app.register(cookie)
 
+  // ─── Swagger / OpenAPI ───
+  await app.register(swagger, {
+    openapi: {
+      info: {
+        title: "POS System API",
+        description: "API REST para sistema de punto de venta (POS). Gestión de productos, inventario, ventas, servicios, usuarios y reportes.",
+        version: "1.0.0",
+      },
+      servers: [
+        { url: `http://localhost:${env.PORT}/api/v1`, description: "Servidor de desarrollo" },
+      ],
+      components: {
+        securitySchemes: {
+          bearerAuth: {
+            type: "http",
+            scheme: "bearer",
+            bearerFormat: "JWT",
+            description: "Token JWT de acceso (accessToken)",
+          },
+          cookieAuth: {
+            type: "apiKey",
+            in: "cookie",
+            name: "accessToken",
+            description: "Cookie httpOnly con el accessToken JWT",
+          },
+        },
+      },
+      tags: [
+        { name: "Auth", description: "Autenticación, registro, verificación de email, recuperación de contraseña" },
+        { name: "Products", description: "Gestión de productos (CRUD, búsqueda por código de barra)" },
+        { name: "Categories", description: "Categorías de productos" },
+        { name: "Services", description: "Servicios compuestos por productos" },
+        { name: "Sales", description: "Ventas con productos y servicios, reportes" },
+        { name: "Inventory", description: "Movimientos de inventario individuales" },
+        { name: "Inventory Batches", description: "Lotes de inventario (entradas/salidas/ajustes masivos)" },
+        { name: "Suppliers", description: "Proveedores" },
+        { name: "Settings", description: "Configuración del negocio" },
+        { name: "Users", description: "Gestión de usuarios del sistema" },
+        { name: "Health", description: "Health check del servidor" },
+      ],
+    },
+  })
+
+  await app.register(swaggerUi, {
+    routePrefix: "/docs",
+    uiConfig: {
+      docExpansion: "list",
+      deepLinking: true,
+    },
+  })
+
   // ─── Global error handler ───
   app.setErrorHandler((error, _request, reply) => {
     if (error instanceof ZodError) {
@@ -72,7 +125,9 @@ export const buildApp = async () => {
 
   app.register(routes, { prefix: '/api/v1' });
 
-  app.get("/health", async () => {
+  app.get("/health", {
+    schema: { tags: ["Health"] },
+  }, async () => {
     return { status: "ok", timestamp: new Date().toISOString() }
   })
 

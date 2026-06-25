@@ -8,9 +8,9 @@ import { suppliersRoutes } from "@/modules/suppliers/presentation/suppliers.rout
 import { servicesRoutes } from "@/modules/services/presentation/services.routes";
 import { settingsRoutes } from "@/modules/settings/presentation/settings.routes";
 import { usersRoutes } from "@/modules/users/presentation/users.routes";
-import { type FastifyInstance } from "fastify";
+import { type FastifyInstance, type FastifyPluginOptions } from "fastify";
 
-export const routes = async (fastify: FastifyInstance, _option: any) => {
+export const routes = async (fastify: FastifyInstance, _opts: FastifyPluginOptions) => {
   fastify.register(authRoutes, { prefix: "/auth" })
   fastify.register(productsRoutes, { prefix: "/products" })
   fastify.register(categoriesRoutes, { prefix: "/categories" })
