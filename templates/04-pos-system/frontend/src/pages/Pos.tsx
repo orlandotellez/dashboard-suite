@@ -700,6 +700,12 @@ export default function Pos() {
                   <span>{money(completedSale.totals.change)}</span>
                 </div>
               )}
+              {storeFooter && (
+                <>
+                  <div className={styles.completedDivider} />
+                  <div className={styles.completedFooter}>{storeFooter}</div>
+                </>
+              )}
             </div>
 
             <div className={styles.completedActions}>

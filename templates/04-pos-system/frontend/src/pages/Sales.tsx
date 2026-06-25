@@ -17,6 +17,7 @@ export default function Sales() {
   const [storeName, setStoreName] = useState("");
   const [storeAddress, setStoreAddress] = useState("");
   const [storePhone, setStorePhone] = useState("");
+  const [storeFooter, setStoreFooter] = useState("");
 
   const LIMIT = 10;
   const totalPages = Math.max(1, Math.ceil(total / LIMIT));
@@ -26,6 +27,7 @@ export default function Sales() {
       setStoreName(res.name);
       if (res.address) setStoreAddress(res.address);
       if (res.phone) setStorePhone(res.phone);
+      if (res.ticket_footer) setStoreFooter(res.ticket_footer);
     }).catch(() => {});
   }, []);
 
@@ -186,7 +188,7 @@ export default function Sales() {
             <div className={styles.modalHeader}>
               <h2 className={styles.modalTitle}>Ticket de venta</h2>
               <div className={styles.modalHeaderActions}>
-                <button onClick={() => printSaleTicket(selected, storeName, storeAddress, storePhone)} className={styles.printBtn} title="Reimprimir">
+                <button onClick={() => printSaleTicket(selected, storeName, storeAddress, storePhone, storeFooter)} className={styles.printBtn} title="Reimprimir">
                   <Printer size={16} /> Reimprimir
                 </button>
                 <button onClick={() => setSelected(null)} className={styles.modalClose}>
@@ -297,7 +299,7 @@ export default function Sales() {
               </div>
 
               <div className={styles.ticketFooter}>
-                ¡Gracias por su compra!
+                {storeFooter}
               </div>
             </div>
           </div>
@@ -307,7 +309,7 @@ export default function Sales() {
   );
 }
 
-function printSaleTicket(sale: Sale, storeName: string, storeAddress?: string, storePhone?: string) {
+function printSaleTicket(sale: Sale, storeName: string, storeAddress?: string, storePhone?: string, storeFooter?: string) {
   const date = new Date(sale.created_at).toLocaleString("es-MX");
 
   function renderServiceItem(svc: SaleServiceItem): string {
@@ -353,7 +355,7 @@ function printSaleTicket(sale: Sale, storeName: string, storeAddress?: string, s
     <div class="tot"><span>Pago (${sale.payment_method})</span><span>${money(sale.amount_received ?? sale.total)}</span></div>
     ${sale.change_given != null && sale.change_given > 0 ? `<div class="tot"><span>Cambio</span><span>${money(sale.change_given)}</span></div>` : ""}
     <div class="line"></div>
-    <div class="f">¡Gracias por su compra!</div>
+    <div class="f">${storeFooter || "¡Gracias por su compra!"}</div>
     </body></html>
   `;
 
