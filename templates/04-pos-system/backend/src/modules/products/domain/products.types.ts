@@ -33,6 +33,7 @@ export interface IProductQueryParams {
   category_id?: string
   active?: boolean
   low_stock?: boolean
+  out_of_stock?: boolean
   page?: number
   limit?: number
 }

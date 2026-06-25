@@ -33,6 +33,7 @@ export default function Inventory() {
   const [lowStockProducts, setLowStockProducts] = useState<LowStockProduct[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [categoryId, setCategoryId] = useState("");
+  const [stockFilter, setStockFilter] = useState<"" | "low" | "out">("");
   const [q, setQ] = useState("");
   const searchRef = useRef(q);
   searchRef.current = q;
@@ -80,7 +81,7 @@ export default function Inventory() {
   }, []);
 
   useEffect(() => {
-    const key = cacheKey("inventory", page, q, categoryId);
+    const key = cacheKey("inventory", page, q, categoryId, stockFilter);
     const cached = cacheGet<{ products: Product[]; total: number; lowStock: LowStockProduct[] }>(key);
 
     if (cached) {
@@ -94,7 +95,15 @@ export default function Inventory() {
     const timer = setTimeout(async () => {
       try {
         const [productRes, lowStockRes] = await Promise.all([
-          productsApi.list({ page, limit: LIMIT, active: true, search: q || undefined, category_id: categoryId || undefined }),
+          productsApi.list({
+            page,
+            limit: LIMIT,
+            active: true,
+            search: q || undefined,
+            category_id: categoryId || undefined,
+            low_stock: stockFilter === "low" || undefined,
+            out_of_stock: stockFilter === "out" || undefined,
+          }),
           inventoryApi.lowStock(),
         ]);
         setProducts(productRes.products);
@@ -108,7 +117,7 @@ export default function Inventory() {
     }, 300);
 
     return () => clearTimeout(timer);
-  }, [page, q, categoryId, refreshKey]);
+  }, [page, q, categoryId, stockFilter, refreshKey]);
 
   // ─── Fetch movement history ───
   useEffect(() => {
@@ -274,10 +283,24 @@ export default function Inventory() {
             <option key={c.id} value={c.id}>{c.name}</option>
           ))}
         </select>
+        <div className={styles.stockFilters}>
+          <button
+            onClick={() => { setStockFilter(stockFilter === "low" ? "" : "low"); setPage(1); }}
+            className={`${styles.stockFilterBtn} ${stockFilter === "low" ? styles.stockFilterActive : ""}`}
+          >
+            Stock bajo
+          </button>
+          <button
+            onClick={() => { setStockFilter(stockFilter === "out" ? "" : "out"); setPage(1); }}
+            className={`${styles.stockFilterBtn} ${stockFilter === "out" ? styles.stockFilterActive : ""}`}
+          >
+            Sin stock
+          </button>
+        </div>
       </div>
 
       <div className={styles.tableCard}>
-        <table className={styles.table}>
+        <div className={styles.tableWrapper}><table className={styles.table}>
           <thead>
             <tr>
               <th className={styles.thLeft}>Producto</th>
@@ -295,7 +318,13 @@ export default function Inventory() {
                     {p.barcode && <div className={styles.productBarcode}>{p.barcode}</div>}
                   </td>
                   <td className={styles.tdRight}>
-                    <span className={p.stock <= p.low_stock_threshold ? styles.stockWarning : ""}>
+                    <span className={
+                      p.stock <= 0
+                        ? styles.stockOut
+                        : p.stock <= p.low_stock_threshold
+                          ? styles.stockWarning
+                          : ""
+                    }>
                       {p.stock}
                     </span>
                   </td>
@@ -316,7 +345,7 @@ export default function Inventory() {
               <tr><td colSpan={4} className={styles.empty}>Sin productos</td></tr>
             )}
           </tbody>
-        </table>
+          </table></div>
 
         {totalPages > 1 && (
           <div className={styles.pagination}>
@@ -352,7 +381,7 @@ export default function Inventory() {
         <h2 className={styles.movementSectionTitle}>Historial de movimientos</h2>
 
         <div className={styles.tableCard}>
-          <table className={styles.table}>
+          <div className={styles.tableWrapper}><table className={styles.table}>
             <thead>
               <tr>
                 <th className={styles.thLeft}>Producto</th>
@@ -402,7 +431,7 @@ export default function Inventory() {
                 <tr><td colSpan={6} className={styles.empty}>Sin movimientos</td></tr>
               )}
             </tbody>
-          </table>
+          </table></div>
 
           {movementsTotalPages > 1 && (
             <div className={styles.pagination}>
@@ -437,7 +466,7 @@ export default function Inventory() {
       <section className={styles.movementSection}>
         <h2 className={styles.movementSectionTitle}>Historial de movimientos agrupados</h2>
         <div className={styles.tableCard}>
-          <table className={styles.table}>
+          <div className={styles.tableWrapper}><table className={styles.table}>
             <thead>
               <tr>
                 <th className={styles.thLeft}>Fecha</th>
@@ -474,7 +503,7 @@ export default function Inventory() {
                 <tr><td colSpan={6} className={styles.empty}>Sin movimientos agrupados</td></tr>
               )}
             </tbody>
-          </table>
+          </table></div>
 
           {batchesTotal > BATCH_LIMIT && (
             <div className={styles.pagination}>

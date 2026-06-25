@@ -28,7 +28,7 @@ function mapProductToResponse(product: any): IProductResponse {
 }
 
 export const createProductService = (repository: IProductRepository) => ({
-  list: async (params?: { search?: string; category_id?: string; active?: boolean; lowStock?: boolean; page?: number; limit?: number }): Promise<IProductListResponse> => {
+  list: async (params?: { search?: string; category_id?: string; active?: boolean; lowStock?: boolean; outOfStock?: boolean; page?: number; limit?: number }): Promise<IProductListResponse> => {
     const result = await repository.findAll(params)
     return {
       products: result.products.map(mapProductToResponse),

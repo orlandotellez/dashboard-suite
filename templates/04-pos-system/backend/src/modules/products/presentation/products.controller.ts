@@ -10,7 +10,15 @@ const productService = createProductService(ProductRepository)
 export const productsController = {
   list: async (request: FastifyRequest, reply: FastifyReply) => {
     const query = ProductQuerySchema.parse(request.query)
-    const result = await productService.list(query)
+    const result = await productService.list({
+      search: query.search,
+      category_id: query.category_id,
+      active: query.active,
+      lowStock: query.low_stock,
+      outOfStock: query.out_of_stock,
+      page: query.page,
+      limit: query.limit,
+    })
     return reply.status(200).send(result)
   },
 

@@ -82,6 +82,10 @@ export const ProductRepository: IProductRepository = {
       where.stock = { lte: prisma.product.fields.low_stock_threshold }
     }
 
+    if (params?.outOfStock) {
+      where.stock = { lte: 0 }
+    }
+
     const page = params?.page || 1
     const limit = params?.limit || 50
     const skip = (page - 1) * limit

@@ -35,6 +35,7 @@ export const ProductQuerySchema = z.object({
   category_id: z.string().optional(),
   active: z.coerce.boolean().optional(),
   low_stock: z.coerce.boolean().optional(),
+  out_of_stock: z.coerce.boolean().optional(),
   page: z.coerce.number().int().positive().optional(),
   limit: z.coerce.number().int().positive().max(100).optional(),
 })

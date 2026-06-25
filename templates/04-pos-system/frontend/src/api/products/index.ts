@@ -74,6 +74,7 @@ export const productsApi = {
     category_id?: string;
     active?: boolean;
     low_stock?: boolean;
+    out_of_stock?: boolean;
     page?: number;
     limit?: number;
   }) => api.get<ProductListResponse>("/products", params as Record<string, string | number | boolean | undefined>),
