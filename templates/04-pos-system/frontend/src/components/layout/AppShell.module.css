@@ -254,12 +254,17 @@
 
 .main {
   min-height: 100vh;
-  margin-top: 50px;
 }
 
 @media (min-width: 768px) {
   .main {
     margin-left: 224px;
+  }
+}
+
+@media (max-width: 768px) {
+  .main {
+    margin-top: 50px;
   }
 }
 
