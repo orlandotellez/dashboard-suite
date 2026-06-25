@@ -27,6 +27,14 @@ function extractErrorMessage(data: unknown): string | null {
   return null;
 }
 
+function getAuthToken(): string | null {
+  try {
+    return localStorage.getItem("auth-token");
+  } catch {
+    return null;
+  }
+}
+
 async function request<T>(
   method: string,
   path: string,
@@ -42,6 +50,11 @@ async function request<T>(
   }
 
   const headers: Record<string, string> = {};
+
+  const token = getAuthToken();
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
 
   if (body !== undefined) {
     headers["Content-Type"] = "application/json";

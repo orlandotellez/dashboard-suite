@@ -31,11 +31,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const initialize = async () => {
       try {
-        const res = await authApi.refresh();
+        const refreshToken = localStorage.getItem("auth-refresh-token") ?? undefined;
+        const res = await authApi.refresh(refreshToken || undefined);
         setUser(res.user);
         localStorage.setItem("auth-user", JSON.stringify(res.user));
+        localStorage.setItem("auth-token", res.accessToken);
+        localStorage.setItem("auth-refresh-token", res.refreshToken);
       } catch {
         setUser(null);
+        localStorage.removeItem("auth-token");
+        localStorage.removeItem("auth-refresh-token");
       } finally {
         setLoading(false);
       }
@@ -46,10 +51,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const interval = setInterval(() => {
-      authApi.refresh()
+      const refreshToken = localStorage.getItem("auth-refresh-token");
+      if (!refreshToken) return;
+
+      authApi.refresh(refreshToken)
         .then((res) => {
           setUser(res.user);
           localStorage.setItem("auth-user", JSON.stringify(res.user));
+          localStorage.setItem("auth-token", res.accessToken);
+          localStorage.setItem("auth-refresh-token", res.refreshToken);
         })
         .catch((err) => {
           console.warn("[Auth] Background refresh failed:", err?.status ?? "", err?.message ?? "");
@@ -72,6 +82,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const res = await authApi.login({ email, password });
       setUser(res.user);
+      localStorage.setItem("auth-token", res.accessToken);
+      localStorage.setItem("auth-refresh-token", res.refreshToken);
       navigate("/pos");
     } finally {
       setLoading(false);
@@ -83,6 +95,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await authApi.logout();
     } catch {}
     setUser(null);
+    localStorage.removeItem("auth-token");
+    localStorage.removeItem("auth-refresh-token");
     navigate("/auth");
   }, [navigate]);
 

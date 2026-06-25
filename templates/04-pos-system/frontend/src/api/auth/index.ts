@@ -21,6 +21,8 @@ export interface AuthUser {
 export interface AuthResponse {
   message: string;
   user: AuthUser;
+  accessToken: string;
+  refreshToken: string;
 }
 
 export interface MessageResponse {
@@ -30,6 +32,8 @@ export interface MessageResponse {
 export interface RefreshResponse {
   message: string;
   user: AuthUser;
+  accessToken: string;
+  refreshToken: string;
 }
 
 export interface ForgotPasswordResponse {
@@ -99,8 +103,8 @@ export const authApi = {
   logout: () =>
     api.post<MessageResponse>("/auth/logout"),
 
-  refresh: () =>
-    api.post<RefreshResponse>("/auth/refresh"),
+  refresh: (refreshToken?: string) =>
+    api.post<RefreshResponse>("/auth/refresh", refreshToken ? { refreshToken } : undefined),
 
   verifyEmail: (data: VerifyEmailPayload) =>
     api.post<MessageResponse>("/auth/verify-email", data),
