@@ -166,6 +166,8 @@ model product {
   sale_items          sale_item[]
   inventory_movements inventory_movement[]
   inventory_batch_items inventory_batch_item[]
+  service_products    service_product[]
+  sale_service_products sale_service_product[]
 
   @@index([barcode])
   @@index([name])
@@ -173,6 +175,39 @@ model product {
   @@index([supplier_id])
   @@index([active])
   @@map("products")
+}
+
+model service {
+  id          String    @id @default(uuid())
+  name        String
+  description String?
+  base_price  Decimal   @db.Decimal(10, 2)
+  is_active   Boolean   @default(true) @map("is_active")
+
+  created_at  DateTime  @default(now()) @db.Timestamptz
+  updated_at  DateTime  @updatedAt @db.Timestamptz
+  deleted_at  DateTime? @db.Timestamptz
+
+  service_products  service_product[]
+  sale_services     sale_service[]
+
+  @@index([name])
+  @@index([is_active])
+  @@map("services")
+}
+
+model service_product {
+  id          String  @id @default(uuid())
+  service_id  String
+  product_id  String
+  quantity    Int     @default(1)
+
+  service service @relation(fields: [service_id], references: [id], onDelete: Cascade)
+  product product @relation(fields: [product_id], references: [id])
+
+  @@index([service_id])
+  @@index([product_id])
+  @@map("service_products")
 }
 
 model sale {
@@ -192,10 +227,50 @@ model sale {
 
   user            user      @relation(fields: [user_id], references: [id])
   items           sale_item[]
+  service_items   sale_service[]
 
   @@index([created_at])
   @@index([user_id])
   @@map("sales")
+}
+
+model sale_service {
+  id           String   @id @default(uuid())
+  sale_id      String
+  service_id   String
+  service_name String
+  base_price   Decimal   @db.Decimal(10, 2)
+  line_total   Decimal   @db.Decimal(10, 2)
+
+  created_at   DateTime @default(now()) @db.Timestamptz
+
+  sale         sale     @relation(fields: [sale_id], references: [id])
+  service      service  @relation(fields: [service_id], references: [id])
+  products     sale_service_product[]
+
+  @@index([sale_id])
+  @@index([service_id])
+  @@map("sale_services")
+}
+
+model sale_service_product {
+  id           String   @id @default(uuid())
+  sale_service_id String
+  product_id   String
+  product_name String
+  quantity     Int
+  unit_price   Decimal   @db.Decimal(10, 2)
+  line_total   Decimal   @db.Decimal(10, 2)
+  affects_price Boolean  @default(false)
+
+  created_at   DateTime @default(now()) @db.Timestamptz
+
+  sale_service sale_service @relation(fields: [sale_service_id], references: [id], onDelete: Cascade)
+  product      product      @relation(fields: [product_id], references: [id])
+
+  @@index([sale_service_id])
+  @@index([product_id])
+  @@map("sale_service_products")
 }
 
 model sale_item {

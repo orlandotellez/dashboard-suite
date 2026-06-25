@@ -4,6 +4,13 @@ import { hashPassword } from "@/core/utils/crypto.utils";
 type CategoryMap = Record<string, string>;
 type SupplierMap = Record<string, string>;
 
+type ServiceSeed = {
+  name: string;
+  description: string;
+  base_price: number;
+  products: { productName: string; quantity: number }[];
+};
+
 type ProductSeed = {
   name: string;
   unit_type: "unidad" | "paquete" | "caja" | "bolsa" | "botella" | "lata" | "sobre" | "barra" | "rollo" | "galon" | "ristra";
@@ -120,9 +127,19 @@ const products: ProductSeed[] = [
   { name: "Shampoo Dove 400ml", unit_type: "botella", category_name: "Higiene y Limpieza", supplier_name: "Unilever Nicaragua", cost: 85, price: 105, stock: 24, low_stock_threshold: 6, tax_rate: 0 },
 ];
 
+const services: ServiceSeed[] = [
+  { name: "Cambio de Aceite", description: "Cambio completo de aceite de motor", base_price: 50, products: [{ productName: "Aceite Tip Top 1L", quantity: 4 }, { productName: "Arroz Gold 2lb", quantity: 1 }] },
+  { name: "Limpieza de Equipo", description: "Limpieza profesional de equipos electrónicos", base_price: 35, products: [{ productName: "Papel Higiénico Scott 4 rollos", quantity: 1 }, { productName: "Detergente Rinso 250g", quantity: 1 }] },
+  { name: "Paquete de Mantenimiento", description: "Servicio completo de mantenimiento preventivo", base_price: 75, products: [{ productName: "Aceite Tip Top 1L", quantity: 2 }, { productName: "Detergente Surf 250g", quantity: 1 }] },
+];
+
 const seed = async () => {
   console.log("🌱 Iniciando seeder de POS...");
 
+  await prisma.sale_service_product.deleteMany({});
+  await prisma.sale_service.deleteMany({});
+  await prisma.service_product.deleteMany({});
+  await prisma.service.deleteMany({});
   await prisma.inventory_batch_item.deleteMany({});
   await prisma.inventory_batch.deleteMany({});
   await prisma.inventory_movement.deleteMany({});
@@ -177,6 +194,34 @@ const seed = async () => {
   }
   console.log(`   ✅ ${products.length} productos`);
 
+  console.log(`🔧 Sembrando ${services.length} servicios...`);
+  for (const svc of services) {
+    const created = await prisma.service.create({
+      data: {
+        name: svc.name,
+        description: svc.description,
+        base_price: svc.base_price,
+        is_active: true,
+      },
+    });
+
+    for (const sp of svc.products) {
+      const product = await prisma.product.findFirst({
+        where: { name: { contains: sp.productName, mode: "insensitive" }, deleted_at: null },
+      });
+      if (product) {
+        await prisma.service_product.create({
+          data: {
+            service_id: created.id,
+            product_id: product.id,
+            quantity: sp.quantity,
+          },
+        });
+      }
+    }
+  }
+  console.log(`   ✅ ${services.length} servicios`);
+
   const testUsers = [
     { name: "Admin", email: "admin@smart-miscelanea.com", password: "admin123", role: "admin" as const },
     { name: "Cajero", email: "cajero@smart-miscelanea.com", password: "cajero123", role: "cajero" as const },
@@ -212,6 +257,7 @@ const seed = async () => {
   console.log(`   📂 ${categories.length} categorías`);
   console.log(`   🏢 ${suppliers.length} proveedores`);
   console.log(`   📦 ${products.length} productos`);
+  console.log(`   🔧 ${services.length} servicios`);
   console.log(`   👤 ${testUsers.length} usuarios`);
   console.log("───────────────────────────────────────");
 

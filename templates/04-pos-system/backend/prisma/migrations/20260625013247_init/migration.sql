@@ -117,6 +117,30 @@ CREATE TABLE "products" (
 );
 
 -- CreateTable
+CREATE TABLE "services" (
+    "id" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "description" TEXT,
+    "base_price" DECIMAL(10,2) NOT NULL,
+    "is_active" BOOLEAN NOT NULL DEFAULT true,
+    "created_at" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMPTZ NOT NULL,
+    "deleted_at" TIMESTAMPTZ,
+
+    CONSTRAINT "services_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "service_products" (
+    "id" TEXT NOT NULL,
+    "service_id" TEXT NOT NULL,
+    "product_id" TEXT NOT NULL,
+    "quantity" INTEGER NOT NULL DEFAULT 1,
+
+    CONSTRAINT "service_products_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "sales" (
     "id" TEXT NOT NULL,
     "subtotal" DECIMAL(10,2) NOT NULL,
@@ -131,6 +155,34 @@ CREATE TABLE "sales" (
     "updated_at" TIMESTAMPTZ NOT NULL,
 
     CONSTRAINT "sales_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "sale_services" (
+    "id" TEXT NOT NULL,
+    "sale_id" TEXT NOT NULL,
+    "service_id" TEXT NOT NULL,
+    "service_name" TEXT NOT NULL,
+    "base_price" DECIMAL(10,2) NOT NULL,
+    "line_total" DECIMAL(10,2) NOT NULL,
+    "created_at" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "sale_services_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "sale_service_products" (
+    "id" TEXT NOT NULL,
+    "sale_service_id" TEXT NOT NULL,
+    "product_id" TEXT NOT NULL,
+    "product_name" TEXT NOT NULL,
+    "quantity" INTEGER NOT NULL,
+    "unit_price" DECIMAL(10,2) NOT NULL,
+    "line_total" DECIMAL(10,2) NOT NULL,
+    "affects_price" BOOLEAN NOT NULL DEFAULT false,
+    "created_at" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "sale_service_products_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -248,10 +300,34 @@ CREATE INDEX "products_supplier_id_idx" ON "products"("supplier_id");
 CREATE INDEX "products_active_idx" ON "products"("active");
 
 -- CreateIndex
+CREATE INDEX "services_name_idx" ON "services"("name");
+
+-- CreateIndex
+CREATE INDEX "services_is_active_idx" ON "services"("is_active");
+
+-- CreateIndex
+CREATE INDEX "service_products_service_id_idx" ON "service_products"("service_id");
+
+-- CreateIndex
+CREATE INDEX "service_products_product_id_idx" ON "service_products"("product_id");
+
+-- CreateIndex
 CREATE INDEX "sales_created_at_idx" ON "sales"("created_at");
 
 -- CreateIndex
 CREATE INDEX "sales_user_id_idx" ON "sales"("user_id");
+
+-- CreateIndex
+CREATE INDEX "sale_services_sale_id_idx" ON "sale_services"("sale_id");
+
+-- CreateIndex
+CREATE INDEX "sale_services_service_id_idx" ON "sale_services"("service_id");
+
+-- CreateIndex
+CREATE INDEX "sale_service_products_sale_service_id_idx" ON "sale_service_products"("sale_service_id");
+
+-- CreateIndex
+CREATE INDEX "sale_service_products_product_id_idx" ON "sale_service_products"("product_id");
 
 -- CreateIndex
 CREATE INDEX "sale_items_sale_id_idx" ON "sale_items"("sale_id");
@@ -299,7 +375,25 @@ ALTER TABLE "products" ADD CONSTRAINT "products_category_id_fkey" FOREIGN KEY ("
 ALTER TABLE "products" ADD CONSTRAINT "products_supplier_id_fkey" FOREIGN KEY ("supplier_id") REFERENCES "suppliers"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "service_products" ADD CONSTRAINT "service_products_service_id_fkey" FOREIGN KEY ("service_id") REFERENCES "services"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "service_products" ADD CONSTRAINT "service_products_product_id_fkey" FOREIGN KEY ("product_id") REFERENCES "products"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "sales" ADD CONSTRAINT "sales_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "sale_services" ADD CONSTRAINT "sale_services_sale_id_fkey" FOREIGN KEY ("sale_id") REFERENCES "sales"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "sale_services" ADD CONSTRAINT "sale_services_service_id_fkey" FOREIGN KEY ("service_id") REFERENCES "services"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "sale_service_products" ADD CONSTRAINT "sale_service_products_sale_service_id_fkey" FOREIGN KEY ("sale_service_id") REFERENCES "sale_services"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "sale_service_products" ADD CONSTRAINT "sale_service_products_product_id_fkey" FOREIGN KEY ("product_id") REFERENCES "products"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "sale_items" ADD CONSTRAINT "sale_items_sale_id_fkey" FOREIGN KEY ("sale_id") REFERENCES "sales"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
