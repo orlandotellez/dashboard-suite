@@ -136,6 +136,7 @@ export default function Inventory() {
 
   async function apply() {
     if (!adjust) return;
+    setSubmitting(true);
     try {
       await inventoryApi.create({
         product_id: adjust.id,
@@ -153,6 +154,8 @@ export default function Inventory() {
       setRefreshKey((k) => k + 1);
     } catch {
       alert("Error al ajustar inventario");
+    } finally {
+      setSubmitting(false);
     }
   }
 
@@ -579,7 +582,9 @@ export default function Inventory() {
                 />
               </div>
 
-              <button type="submit" className={styles.primaryBtn}>Aplicar</button>
+              <button type="submit" className={styles.primaryBtn} disabled={submitting}>
+                {submitting ? "Aplicando…" : "Aplicar"}
+              </button>
             </form>
           </div>
         </div>

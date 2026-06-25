@@ -24,6 +24,7 @@ export default function Users() {
   const [editing, setEditing] = useState<UserResponse | null | "new">(null);
   const [form, setForm] = useState({ name: "", email: "", password: "", role: "cajero" as string, phone: "" });
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
   const LIMIT = 10;
   const totalPages = Math.max(1, Math.ceil(total / LIMIT));
@@ -72,6 +73,7 @@ export default function Users() {
 
   async function save() {
     if (!editing) return;
+    setSubmitting(true);
     try {
       if (editing === "new") {
         await usersApi.create({ name: form.name, email: form.email, password: form.password, role: form.role as any, phone: form.phone || undefined });
@@ -84,6 +86,8 @@ export default function Users() {
       fetchUsers(page, q);
     } catch {
       alert("Error al guardar usuario");
+    } finally {
+      setSubmitting(false);
     }
   }
 
@@ -251,7 +255,9 @@ export default function Users() {
               </div>
 
               <div className={styles.modalActions}>
-                <button type="submit" className={styles.primaryBtn}>Guardar</button>
+                <button type="submit" className={styles.primaryBtn} disabled={submitting}>
+                  {submitting ? "Guardando…" : "Guardar"}
+                </button>
                 <button type="button" onClick={close} className={styles.secondaryBtn}>Cancelar</button>
               </div>
             </form>

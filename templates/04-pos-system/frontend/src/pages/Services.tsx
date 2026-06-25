@@ -36,6 +36,7 @@ export default function Services() {
   const [form, setForm] = useState(emptyForm);
   const [selectedProducts, setSelectedProducts] = useState<{ product_id: string; product_name: string; quantity: number }[]>([]);
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
   const totalPages = Math.max(1, Math.ceil(total / LIMIT));
 
@@ -151,6 +152,7 @@ export default function Services() {
 
   async function save() {
     if (!editing) return;
+    setSubmitting(true);
     try {
       const payload = {
         name: form.name,
@@ -176,6 +178,8 @@ export default function Services() {
       cacheSet(cacheKey("services", page, q), { services: res.services, total: res.total });
     } catch {
       alert("Error al guardar servicio");
+    } finally {
+      setSubmitting(false);
     }
   }
 
@@ -391,7 +395,9 @@ export default function Services() {
               </div>
 
               <div className={styles.modalActions}>
-                <button type="submit" className={styles.primaryBtn}>Guardar</button>
+                <button type="submit" className={styles.primaryBtn} disabled={submitting}>
+                  {submitting ? "Guardando…" : "Guardar"}
+                </button>
                 <button type="button" onClick={close} className={styles.secondaryBtn}>Cancelar</button>
               </div>
             </form>

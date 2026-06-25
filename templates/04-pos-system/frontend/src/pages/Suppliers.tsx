@@ -34,6 +34,7 @@ export default function Suppliers() {
   const [editing, setEditing] = useState<Supplier | null | "new">(null);
   const [form, setForm] = useState(emptyForm);
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
   const totalPages = Math.max(1, Math.ceil(total / LIMIT));
 
@@ -91,6 +92,7 @@ export default function Suppliers() {
 
   async function save() {
     if (!editing) return;
+    setSubmitting(true);
     try {
       const payload = {
         name: form.name,
@@ -116,6 +118,8 @@ export default function Suppliers() {
       cacheSet(cacheKey("suppliers", page, q), { suppliers: res.suppliers, total: res.total });
     } catch {
       alert("Error al guardar proveedor");
+    } finally {
+      setSubmitting(false);
     }
   }
 
@@ -302,7 +306,9 @@ export default function Suppliers() {
               </div>
 
               <div className={styles.modalActions}>
-                <button type="submit" className={styles.primaryBtn}>Guardar</button>
+                <button type="submit" className={styles.primaryBtn} disabled={submitting}>
+                  {submitting ? "Guardando…" : "Guardar"}
+                </button>
                 <button type="button" onClick={close} className={styles.secondaryBtn}>Cancelar</button>
               </div>
             </form>

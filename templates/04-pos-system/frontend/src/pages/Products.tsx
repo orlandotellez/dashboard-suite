@@ -55,6 +55,7 @@ export default function Products() {
   const [editing, setEditing] = useState<Product | null | "new">(null);
   const [form, setForm] = useState(emptyForm);
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
   const catMap = useMemo(() => {
     const m = new Map<string, Category>();
@@ -140,6 +141,7 @@ export default function Products() {
 
   async function save() {
     if (!editing) return;
+    setSubmitting(true);
     try {
       const payload = {
         name: form.name,
@@ -169,6 +171,8 @@ export default function Products() {
       cacheSet(cacheKey("products", page, q, categoryId), { products: res.products, total: res.total });
     } catch {
       alert("Error al guardar producto");
+    } finally {
+      setSubmitting(false);
     }
   }
 
@@ -415,7 +419,9 @@ export default function Products() {
               </div>
 
               <div className={styles.modalActions}>
-                <button type="submit" className={styles.primaryBtn}>Guardar</button>
+                <button type="submit" className={styles.primaryBtn} disabled={submitting}>
+                  {submitting ? "Guardando…" : "Guardar"}
+                </button>
                 <button type="button" onClick={close} className={styles.secondaryBtn}>Cancelar</button>
               </div>
             </form>
