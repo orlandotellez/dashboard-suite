@@ -1,11 +1,15 @@
 import { prisma } from "@/config/prisma"
 import type { IInventoryRepository } from "../domain/inventory.interface"
 import type { IInventoryMovementEntity, CreateMovementData } from "../domain/inventory.entities"
+import { Prisma } from "@prisma/client"
 
-function mapToEntity(movement: any): IInventoryMovementEntity {
+type MovementRecord = Prisma.inventory_movementGetPayload<{ include: { product: { select: { name: true } } } }>
+
+function mapToEntity(movement: MovementRecord): IInventoryMovementEntity {
   return {
     id: movement.id,
     product_id: movement.product_id,
+    product_name: movement.product?.name || undefined,
     movement_type: movement.movement_type,
     quantity: movement.quantity,
     note: movement.note || undefined,
@@ -34,6 +38,7 @@ export const InventoryRepository: IInventoryRepository = {
   async findByProductId(productId: string, params) {
     const movements = await prisma.inventory_movement.findMany({
       where: { product_id: productId },
+      include: { product: { select: { name: true } } },
       orderBy: { created_at: "desc" },
       take: params?.limit || 50,
     })
@@ -41,7 +46,7 @@ export const InventoryRepository: IInventoryRepository = {
   },
 
   async findAll(params) {
-    const where: any = {}
+    const where: { product_id?: string; movement_type?: string } = {}
     if (params?.product_id) where.product_id = params.product_id
     if (params?.movement_type) where.movement_type = params.movement_type
 
@@ -61,7 +66,7 @@ export const InventoryRepository: IInventoryRepository = {
     ])
 
     return {
-      movements: rawMovements.map(m => ({ ...mapToEntity(m), product: m.product })),
+      movements: rawMovements.map(mapToEntity),
       total,
       page,
       limit,

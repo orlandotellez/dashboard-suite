@@ -1,8 +1,16 @@
 import { prisma } from "@/config/prisma"
 import type { IBatchInventoryRepository } from "../domain/batch-inventory.interface"
 import type { IBatchEntity, IBatchItemEntity, CreateBatchData, CreateBatchItemData } from "../domain/batch-inventory.entities"
+import { Prisma } from "@prisma/client"
 
-function mapItemToEntity(item: any): IBatchItemEntity {
+const batchItemInclude = {
+  product: { select: { name: true } },
+} as const
+
+type BatchItemRecord = Prisma.inventory_batch_itemGetPayload<{ include: typeof batchItemInclude }>
+type BatchRecord = Prisma.inventory_batchGetPayload<{ include: { items: { include: typeof batchItemInclude }; supplier: { select: { name: true } }; user: { select: { name: true } } } }>
+
+function mapItemToEntity(item: BatchItemRecord): IBatchItemEntity {
   return {
     id: item.id,
     batch_id: item.batch_id,
@@ -14,7 +22,7 @@ function mapItemToEntity(item: any): IBatchItemEntity {
   }
 }
 
-function mapToEntity(batch: any): IBatchEntity {
+function mapToEntity(batch: BatchRecord): IBatchEntity {
   return {
     id: batch.id,
     movement_type: batch.movement_type,
@@ -43,9 +51,15 @@ export const BatchInventoryRepository: IBatchInventoryRepository = {
           })),
         },
       },
-      include: { items: true },
+      include: {
+        items: {
+          include: { product: { select: { name: true } } },
+        },
+        supplier: { select: { name: true } },
+        user: { select: { name: true } },
+      },
     })
-    return mapToEntity(batch)
+    return mapToEntity(batch as unknown as BatchRecord)
   },
 
   async findById(id: string) {
@@ -64,7 +78,7 @@ export const BatchInventoryRepository: IBatchInventoryRepository = {
   },
 
   async findAll(params) {
-    const where: any = {}
+    const where: { movement_type?: string; supplier_id?: string } = {}
     if (params?.movement_type) where.movement_type = params.movement_type
     if (params?.supplier_id) where.supplier_id = params.supplier_id
 

@@ -1,6 +1,7 @@
 import { prisma } from "@/config/prisma"
 import type { IServiceRepository } from "../domain/services.interface"
 import type { IServiceEntity, CreateServiceData, UpdateServiceData } from "../domain/services.entities"
+import { Prisma } from "@prisma/client"
 
 const serviceSelect = {
   id: true,
@@ -27,7 +28,10 @@ const serviceSelect = {
   },
 }
 
-function mapToEntity(service: any): IServiceEntity {
+type ServiceRecord = Prisma.serviceGetPayload<{ select: typeof serviceSelect }>
+type ServiceProductRecord = Prisma.service_productGetPayload<{ select: { id: true; product_id: true; quantity: true; product: { select: { id: true; name: true; price: true } } } }>
+
+function mapToEntity(service: ServiceRecord): IServiceEntity {
   return {
     id: service.id,
     name: service.name,
@@ -37,7 +41,7 @@ function mapToEntity(service: any): IServiceEntity {
     created_at: service.created_at,
     updated_at: service.updated_at,
     deleted_at: service.deleted_at || undefined,
-    service_products: service.service_products?.map((sp: any) => ({
+    service_products: service.service_products?.map((sp: ServiceProductRecord) => ({
       id: sp.id,
       service_id: service.id,
       product_id: sp.product_id,
@@ -51,7 +55,7 @@ function mapToEntity(service: any): IServiceEntity {
 
 export const ServiceRepository: IServiceRepository = {
   async findAll(params) {
-    const where: any = { deleted_at: null }
+    const where: Prisma.serviceWhereInput = { deleted_at: null }
 
     if (params?.search) {
       where.OR = [

@@ -15,9 +15,11 @@ const supplierSelect = {
   created_at: true,
   updated_at: true,
   deleted_at: true,
-}
+} as const
 
-function mapToEntity(supplier: any): ISupplierEntity {
+type SupplierRecord = Prisma.supplierGetPayload<{ select: typeof supplierSelect }>
+
+function mapToEntity(supplier: SupplierRecord): ISupplierEntity {
   return {
     id: supplier.id,
     name: supplier.name,

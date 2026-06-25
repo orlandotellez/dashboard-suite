@@ -34,7 +34,9 @@ const productSelect = {
   },
 }
 
-function mapToEntity(product: any): IProductEntity {
+type ProductRecord = Prisma.productGetPayload<{ select: typeof productSelect }>
+
+function mapToEntity(product: ProductRecord): IProductEntity {
   return {
     id: product.id,
     barcode: product.barcode || undefined,

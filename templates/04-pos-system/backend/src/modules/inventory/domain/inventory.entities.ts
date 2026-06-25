@@ -1,6 +1,7 @@
 export interface IInventoryMovementEntity {
   id: string
   product_id: string
+  product_name?: string
   movement_type: string
   quantity: number
   note?: string

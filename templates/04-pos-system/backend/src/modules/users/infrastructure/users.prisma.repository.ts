@@ -1,7 +1,7 @@
 import { prisma } from "@/config/prisma"
 import type { IUserRepository } from "../domain/users.interface"
 import type { IUserEntity, CreateUserData, UpdateUserData } from "../domain/users.entities"
-import type { Prisma } from "@prisma/client"
+import { Prisma } from "@prisma/client"
 
 const userSelect = {
   id: true,
@@ -14,9 +14,11 @@ const userSelect = {
   created_at: true,
   updated_at: true,
   deleted_at: true,
-}
+} as const
 
-function mapToEntity(user: any): IUserEntity {
+type UserRecord = Prisma.userGetPayload<{ select: typeof userSelect }>
+
+function mapToEntity(user: UserRecord): IUserEntity {
   return {
     id: user.id,
     name: user.name,

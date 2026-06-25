@@ -2,6 +2,22 @@ import { prisma } from "@/config/prisma"
 import type { ISaleRepository } from "../domain/sales.interface"
 import type { ISaleEntity, CreateSaleData, CreateSaleServiceItemProductData } from "../domain/sales.entities"
 import { mapPrismaSaleToEntity } from "./mappers/sales.prisma.mappers"
+import { Prisma } from "@prisma/client"
+
+type SaleWhereInput = Prisma.saleWhereInput
+
+const saleInclude = {
+  items: true,
+  service_items: {
+    include: {
+      product: { select: { id: true, name: true, price: true } },
+    },
+  },
+} as const
+
+type ServiceProductWithProduct = Prisma.service_productGetPayload<{
+  include: { product: { select: { id: true; name: true; price: true } } }
+}>
 
 export const SaleRepository: ISaleRepository = {
   async create(data: CreateSaleData, serviceProductsToDeduct?: { product_id: string; quantity: number }[], customServiceProducts?: Map<string, CreateSaleServiceItemProductData[]>) {
@@ -56,7 +72,7 @@ export const SaleRepository: ISaleRepository = {
       if (data.service_items && data.service_items.length > 0 && created.service_items) {
         // Fetch auto-lookup products for items that don't have custom products
         const itemsWithoutCustom = data.service_items.filter((si) => !si.products || si.products.length === 0)
-        let autoLookupProducts: any[] = []
+        let autoLookupProducts: ServiceProductWithProduct[] = []
         if (itemsWithoutCustom.length > 0) {
           autoLookupProducts = await tx.service_product.findMany({
             where: {
@@ -176,12 +192,13 @@ export const SaleRepository: ISaleRepository = {
   },
 
   async findAll(params) {
-    const where: any = {}
+    const where: SaleWhereInput = {}
 
     if (params?.startDate || params?.endDate) {
-      where.created_at = {}
-      if (params.startDate) where.created_at.gte = params.startDate
-      if (params.endDate) where.created_at.lte = params.endDate
+      where.created_at = {
+        ...(params.startDate && { gte: params.startDate }),
+        ...(params.endDate && { lte: params.endDate }),
+      }
     }
     if (params?.userId) where.user_id = params.userId
     if (params?.paymentMethod) where.payment_method = params.paymentMethod
