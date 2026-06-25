@@ -3,13 +3,12 @@ import { createSaleService } from "../application/sales.service"
 import { SaleRepository } from "../infrastructure/sales.prisma.repository"
 import { CreateSaleDtoSchema, SaleQuerySchema, ReportQuerySchema, RevenueTrendQuerySchema } from "./sales.dto"
 import { UnauthorizedError } from "@/core/errors/AppError"
-import { getUserIdFromCookies } from "@/core/utils/auth.utils"
 
 const saleService = createSaleService(SaleRepository)
 
 export const salesController = {
   create: async (request: FastifyRequest, reply: FastifyReply) => {
-    const { userId } = getUserIdFromCookies(request)
+    const userId = request.userId
     if (!userId) throw new UnauthorizedError("Authentication required")
 
     const data = CreateSaleDtoSchema.parse(request.body)

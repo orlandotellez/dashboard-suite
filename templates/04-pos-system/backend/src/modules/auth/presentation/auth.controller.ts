@@ -43,7 +43,9 @@ export const authController = {
 
     return reply.status(201).send({
       message: result.message,
-      user: result.user
+      user: result.user,
+      accessToken: result.accessToken,
+      refreshToken: result.refreshToken
     })
   },
 
@@ -66,7 +68,9 @@ export const authController = {
 
     return reply.status(200).send({
       message: result.message,
-      user: result.user
+      user: result.user,
+      accessToken: result.accessToken,
+      refreshToken: result.refreshToken
     })
   },
 
@@ -97,7 +101,9 @@ export const authController = {
 
     return reply.status(200).send({
       message: result.message,
-      user: result.user
+      user: result.user,
+      accessToken: result.accessToken,
+      refreshToken: result.refreshToken
     })
   },
 

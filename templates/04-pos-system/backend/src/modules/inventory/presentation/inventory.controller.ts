@@ -4,13 +4,12 @@ import { InventoryRepository } from "../infrastructure/inventory.prisma.reposito
 import { ProductRepository } from "../../products/infrastructure/products.prisma.repository"
 import { CreateMovementDtoSchema, MovementQuerySchema } from "./inventory.dto"
 import { UnauthorizedError } from "@/core/errors/AppError"
-import { getUserIdFromCookies } from "@/core/utils/auth.utils"
 
 const inventoryService = createInventoryService(InventoryRepository, ProductRepository)
 
 export const inventoryController = {
   createMovement: async (request: FastifyRequest, reply: FastifyReply) => {
-    const { userId } = getUserIdFromCookies(request)
+    const userId = request.userId
     if (!userId) throw new UnauthorizedError("Authentication required")
 
     const data = CreateMovementDtoSchema.parse(request.body)

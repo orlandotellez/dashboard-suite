@@ -4,13 +4,12 @@ import { BatchInventoryRepository } from "../infrastructure/batch-inventory.pris
 import { ProductRepository } from "../../products/infrastructure/products.prisma.repository"
 import { CreateBatchDtoSchema, BatchQuerySchema } from "./batch-inventory.dto"
 import { UnauthorizedError } from "@/core/errors/AppError"
-import { getUserIdFromCookies } from "@/core/utils/auth.utils"
 
 const batchInventoryService = createBatchInventoryService(BatchInventoryRepository, ProductRepository)
 
 export const batchInventoryController = {
   create: async (request: FastifyRequest, reply: FastifyReply) => {
-    const { userId } = getUserIdFromCookies(request)
+    const userId = request.userId
     if (!userId) throw new UnauthorizedError("Authentication required")
 
     const data = CreateBatchDtoSchema.parse(request.body)
