@@ -552,7 +552,7 @@ export default function Inventory() {
 
               <div className={styles.field}>
                 <label className={styles.fieldLabel}>Tipo de movimiento</label>
-                <select value={type} onChange={(e) => setType(e.target.value as any)} className={styles.select}>
+                <select value={type} onChange={(e) => { setType(e.target.value as any); if (e.target.value === "ajuste" && adjust) setQty(adjust.stock); else if (e.target.value !== "ajuste") setQty(0); }} className={styles.select}>
                   <option value="entrada">Entrada (compra)</option>
                   <option value="salida">Salida (merma)</option>
                   <option value="ajuste">Ajuste a nuevo valor</option>
