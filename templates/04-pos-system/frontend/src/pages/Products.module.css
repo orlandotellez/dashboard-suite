@@ -148,6 +148,11 @@
   border-color: var(--ring);
 }
 
+.tableWrapper {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
 .tableCard {
   border: 1px solid var(--border);
   border-radius: 8px;

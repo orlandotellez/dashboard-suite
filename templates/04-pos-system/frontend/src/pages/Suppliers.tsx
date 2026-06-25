@@ -159,7 +159,7 @@ export default function Suppliers() {
       </div>
 
       <div className={styles.tableCard}>
-        <table className={styles.table}>
+        <div className={styles.tableWrapper}><table className={styles.table}>
           <thead>
             <tr>
               <th className={styles.thLeft}>Nombre</th>
@@ -201,7 +201,7 @@ export default function Suppliers() {
               <tr><td colSpan={6} className={styles.empty}>Sin proveedores</td></tr>
             )}
           </tbody>
-        </table>
+        </table></div>
 
         {totalPages > 1 && (
           <div className={styles.pagination}>

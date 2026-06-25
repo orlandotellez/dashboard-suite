@@ -118,10 +118,10 @@ export default function Reports() {
         </div>
         <div className={styles.recentCard}>
           <div className={styles.skeletonBar} style={{ width: "30%", height: 16, marginBottom: 16 }} />
-          <table className={styles.table}>
+          <div className={styles.tableWrapper}><table className={styles.table}>
             <thead><tr><th>Fecha</th><th>Método</th><th>Total</th></tr></thead>
             <tbody><TableSkeleton cols={SKELETON_COLS} rows={5} /></tbody>
-          </table>
+          </table></div>
         </div>
       </div>
     );
@@ -184,7 +184,7 @@ export default function Reports() {
 
       <section className={styles.recentCard}>
         <h2 className={styles.recentTitle}>Últimas ventas</h2>
-        <table className={styles.table}>
+        <div className={styles.tableWrapper}><table className={styles.table}>
           <thead>
             <tr>
               <th className={styles.thLeft}>Fecha</th>
@@ -193,8 +193,8 @@ export default function Reports() {
             </tr>
           </thead>
           <tbody>
-            {sales.length > 0 ? (
-              sales.map((s) => (
+              {sales.length > 0 ? (
+                sales.map((s) => (
                 <tr key={s.id} className={`${styles.tr} ${loading ? styles.trDim : ""}`}>
                   <td className={styles.tdDate}>{new Date(s.created_at).toLocaleString("es-MX")}</td>
                   <td className={styles.tdMethod}>{s.payment_method}</td>
@@ -207,7 +207,7 @@ export default function Reports() {
               <tr><td colSpan={3} className={styles.empty}>Sin ventas</td></tr>
             )}
           </tbody>
-        </table>
+        </table></div>
 
         {salesTotalPages > 1 && (
           <div className={styles.pagination}>

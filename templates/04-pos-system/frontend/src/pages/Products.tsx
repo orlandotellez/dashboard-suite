@@ -222,7 +222,7 @@ export default function Products() {
       </div>
 
       <div className={styles.tableCard}>
-        <table className={styles.table}>
+        <div className={styles.tableWrapper}><table className={styles.table}>
           <thead>
             <tr>
               <th className={styles.thLeft}>Producto</th>
@@ -268,7 +268,7 @@ export default function Products() {
               <tr><td colSpan={6} className={styles.empty}>Sin productos</td></tr>
             )}
           </tbody>
-        </table>
+        </table></div>
 
         {totalPages > 1 && (
           <div className={styles.pagination}>

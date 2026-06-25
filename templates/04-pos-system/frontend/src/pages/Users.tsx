@@ -121,7 +121,7 @@ export default function Users() {
       </div>
 
       <div className={styles.tableCard}>
-        <table className={styles.table}>
+        <div className={styles.tableWrapper}><table className={styles.table}>
           <thead>
             <tr>
               <th className={styles.thLeft}>Nombre</th>
@@ -172,7 +172,7 @@ export default function Users() {
               <tr><td colSpan={5} className={styles.empty}>Sin usuarios</td></tr>
             )}
           </tbody>
-        </table>
+        </table></div>
 
         {totalPages > 1 && (
           <div className={styles.pagination}>
