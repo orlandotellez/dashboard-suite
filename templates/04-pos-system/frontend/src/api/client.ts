@@ -1,20 +1,4 @@
-const CONFIG_API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3000/api/v1";
-
-let cachedBaseUrl: string | null = null;
-
-async function getBaseUrl(): Promise<string> {
-  if (cachedBaseUrl) return cachedBaseUrl;
-
-  try {
-    const res = await fetch(CONFIG_API_URL);
-    const data = await res.json();
-    cachedBaseUrl = data.current_api_url;
-    return cachedBaseUrl!;
-  } catch (error) {
-    console.error("Error obteniendo la API URL dinámica:", error);
-    return "http://localhost:3000/api/v1";
-  }
-}
+const BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3000/api/v1";
 
 export class ApiError extends Error {
   status: number;
@@ -57,7 +41,6 @@ async function request<T>(
   body?: unknown,
   params?: Record<string, string | number | boolean | undefined>,
 ): Promise<T> {
-  const BASE_URL = await getBaseUrl()
   const url = new URL(`${BASE_URL}${path}`);
 
   if (params) {
