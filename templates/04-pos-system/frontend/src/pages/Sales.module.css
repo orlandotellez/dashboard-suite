@@ -352,8 +352,10 @@
   padding: 24px;
   font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
   font-size: 12px;
-  max-width: 320px;
-  margin: 0 auto;
+  max-width: 400px;
+  margin: 16px auto;
+  border: 2px dashed var(--border);
+  border-radius: 8px;
 }
 
 .ticketHeader {

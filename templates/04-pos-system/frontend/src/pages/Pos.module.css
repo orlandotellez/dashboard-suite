@@ -672,7 +672,7 @@
 .completedModal {
   background: var(--background);
   border-radius: 12px;
-  max-width: 400px;
+  max-width: 480px;
   width: 100%;
   max-height: 90vh;
   overflow-y: auto;
@@ -702,6 +702,9 @@
   font-family: ui-monospace, monospace;
   font-size: 12px;
   color: var(--foreground);
+  border: 2px dashed var(--border);
+  border-radius: 8px;
+  margin: 0 24px 16px;
 }
 
 .completedStoreName {
