@@ -39,12 +39,14 @@ export default function Pos() {
   const discountPct = usePosStore((s) => s.discountPct);
   const payment = usePosStore((s) => s.payment);
   const received = usePosStore((s) => s.received);
+  const manualAmount = usePosStore((s) => s.manualAmount);
   const checkingOut = usePosStore((s) => s.checkingOut);
   const setQty = usePosStore((s) => s.setQty);
   const clearCart = usePosStore((s) => s.clearCart);
   const setDiscountPct = usePosStore((s) => s.setDiscountPct);
   const setPayment = usePosStore((s) => s.setPayment);
   const setReceived = usePosStore((s) => s.setReceived);
+  const setManualAmount = usePosStore((s) => s.setManualAmount);
   const setCheckingOut = usePosStore((s) => s.setCheckingOut);
 
   useEffect(() => {
@@ -193,14 +195,14 @@ export default function Pos() {
     const tax = 0;
     const discount = subtotal * (discountPct / 100);
     const total = subtotal - discount;
-    const change = payment === "efectivo" && received ? Math.max(0, Number(received) - total) : 0;
+    const change = (payment === "efectivo" || manualAmount) && received ? Math.max(0, Number(received) - total) : 0;
     return { subtotal, tax, discount, total, change };
   }, [cart, discountPct, payment, received]);
 
   async function checkout() {
     if (!cart.length || checkingOut) return;
 
-    if (payment === "efectivo" && Number(received || 0) < totals.total) {
+    if ((payment === "efectivo" || manualAmount) && Number(received || 0) < totals.total) {
       alert(`El monto recibido ($${money(Number(received || 0))}) es menor al total ($${money(totals.total)}).`);
       setCheckingOut(false);
       return;
@@ -244,14 +246,16 @@ export default function Pos() {
           };
         });
 
+      const shouldSendAmount = payment === "efectivo" || manualAmount;
+
       const payload: CreateSalePayload = {
         subtotal: totals.subtotal,
         tax_total: 0,
         discount: totals.discount,
         total: totals.total,
-        payment_method: payment as "efectivo" | "tarjeta" | "transferencia",
-        amount_received: payment === "efectivo" ? Number(received || 0) : undefined,
-        change_given: payment === "efectivo" ? totals.change : undefined,
+        payment_method: payment as "efectivo" | "tarjeta" | "transferencia" | "credito",
+        amount_received: shouldSendAmount ? Number(received || 0) : undefined,
+        change_given: shouldSendAmount ? totals.change : undefined,
         items: items.length > 0 ? items : undefined,
         service_items: serviceItems.length > 0 ? serviceItems : undefined,
       };
@@ -541,37 +545,55 @@ export default function Pos() {
               <option value="efectivo">Efectivo</option>
               <option value="tarjeta">Tarjeta</option>
               <option value="transferencia">Transferencia</option>
+              <option value="credito">Crédito</option>
             </select>
           </div>
-          {payment === "efectivo" && (
+          {payment !== "credito" && (
             <>
-              <div className={styles.field}>
-                <label className={styles.fieldLabel}>Monto recibido</label>
-                <input
-                  type="number" min={0} value={received}
-                  onChange={(e) => setReceived(e.target.value)}
-                  className={`${styles.input} ${styles.inputRight}`}
-                />
-              </div>
-              <div className={styles.changeRow}>
-                <span className={styles.changeLabel}>Cambio</span>
-                <span className={`${styles.changeValue} ${payment === "efectivo" && received && Number(received) < totals.total ? styles.changeNegative : ""}`}>
-                  {payment === "efectivo" && received && Number(received) < totals.total
-                    ? `−$${money(totals.total - Number(received))}`
-                    : money(totals.change)
-                  }
-                </span>
-              </div>
+              {payment === "tarjeta" || payment === "transferencia"
+                ? (
+                  <label className={styles.manualAmountLabel}>
+                    <input
+                      type="checkbox"
+                      checked={manualAmount}
+                      onChange={(e) => setManualAmount(e.target.checked)}
+                      className={styles.manualAmountCheckbox}
+                    />
+                    Adjuntar monto manualmente
+                  </label>
+                )
+                : null}
+              {(payment === "efectivo" || manualAmount) && (
+                <>
+                  <div className={styles.field}>
+                    <label className={styles.fieldLabel}>Monto recibido</label>
+                    <input
+                      type="number" min={0} value={received}
+                      onChange={(e) => setReceived(e.target.value)}
+                      className={`${styles.input} ${styles.inputRight}`}
+                    />
+                  </div>
+                  <div className={styles.changeRow}>
+                    <span className={styles.changeLabel}>Cambio</span>
+                    <span className={`${styles.changeValue} ${received && Number(received) < totals.total ? styles.changeNegative : ""}`}>
+                      {received && Number(received) < totals.total
+                        ? `−$${money(totals.total - Number(received))}`
+                        : money(totals.change)
+                      }
+                    </span>
+                  </div>
+                </>
+              )}
             </>
           )}
         </div>
 
         <button
           onClick={checkout}
-          disabled={cart.length === 0 || (payment === "efectivo" && received !== "" && Number(received || 0) < totals.total)}
+          disabled={cart.length === 0 || checkingOut || ((payment === "efectivo" || manualAmount) && received !== "" && Number(received || 0) < totals.total)}
           className={styles.checkoutBtn}
         >
-          Cobrar
+          {checkingOut ? "Procesando venta..." : "Cobrar"}
         </button>
         {cart.length > 0 && (
           <button onClick={clearCart} className={styles.clearCart}>
@@ -668,16 +690,18 @@ export default function Pos() {
                 <span>TOTAL</span>
                 <span>{money(completedSale.totals.total)}</span>
               </div>
-              {completedSale.payment === "efectivo" && (
+              {(completedSale.payment === "efectivo" || completedSale.received) && (
                 <React.Fragment>
                   <div className={styles.ctotRow}>
                     <span>Pago ({completedSale.payment})</span>
                     <span>{money(Number(completedSale.received || 0))}</span>
                   </div>
-                  <div className={styles.ctotRow}>
-                    <span>Cambio</span>
-                    <span>{money(completedSale.totals.change)}</span>
-                  </div>
+                  {completedSale.totals.change > 0 && (
+                    <div className={styles.ctotRow}>
+                      <span>Cambio</span>
+                      <span>{money(completedSale.totals.change)}</span>
+                    </div>
+                  )}
                 </React.Fragment>
               )}
             </div>
@@ -779,8 +803,8 @@ function printTicket(
     ${totals.tax > 0 ? `<div class="tot"><span>Impuestos</span><span>${money(totals.tax)}</span></div>` : ""}
     ${discountPct > 0 ? `<div class="tot"><span>Descuento (${discountPct}%)</span><span>−${money(totals.discount)}</span></div>` : `<div class="tot"><span>Descuento</span><span>${money(totals.discount)}</span></div>`}
     <div class="big tot"><span>TOTAL</span><span>${money(totals.total)}</span></div>
-    <div class="tot"><span>Pago (${payment})</span><span>${money(payment === "efectivo" ? Number(received || 0) : totals.total)}</span></div>
-    ${payment === "efectivo" ? `<div class="tot"><span>Cambio</span><span>${money(totals.change)}</span></div>` : ""}
+    <div class="tot"><span>Pago (${payment})</span><span>${money(payment === "efectivo" || received ? Number(received || 0) : totals.total)}</span></div>
+    ${payment === "efectivo" || received ? `<div class="tot"><span>Cambio</span><span>${money(totals.change)}</span></div>` : ""}
     <div class="line"></div>
     <div class="m">${storeFooter || "¡Gracias por su compra!"}</div>
     <script>window.print();</script>

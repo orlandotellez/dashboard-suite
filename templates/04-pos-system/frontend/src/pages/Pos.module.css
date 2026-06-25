@@ -835,3 +835,20 @@
 .completedCloseBtn:hover {
   background: var(--accent);
 }
+
+.manualAmountLabel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--muted-foreground);
+  cursor: pointer;
+  user-select: none;
+}
+
+.manualAmountCheckbox {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--foreground);
+  cursor: pointer;
+}

@@ -38,6 +38,7 @@ interface PosState {
   discountPct: number;
   payment: string;
   received: string;
+  manualAmount: boolean;
   checkingOut: boolean;
 
   addToCart: (item: Product | { id: string; service_id: string; name: string; base_price: number; products: ServiceProduct[] }) => void;
@@ -50,6 +51,7 @@ interface PosState {
   setDiscountPct: (pct: number) => void;
   setPayment: (method: string) => void;
   setReceived: (amount: string) => void;
+  setManualAmount: (v: boolean) => void;
   setCheckingOut: (v: boolean) => void;
 }
 
@@ -62,6 +64,7 @@ export const usePosStore = create<PosState>()((set) => ({
   discountPct: 0,
   payment: "efectivo",
   received: "",
+  manualAmount: false,
   checkingOut: false,
 
   addToCart: (item) =>
@@ -167,10 +170,11 @@ export const usePosStore = create<PosState>()((set) => ({
       ),
     })),
 
-  clearCart: () => set({ cart: [], discountPct: 0, received: "", payment: "efectivo" }),
+  clearCart: () => set({ cart: [], discountPct: 0, received: "", manualAmount: false, payment: "efectivo" }),
 
   setDiscountPct: (discountPct) => set({ discountPct }),
-  setPayment: (payment) => set({ payment }),
+  setPayment: (payment) => set({ payment, manualAmount: false, received: "" }),
   setReceived: (received) => set({ received }),
+  setManualAmount: (manualAmount) => set({ manualAmount }),
   setCheckingOut: (checkingOut) => set({ checkingOut }),
 }));
