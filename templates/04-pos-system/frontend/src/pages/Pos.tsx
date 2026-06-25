@@ -816,14 +816,11 @@ function printTicket(
   iframe.style.left = "-9999px";
   iframe.style.width = "1px";
   iframe.style.height = "1px";
-  iframe.onload = () => {
-    setTimeout(() => {
-      iframe.contentWindow?.print();
-      // Remover el iframe después de imprimir o al cancelar
-      setTimeout(() => document.body.removeChild(iframe), 1000);
-    }, 500);
-  };
   document.body.appendChild(iframe);
   iframe.contentDocument?.write(html);
   iframe.contentDocument?.close();
+  setTimeout(() => {
+    iframe.contentWindow?.print();
+    setTimeout(() => document.body.removeChild(iframe), 1000);
+  }, 500);
 }

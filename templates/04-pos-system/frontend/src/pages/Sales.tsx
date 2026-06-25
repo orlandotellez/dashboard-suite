@@ -363,13 +363,11 @@ function printSaleTicket(sale: Sale, storeName: string, storeAddress?: string, s
   iframe.style.left = "-9999px";
   iframe.style.width = "1px";
   iframe.style.height = "1px";
-  iframe.onload = () => {
-    setTimeout(() => {
-      iframe.contentWindow?.print();
-      setTimeout(() => document.body.removeChild(iframe), 1000);
-    }, 500);
-  };
   document.body.appendChild(iframe);
   iframe.contentDocument?.write(html);
   iframe.contentDocument?.close();
+  setTimeout(() => {
+    iframe.contentWindow?.print();
+    setTimeout(() => document.body.removeChild(iframe), 1000);
+  }, 500);
 }
