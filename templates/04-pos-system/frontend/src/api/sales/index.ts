@@ -105,7 +105,7 @@ export interface CreateSalePayload {
   tax_total: number;
   discount: number;
   total: number;
-  payment_method: "efectivo" | "tarjeta" | "transferencia";
+  payment_method: "efectivo" | "tarjeta" | "transferencia" | "credito";
   amount_received?: number;
   change_given?: number;
   items?: CreateSaleItemPayload[];

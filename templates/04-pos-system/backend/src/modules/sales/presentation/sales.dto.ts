@@ -31,7 +31,7 @@ export const CreateSaleDtoSchema = z.object({
   tax_total: z.number().min(0),
   discount: z.number().min(0),
   total: z.number().positive(),
-  payment_method: z.enum(["efectivo", "tarjeta", "transferencia"]),
+  payment_method: z.enum(["efectivo", "tarjeta", "transferencia", "credito"]),
   amount_received: z.number().positive().optional(),
   change_given: z.number().min(0).optional(),
   items: z.array(CreateSaleItemDtoSchema).optional().default([]),
@@ -45,7 +45,7 @@ export const SaleQuerySchema = z.object({
   start_date: z.string().optional(),
   end_date: z.string().optional(),
   user_id: z.string().uuid().optional(),
-  payment_method: z.enum(["efectivo", "tarjeta", "transferencia"]).optional(),
+  payment_method: z.enum(["efectivo", "tarjeta", "transferencia", "credito"]).optional(),
   page: z.coerce.number().int().positive().optional(),
   limit: z.coerce.number().int().positive().max(100).optional(),
 })

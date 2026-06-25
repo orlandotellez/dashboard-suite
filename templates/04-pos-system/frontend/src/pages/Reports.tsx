@@ -160,6 +160,7 @@ export default function Reports() {
             <Row label="Efectivo" value={money(bm.efectivo ?? 0)} />
             <Row label="Tarjeta" value={money(bm.tarjeta ?? 0)} />
             <Row label="Transferencia" value={money(bm.transferencia ?? 0)} />
+            <Row label="Crédito" value={money(bm.credito ?? 0)} />
             <div className={styles.divider} />
             <Row label="Total" value={money(report?.total_revenue ?? 0)} bold />
           </div>

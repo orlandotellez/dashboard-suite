@@ -106,6 +106,7 @@ export default function Sales() {
             <option value="efectivo">Efectivo</option>
             <option value="tarjeta">Tarjeta</option>
             <option value="transferencia">Transferencia</option>
+            <option value="credito">Crédito</option>
           </select>
         </div>
         <button onClick={handleSearch} className={styles.searchBtn}>
