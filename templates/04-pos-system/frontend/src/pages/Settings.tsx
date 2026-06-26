@@ -10,7 +10,7 @@ export default function Settings() {
 
   useEffect(() => {
     if (user && user.role !== "admin") {
-      navigate("/", { replace: true });
+      navigate("/pos", { replace: true });
     }
   }, [user, navigate]);
 

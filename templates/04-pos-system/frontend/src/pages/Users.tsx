@@ -20,7 +20,7 @@ export default function Users() {
 
   useEffect(() => {
     if (currentUser && currentUser.role !== "admin") {
-      navigate("/", { replace: true });
+      navigate("/pos", { replace: true });
     }
   }, [currentUser, navigate]);
 

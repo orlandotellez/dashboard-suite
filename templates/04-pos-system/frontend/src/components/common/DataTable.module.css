@@ -30,6 +30,7 @@
 .table tbody tr {
   cursor: pointer;
   transition: background 0.15s;
+  border-bottom: 1px solid var(--border);
 }
 
 .table tbody tr:hover {
@@ -130,6 +131,6 @@
 
 .pageActive {
   background: var(--primary, #3b82f6) !important;
-  color: #fff !important;
+  color: #000 !important;
   border-color: var(--primary, #3b82f6) !important;
 }

@@ -100,6 +100,7 @@ button {
     opacity: 0;
     transform: translateY(4px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -195,8 +196,14 @@ textarea.fieldInput {
   transition: opacity 0.15s;
 }
 
-.primaryBtn:hover { opacity: 0.9; }
-.primaryBtn:disabled { opacity: 0.5; cursor: default; }
+.primaryBtn:hover {
+  opacity: 0.9;
+}
+
+.primaryBtn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
 
 .secondaryBtn {
   display: inline-flex;
@@ -212,4 +219,6 @@ textarea.fieldInput {
   transition: background 0.15s;
 }
 
-.secondaryBtn:hover { background: var(--accent, #f3f4f6); }
+.secondaryBtn:hover {
+  background: var(--accent, #f3f4f6);
+}
