@@ -53,6 +53,7 @@ export default function Pos() {
   const received = usePosStore((s) => s.received);
   const manualAmount = usePosStore((s) => s.manualAmount);
   const checkingOut = usePosStore((s) => s.checkingOut);
+  const currency = usePosStore((s) => s.currency);
   const setQty = usePosStore((s) => s.setQty);
   const clearCart = usePosStore((s) => s.clearCart);
   const setDiscountPct = usePosStore((s) => s.setDiscountPct);
@@ -60,6 +61,7 @@ export default function Pos() {
   const setReceived = usePosStore((s) => s.setReceived);
   const setManualAmount = usePosStore((s) => s.setManualAmount);
   const setCheckingOut = usePosStore((s) => s.setCheckingOut);
+  const setCurrency = usePosStore((s) => s.setCurrency);
   const addServiceProduct = usePosStore((s) => s.addServiceProduct);
 
   
@@ -344,10 +346,12 @@ export default function Pos() {
           received={received}
           manualAmount={manualAmount}
           checkingOut={checkingOut}
+          currency={currency}
           onDiscountPct={setDiscountPct}
           onPayment={setPayment}
           onReceived={setReceived}
           onManualAmount={setManualAmount}
+          onSetCurrency={setCurrency}
           onCheckout={checkout}
           onClearCart={clearCart}
         />

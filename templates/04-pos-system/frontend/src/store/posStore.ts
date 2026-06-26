@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import type { Product } from "@/api/products";
 import type { ServiceProduct } from "@/api/services";
+import type { CurrencyCode } from "@/lib/constants";
 
 // ---------------------------------------------------------------------------
 // Tipos de items del carrito
@@ -40,6 +41,7 @@ interface PosState {
   received: string;
   manualAmount: boolean;
   checkingOut: boolean;
+  currency: CurrencyCode;
 
   addToCart: (item: Product | { id: string; service_id: string; name: string; base_price: number; products: ServiceProduct[] }) => void;
   setQty: (id: string, q: number) => void;
@@ -53,6 +55,7 @@ interface PosState {
   setReceived: (amount: string) => void;
   setManualAmount: (v: boolean) => void;
   setCheckingOut: (v: boolean) => void;
+  setCurrency: (c: CurrencyCode) => void;
 }
 
 function isProduct(item: Product | { id: string; service_id: string; name: string; base_price: number; products: ServiceProduct[] }): item is Product {
@@ -66,6 +69,7 @@ export const usePosStore = create<PosState>()((set) => ({
   received: "",
   manualAmount: false,
   checkingOut: false,
+  currency: "NIO",
 
   addToCart: (item) =>
     set((s) => {
@@ -177,4 +181,5 @@ export const usePosStore = create<PosState>()((set) => ({
   setReceived: (received) => set({ received }),
   setManualAmount: (manualAmount) => set({ manualAmount }),
   setCheckingOut: (checkingOut) => set({ checkingOut }),
+  setCurrency: (currency) => set({ currency }),
 }));

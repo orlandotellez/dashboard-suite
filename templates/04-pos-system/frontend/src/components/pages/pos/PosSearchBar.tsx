@@ -1,6 +1,7 @@
 import { Wrench } from "lucide-react";
 import type { Product, Service } from "@/api";
 import { money } from "@/lib/format";
+import { usePosStore } from "@/store/posStore";
 import styles from "./PosSearchBar.module.css";
 
 export interface SearchResult {
@@ -37,6 +38,7 @@ export function PosSearchBar({
   onSubmit,
   onAddToCart,
 }: PosSearchBarProps) {
+  const currency = usePosStore((s) => s.currency);
   return (
     <div className={styles.searchBar} ref={searchWrapperRef}>
       <form onSubmit={onSubmit}>
@@ -73,7 +75,7 @@ export function PosSearchBar({
                   {r._type === "product" && isLowStock && <span className={styles.searchResultCodeLowStock}>Stock bajo</span>}
                   {r._type === "service" && <span className={styles.searchResultCode}>Servicio</span>}
                 </div>
-                <span className={styles.searchResultPrice}>{money(r.price)}</span>
+                <span className={styles.searchResultPrice}>{money(r.price, currency)}</span>
               </button>
             );
           })}

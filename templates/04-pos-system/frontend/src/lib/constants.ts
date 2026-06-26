@@ -24,4 +24,14 @@ export const PAYMENT_METHODS = [
 export type PaymentMethod = (typeof PAYMENT_METHODS)[number]["value"];
 
 
+export const CURRENCIES = [
+  { code: "NIO", label: "Córdoba (C$)" },
+  { code: "USD", label: "Dólar ($)" },
+  { code: "EUR", label: "Euro (€)" },
+  { code: "MXN", label: "Peso Mexicano ($)" },
+] as const;
+
+export type CurrencyCode = (typeof CURRENCIES)[number]["code"];
+
+
 export const MOVEMENT_TYPES = ["entrada", "salida", "ajuste", "venta"] as const;

@@ -1,7 +1,7 @@
 import { X } from "lucide-react";
 import { money } from "@/lib/format";
-import { PAYMENT_METHODS } from "@/lib/constants";
-import type { CartItem } from "@/store/posStore";
+import { PAYMENT_METHODS, CURRENCIES } from "@/lib/constants";
+import type { CurrencyCode } from "@/lib/constants";
 import styles from "../../../pages/Pos.module.css";
 
 
@@ -25,23 +25,25 @@ interface PosPaymentPanelProps {
   received: string;
   manualAmount: boolean;
   checkingOut: boolean;
+  currency: CurrencyCode;
   onDiscountPct: (v: number) => void;
   onPayment: (v: string) => void;
   onReceived: (v: string) => void;
   onManualAmount: (v: boolean) => void;
+  onSetCurrency: (c: CurrencyCode) => void;
   onCheckout: () => void;
   onClearCart: () => void;
 }
 
 export function PosPaymentPanel({
-  totals, cartLength, discountPct, payment, received, manualAmount, checkingOut,
-  onDiscountPct, onPayment, onReceived, onManualAmount, onCheckout, onClearCart,
+  totals, cartLength, discountPct, payment, received, manualAmount, checkingOut, currency,
+  onDiscountPct, onPayment, onReceived, onManualAmount, onSetCurrency, onCheckout, onClearCart,
 }: PosPaymentPanelProps) {
   return (
     <>
       <div className={styles.totalsSection}>
-        <Row label="Subtotal" value={money(totals.subtotal)} />
-        {totals.tax > 0 && <Row label="Impuestos" value={money(totals.tax)} />}
+        <Row label="Subtotal" value={money(totals.subtotal, currency)} />
+        {totals.tax > 0 && <Row label="Impuestos" value={money(totals.tax, currency)} />}
         <div className={styles.discountRow}>
           <label className={styles.discountLabel}>Descuento %</label>
           <input
@@ -50,17 +52,29 @@ export function PosPaymentPanel({
             className={styles.discountInput}
           />
         </div>
-        <Row label="− Descuento" value={money(totals.discount)} />
+        <Row label="− Descuento" value={money(totals.discount, currency)} />
       </div>
 
       <div className={styles.divider} />
 
       <div className={styles.totalRow}>
         <div className={styles.totalLabel}>Total</div>
-        <div className={styles.totalValue}>{money(totals.total)}</div>
+        <div className={styles.totalValue}>{money(totals.total, currency)}</div>
       </div>
 
       <div className={styles.paymentSection}>
+        <div className={styles.field}>
+          <label className={styles.fieldLabel}>Moneda</label>
+          <select
+            value={currency}
+            onChange={(e) => onSetCurrency(e.target.value as CurrencyCode)}
+            className={styles.select}
+          >
+            {CURRENCIES.map((c) => (
+              <option key={c.code} value={c.code}>{c.label}</option>
+            ))}
+          </select>
+        </div>
         <div className={styles.field}>
           <label className={styles.fieldLabel}>Método de pago</label>
           <select
@@ -102,8 +116,8 @@ export function PosPaymentPanel({
                   <span className={styles.changeLabel}>Cambio</span>
                   <span className={`${styles.changeValue} ${received && Number(received) < totals.total ? styles.changeNegative : ""}`}>
                     {received && Number(received) < totals.total
-                      ? `−$${money(totals.total - Number(received))}`
-                      : money(totals.change)
+                      ? `−${money(totals.total - Number(received), currency)}`
+                      : money(totals.change, currency)
                     }
                   </span>
                 </div>

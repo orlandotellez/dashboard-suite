@@ -23,9 +23,7 @@ export function PosCartTable({
   onSetQty, onDelete, onAddingToService, onServiceProductSearch,
   onAddServiceProduct, showAlert,
 }: PosCartTableProps) {
-  const toggleServiceProductAffectsPrice = usePosStore((s) => s.toggleServiceProductAffectsPrice);
-  const updateServiceProductQty = usePosStore((s) => s.updateServiceProductQty);
-  const removeServiceProduct = usePosStore((s) => s.removeServiceProduct);
+  const currency = usePosStore((s) => s.currency);
 
   if (cart.length === 0) {
     return (
@@ -95,8 +93,8 @@ export function PosCartTable({
                 </button>
               </div>
             </td>
-            <td className={styles.tdRight}>{money(getItemPrice(x))}</td>
-            <td className={styles.tdRightBold}>{money(getItemSubtotal(x))}</td>
+            <td className={styles.tdRight}>{money(getItemPrice(x), currency)}</td>
+            <td className={styles.tdRightBold}>{money(getItemSubtotal(x), currency)}</td>
             <td className={styles.tdAction}>
               <button onClick={() => onDelete(x.id)} className={styles.deleteBtn}>
                 <Trash2 size={14} />
@@ -129,10 +127,11 @@ function ServiceProductManager({
   const toggleServiceProductAffectsPrice = usePosStore((s) => s.toggleServiceProductAffectsPrice);
   const updateServiceProductQty = usePosStore((s) => s.updateServiceProductQty);
   const removeServiceProduct = usePosStore((s) => s.removeServiceProduct);
+  const currency = usePosStore((s) => s.currency);
 
   return (
     <div className={styles.serviceProducts}>
-      <div className={styles.serviceBasePrice}>Base: {money(svc.base_price)}</div>
+      <div className={styles.serviceBasePrice}>Base: {money(svc.base_price, currency)}</div>
       {svc.products.map((sp) => (
         <div key={sp.product_id} className={styles.serviceProductItem}>
           <span className={styles.spName}>{sp.product_name}</span>
