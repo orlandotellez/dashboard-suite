@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { ChevronDown, Settings, LogOut } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
-import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { ConfirmDialog } from "@/components/common/ui/ConfirmDialog";
 import styles from "./UserMenu.module.css";
 
 export function UserMenu() {
@@ -11,7 +11,7 @@ export function UserMenu() {
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
-  /* ── Cerrar dropdown al hacer click fuera ── */
+  
   useEffect(() => {
     if (!open) return;
     const handler = (e: MouseEvent) => {
@@ -23,7 +23,7 @@ export function UserMenu() {
     return () => document.removeEventListener("mousedown", handler);
   }, [open]);
 
-  /* ── Cerrar con Escape ── */
+  
   useEffect(() => {
     if (!open) return;
     const handler = (e: KeyboardEvent) => {
@@ -33,7 +33,7 @@ export function UserMenu() {
     return () => document.removeEventListener("keydown", handler);
   }, [open]);
 
-  /* ── Iniciales del usuario ── */
+  
   const initials = user?.name
     ? user.name
         .split(" ")
@@ -45,7 +45,7 @@ export function UserMenu() {
 
   return (
     <div className={styles.wrapper} ref={ref}>
-      {/* Trigger */}
+      {}
       <button
         className={styles.trigger}
         onClick={() => setOpen((v) => !v)}
@@ -64,7 +64,7 @@ export function UserMenu() {
         />
       </button>
 
-      {/* Dropdown */}
+      {}
       {open && (
         <div className={styles.dropdown} role="menu">
           <div className={styles.dropdownHeader}>
@@ -104,7 +104,7 @@ export function UserMenu() {
         </div>
       )}
 
-      {/* Confirmacion de salida */}
+      {}
       <ConfirmDialog
         open={showLogoutConfirm}
         title="Cerrar sesion"

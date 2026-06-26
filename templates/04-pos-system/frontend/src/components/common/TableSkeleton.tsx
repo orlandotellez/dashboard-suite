@@ -1,7 +1,7 @@
 import s from "./Skeleton.module.css";
 
 export interface SkeletonCol {
-  width: string;    // ej: "60%", "80px"
+  width: string;    
   align?: "left" | "right" | "center";
 }
 
