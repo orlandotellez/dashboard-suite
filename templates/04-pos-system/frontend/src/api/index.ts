@@ -9,7 +9,7 @@ export { suppliersApi } from "./suppliers";
 export { settingsApi } from "./settings";
 export { usersApi } from "./users";
 
-export type { AuthUser, Role, SessionInfo, UserSessionsResponse } from "./auth";
+export type { AuthUser, Role } from "./auth";
 export type { Product, ProductCategory, ProductSupplier, ProductListResponse } from "./products";
 export type { Category } from "./categories";
 export type { Service, ServiceProduct, ServiceListResponse } from "./services";

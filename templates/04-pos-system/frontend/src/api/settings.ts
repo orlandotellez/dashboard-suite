@@ -1,8 +1,8 @@
-import { api } from "../client";
+import { api } from "./client";
 
-// ---------------------------------------------------------------------------
-// Tipos
-// ---------------------------------------------------------------------------
+
+
+
 
 export interface Settings {
   id: number;
@@ -15,9 +15,9 @@ export interface Settings {
   updated_at: string;
 }
 
-// ---------------------------------------------------------------------------
-// Payloads
-// ---------------------------------------------------------------------------
+
+
+
 
 export interface UpdateSettingsPayload {
   name?: string;
@@ -28,9 +28,9 @@ export interface UpdateSettingsPayload {
   ticket_footer?: string | null;
 }
 
-// ---------------------------------------------------------------------------
-// Endpoints
-// ---------------------------------------------------------------------------
+
+
+
 
 export const settingsApi = {
   get: () =>

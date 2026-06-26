@@ -1,8 +1,8 @@
-import { api } from "../client";
+import { api } from "./client";
 
-// ---------------------------------------------------------------------------
-// Tipos
-// ---------------------------------------------------------------------------
+
+
+
 
 export interface ServiceProduct {
   id: string;
@@ -34,9 +34,9 @@ export interface DeleteResponse {
   message: string;
 }
 
-// ---------------------------------------------------------------------------
-// Payloads
-// ---------------------------------------------------------------------------
+
+
+
 
 export interface ServiceProductPayload {
   product_id: string;
@@ -53,9 +53,9 @@ export interface CreateServicePayload {
 
 export interface UpdateServicePayload extends Partial<CreateServicePayload> {}
 
-// ---------------------------------------------------------------------------
-// Endpoints
-// ---------------------------------------------------------------------------
+
+
+
 
 export const servicesApi = {
   list: (params?: {

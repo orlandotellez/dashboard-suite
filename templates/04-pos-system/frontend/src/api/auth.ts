@@ -1,8 +1,8 @@
-import { api } from "../client";
+import { api } from "./client";
 
-// ---------------------------------------------------------------------------
-// Tipos
-// ---------------------------------------------------------------------------
+
+
+
 
 export type Role = "admin" | "cajero";
 
@@ -41,22 +41,9 @@ export interface ForgotPasswordResponse {
   expires_at: string;
 }
 
-export interface SessionInfo {
-  id: string;
-  expires_at: string;
-  ip_address?: string;
-  user_agent?: string;
-  created_at: string;
-  updated_at: string;
-}
 
-export interface UserSessionsResponse {
-  sessions: SessionInfo[];
-}
 
-// ---------------------------------------------------------------------------
-// Payloads
-// ---------------------------------------------------------------------------
+
 
 export interface RegisterPayload {
   name: string;
@@ -89,9 +76,9 @@ export interface ResetPasswordPayload {
   newPassword: string;
 }
 
-// ---------------------------------------------------------------------------
-// Endpoints
-// ---------------------------------------------------------------------------
+
+
+
 
 export const authApi = {
   register: (data: RegisterPayload) =>
@@ -118,9 +105,4 @@ export const authApi = {
   resetPassword: (data: ResetPasswordPayload) =>
     api.post<MessageResponse>("/auth/reset-password", data),
 
-  getSessions: () =>
-    api.get<UserSessionsResponse>("/auth/sessions"),
-
-  revokeSession: (sessionId: string) =>
-    api.delete<MessageResponse>(`/auth/sessions/${sessionId}`),
 };

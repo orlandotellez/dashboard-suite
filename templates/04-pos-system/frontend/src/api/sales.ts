@@ -1,8 +1,8 @@
-import { api } from "../client";
+import { api } from "./client";
 
-// ---------------------------------------------------------------------------
-// Tipos
-// ---------------------------------------------------------------------------
+
+
+
 
 export interface SaleItem {
   id: string;
@@ -70,9 +70,9 @@ export interface RevenueTrendItem {
   revenue: number;
 }
 
-// ---------------------------------------------------------------------------
-// Payloads
-// ---------------------------------------------------------------------------
+
+
+
 
 export interface CreateSaleItemPayload {
   product_id: string;
@@ -112,9 +112,9 @@ export interface CreateSalePayload {
   service_items?: CreateSaleServiceItemPayload[];
 }
 
-// ---------------------------------------------------------------------------
-// Endpoints
-// ---------------------------------------------------------------------------
+
+
+
 
 export const salesApi = {
   list: (params?: {

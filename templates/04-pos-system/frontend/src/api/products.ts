@@ -1,8 +1,8 @@
-import { api } from "../client";
+import { api } from "./client";
 
-// ---------------------------------------------------------------------------
-// Tipos
-// ---------------------------------------------------------------------------
+
+
+
 
 export interface ProductCategory {
   id: string;
@@ -43,9 +43,9 @@ export interface DeleteResponse {
   message: string;
 }
 
-// ---------------------------------------------------------------------------
-// Payloads
-// ---------------------------------------------------------------------------
+
+
+
 
 export interface CreateProductPayload {
   barcode?: string;
@@ -64,9 +64,9 @@ export interface CreateProductPayload {
 
 export interface UpdateProductPayload extends Partial<CreateProductPayload> {}
 
-// ---------------------------------------------------------------------------
-// Endpoints
-// ---------------------------------------------------------------------------
+
+
+
 
 export const productsApi = {
   list: (params?: {
