@@ -20,7 +20,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const stored = localStorage.getItem("auth-user");
       return stored ? JSON.parse(stored) : null;
-    } catch {
+    } catch (err) {
+      console.warn("[Auth] Error al restaurar sesión de localStorage:", err);
       localStorage.removeItem("auth-user");
       return null;
     }
@@ -37,7 +38,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         localStorage.setItem("auth-user", JSON.stringify(res.user));
         localStorage.setItem("auth-token", res.accessToken);
         localStorage.setItem("auth-refresh-token", res.refreshToken);
-      } catch {
+      } catch (err) {
+        console.warn("[Auth] Error al refrescar sesión:", err);
         setUser(null);
         localStorage.removeItem("auth-token");
         localStorage.removeItem("auth-refresh-token");
@@ -93,7 +95,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = useCallback(async () => {
     try {
       await authApi.logout();
-    } catch {}
+    } catch (err) { console.warn("[Auth] Error al hacer logout:", err); }
     setUser(null);
     localStorage.removeItem("auth-token");
     localStorage.removeItem("auth-refresh-token");

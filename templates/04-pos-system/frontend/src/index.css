@@ -105,3 +105,111 @@ button {
     transform: translateY(0);
   }
 }
+
+
+.tableCard {
+  background: var(--card-bg, var(--bg));
+  border: 1px solid var(--border, #e5e7eb);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.tableWrapper {
+  overflow-x: auto;
+}
+
+.tableClass {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.tableClass th {
+  text-align: left;
+  padding: 10px 16px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted-foreground, #6b7280);
+  border-bottom: 1px solid var(--border, #e5e7eb);
+  background: var(--muted, #f9fafb);
+  white-space: nowrap;
+}
+
+.tableClass td {
+  padding: 10px 16px;
+  font-size: 13px;
+}
+
+.tableClass tbody tr {
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.tableClass tbody tr:hover {
+  background: var(--accent, #f3f4f6);
+}
+
+.fieldInput {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid var(--border, #e5e7eb);
+  border-radius: 8px;
+  font-size: 14px;
+  background: var(--input-bg, #fff);
+  color: var(--foreground, #111827);
+  transition: border-color 0.15s;
+  box-sizing: border-box;
+}
+
+.fieldInput:focus {
+  outline: none;
+  border-color: var(--primary, #3b82f6);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+textarea.fieldInput {
+  resize: vertical;
+  min-height: 60px;
+  font-family: inherit;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.primaryBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: var(--primary, #3b82f6);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.primaryBtn:hover { opacity: 0.9; }
+.primaryBtn:disabled { opacity: 0.5; cursor: default; }
+
+.secondaryBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: none;
+  color: var(--foreground, #111827);
+  border: 1px solid var(--border, #e5e7eb);
+  border-radius: 8px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.secondaryBtn:hover { background: var(--accent, #f3f4f6); }
