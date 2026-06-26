@@ -1,46 +1,35 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { Plus, Search, Pencil, Trash2, X, ChevronLeft, ChevronRight } from "lucide-react";
-import { productsApi, type Product } from "@/api/products";
-import { categoriesApi, type Category } from "@/api/categories";
-import { suppliersApi, type Supplier } from "@/api/suppliers";
-import { money } from "@/lib/format";
+import { useEffect, useRef, useState } from "react";
+import { Plus, Search, X } from "lucide-react";
+import { productsApi, type CreateProductPayload, type UpdateProductPayload } from "@/api/products";
+import { categoriesApi } from "@/api/categories";
+import { suppliersApi } from "@/api/suppliers";
+import type { Product, Category, Supplier } from "@/api";
 import { cacheGet, cacheSet, cacheClear, cacheKey } from "@/lib/simple-cache";
-import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
-import TableSkeleton from "@/components/TableSkeleton";
+import { UNIT_TYPE_LABELS } from "@/lib/constants";
+import { useToast } from "@/components/common/ui/Toast";
+import { ConfirmDialog } from "@/components/common/ui/ConfirmDialog";
+import { ProductTable } from "@/components/pages/products/ProductTable";
 import styles from "./Products.module.css";
 
 const LIMIT = 10;
 
-const UNIT_TYPE_LABELS: Record<string, string> = {
-  unidad: "Unidad",
-  paquete: "Paquete",
-  caja: "Caja",
-  bolsa: "Bolsa",
-  botella: "Botella",
-  lata: "Lata",
-  sobre: "Sobre",
-  barra: "Barra",
-  rollo: "Rollo",
-  galon: "Galón",
-  ristra: "Ristra",
-};
-
 const emptyForm = {
-  name: "", barcode: "", unit_type: "", unit_quantity: 0,
-  category_id: "", supplier_id: "", price: 0, cost: 0, tax_rate: 16,
-  stock: 0, low_stock_threshold: 5,
+  name: "",
+  barcode: "",
+  unit_type: "",
+  unit_quantity: 0,
+  category_id: "",
+  supplier_id: "",
+  price: 0,
+  cost: 0,
+  tax_rate: 16,
+  stock: 0,
+  low_stock_threshold: 5,
 };
-
-const SKELETON_COLS = [
-  { width: "35%" },
-  { width: "15%" },
-  { width: "20%" },
-  { width: "15%", align: "right" as const },
-  { width: "15%", align: "right" as const },
-  { width: "60px", align: "center" as const },
-];
 
 export default function Products() {
+  const { toast } = useToast();
+
   const [products, setProducts] = useState<Product[]>(() => {
     const cached = cacheGet<Product[]>(cacheKey("products", 1, ""));
     return cached ?? [];
@@ -53,97 +42,64 @@ export default function Products() {
   const [categoryId, setCategoryId] = useState("");
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<Product | null | "new">(null);
-  const [form, setForm] = useState(emptyForm);
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
-
-  const catMap = useMemo(() => {
-    const m = new Map<string, Category>();
-    for (const c of categories) m.set(c.id, c);
-    return m;
-  }, [categories]);
+  const [form, setForm] = useState(emptyForm);
 
   const totalPages = Math.max(1, Math.ceil(total / LIMIT));
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isNew = typeof editing === "string";
 
   useEffect(() => {
-    categoriesApi.list().then(setCategories).catch(() => {});
-    suppliersApi.list().then(res => setSuppliers(res.suppliers)).catch(() => {});
+    categoriesApi.list().then(setCategories).catch((err) => console.warn("Error al cargar categorías:", err));
+    suppliersApi.list().then(res => setSuppliers(res.suppliers)).catch((err) => console.warn("Error al cargar proveedores:", err));
   }, []);
 
-  const searchRef = useRef(q);
-  searchRef.current = q;
+  useEffect(() => {
+    if (!editing) return;
+    if (isNew) { setForm(emptyForm); return; }
+    setForm({
+      name: editing.name,
+      barcode: editing.barcode ?? "",
+      unit_type: editing.unit_type ?? "",
+      unit_quantity: editing.unit_quantity ?? 0,
+      category_id: editing.category?.id ?? "",
+      supplier_id: editing.supplier?.id ?? "",
+      price: editing.price,
+      cost: editing.cost,
+      tax_rate: editing.tax_rate,
+      stock: editing.stock,
+      low_stock_threshold: editing.low_stock_threshold,
+    });
+  }, [editing]);
 
   useEffect(() => {
     const key = cacheKey("products", page, q, categoryId);
     const cached = cacheGet<{ products: Product[]; total: number }>(key);
-
-    if (cached) {
-      setProducts(cached.products);
-      setTotal(cached.total);
-    }
-
+    if (cached) { setProducts(cached.products); setTotal(cached.total); }
     setLoading(!cached);
 
-    const timer = setTimeout(() => {
-      productsApi.list({
-        page,
-        limit: LIMIT,
-        search: q || undefined,
-        category_id: categoryId || undefined,
-      })
+    if (timerRef.current) clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(() => {
+      productsApi.list({ page, limit: LIMIT, search: q || undefined, category_id: categoryId || undefined })
         .then((res) => {
           setProducts(res.products);
           setTotal(res.total);
           cacheSet(key, { products: res.products, total: res.total });
         })
-        .catch(() => {})
+        .catch((err) => console.warn("Error al listar productos:", err))
         .finally(() => setLoading(false));
     }, 300);
-
-    return () => clearTimeout(timer);
+    return () => { if (timerRef.current) clearTimeout(timerRef.current); };
   }, [page, q, categoryId]);
 
-  function handleSearch(value: string) {
-    setQ(value);
-    setPage(1);
-  }
+  function handleSearch(value: string) { setQ(value); setPage(1); }
 
-  function handleCategoryChange(value: string) {
-    setCategoryId(value);
-    setPage(1);
-  }
-
-  function openNew() {
-    setForm(emptyForm);
-    setEditing("new");
-  }
-
-  function openEdit(p: Product) {
-    setForm({
-      name: p.name,
-      barcode: p.barcode ?? "",
-      unit_type: p.unit_type ?? "",
-      unit_quantity: p.unit_quantity ?? 0,
-      category_id: p.category?.id ?? "",
-      supplier_id: p.supplier?.id ?? "",
-      price: p.price,
-      cost: p.cost,
-      tax_rate: p.tax_rate,
-      stock: p.stock,
-      low_stock_threshold: p.low_stock_threshold,
-    });
-    setEditing(p);
-  }
-
-  function close() {
-    setEditing(null);
-  }
-
-  async function save() {
-    if (!editing) return;
+  async function handleSave(e: React.FormEvent) {
+    e.preventDefault();
     setSubmitting(true);
     try {
-      const payload = {
+      const data: CreateProductPayload = {
         name: form.name,
         barcode: form.barcode || undefined,
         unit_type: form.unit_type || undefined,
@@ -156,24 +112,21 @@ export default function Products() {
         stock: form.stock,
         low_stock_threshold: form.low_stock_threshold,
       };
-
-      if (editing === "new") {
-        await productsApi.create(payload);
-      } else {
-        await productsApi.update(editing.id, payload);
+      if (isNew) {
+        await productsApi.create(data);
+      } else if (editing) {
+        await productsApi.update(editing.id, data as UpdateProductPayload);
       }
-
-      close();
+      setEditing(null);
       cacheClear("products");
       const res = await productsApi.list({ page, limit: LIMIT, search: q || undefined, category_id: categoryId || undefined });
-      setProducts(res.products);
-      setTotal(res.total);
+      setProducts(res.products); setTotal(res.total);
       cacheSet(cacheKey("products", page, q, categoryId), { products: res.products, total: res.total });
-    } catch {
-      alert("Error al guardar producto");
-    } finally {
-      setSubmitting(false);
-    }
+      toast("Producto guardado correctamente", "success");
+    } catch (err) {
+      console.error("Error al guardar producto:", err);
+      toast("Error al guardar producto", "error");
+    } finally { setSubmitting(false); }
   }
 
   async function remove(id: string) {
@@ -181,15 +134,14 @@ export default function Products() {
       await productsApi.delete(id);
       cacheClear("products");
       const res = await productsApi.list({ page, limit: LIMIT, search: q || undefined, category_id: categoryId || undefined });
-      setProducts(res.products);
-      setTotal(res.total);
+      setProducts(res.products); setTotal(res.total);
       cacheSet(cacheKey("products", page, q, categoryId), { products: res.products, total: res.total });
-    } catch {
-      alert("Error al eliminar producto");
+      toast("Producto eliminado", "success");
+    } catch (err) {
+      console.error("Error al eliminar producto:", err);
+      toast("Error al eliminar producto", "error");
     }
   }
-
-  const isOpen = editing !== null;
 
   return (
     <div className={styles.page}>
@@ -198,7 +150,7 @@ export default function Products() {
           <h1 className={styles.h1}>Productos</h1>
           <p className={styles.subtitle}>{total} productos en catálogo</p>
         </div>
-        <button onClick={openNew} className={styles.primaryBtn}>
+        <button onClick={() => setEditing("new")} className={styles.primaryBtn}>
           <Plus size={16} /> Nuevo
         </button>
       </header>
@@ -206,140 +158,49 @@ export default function Products() {
       <div className={styles.toolbar}>
         <div className={styles.searchWrapper}>
           <Search size={16} className={styles.searchIcon} />
-          <input
-            value={q}
-            onChange={(e) => handleSearch(e.target.value)}
-            placeholder="Buscar por nombre, código o categoría"
-            className={styles.searchInput}
-          />
+          <input value={q} onChange={(e) => handleSearch(e.target.value)} placeholder="Buscar por nombre, código o categoría" className={styles.searchInput} />
         </div>
-        <select
-          value={categoryId}
-          onChange={(e) => handleCategoryChange(e.target.value)}
-          className={styles.filterSelect}
-        >
+        <select value={categoryId} onChange={(e) => { setCategoryId(e.target.value); setPage(1); }} className={styles.filterSelect}>
           <option value="">Todas las categorías</option>
-          {categories.map((c) => (
-            <option key={c.id} value={c.id}>{c.name}</option>
-          ))}
+          {categories.map((c) => (<option key={c.id} value={c.id}>{c.name}</option>))}
         </select>
       </div>
 
-      <div className={styles.tableCard}>
-        <div className={styles.tableWrapper}><table className={styles.table}>
-          <thead>
-            <tr>
-              <th className={styles.thLeft}>Producto</th>
-              <th className={styles.thLeft}>Código</th>
-              <th className={styles.thLeft}>Proveedor</th>
-              <th className={styles.thRight}>Precio</th>
-              <th className={styles.thRight}>Stock</th>
-              <th className={styles.thAction}></th>
-            </tr>
-          </thead>
-          <tbody>
-            {products.length > 0 ? (
-              products.map((p) => (
-                <tr key={p.id} className={`${styles.tr} ${loading ? styles.trDim : ""}`} onClick={() => openEdit(p)}>
-                  <td className={styles.tdProduct}>
-                    <div className={styles.productName}>{p.name}</div>
-                    <div className={styles.productCat}>
-                      {p.category && <span>{p.category.name}</span>}
-                      {p.unit_type && <span> · {UNIT_TYPE_LABELS[p.unit_type] || p.unit_type}{p.unit_quantity ? ` ${p.unit_quantity}` : ""}</span>}
-                    </div>
-                  </td>
-                  <td className={styles.tdBarcode}>{p.barcode ?? "—"}</td>
-                  <td className={styles.tdLeft}>{p.supplier?.name ?? "—"}</td>
-                  <td className={styles.tdRight}>{money(p.price)}</td>
-                  <td className={styles.tdRight}>
-                    <span className={p.stock <= p.low_stock_threshold ? styles.stockWarning : styles.stockNormal}>
-                      {p.stock}
-                    </span>
-                  </td>
-                  <td className={styles.tdActions}>
-                    <button onClick={(e) => { e.stopPropagation(); openEdit(p); }} className={styles.iconBtn} title="Editar">
-                      <Pencil size={14} />
-                    </button>
-                    <button onClick={(e) => { e.stopPropagation(); setDeleteTarget(p.id); }} className={`${styles.iconBtn} ${styles.iconDanger}`} title="Eliminar">
-                      <Trash2 size={14} />
-                    </button>
-                  </td>
-                </tr>
-              ))
-            ) : loading ? (
-              <TableSkeleton cols={SKELETON_COLS} />
-            ) : (
-              <tr><td colSpan={6} className={styles.empty}>Sin productos</td></tr>
-            )}
-          </tbody>
-        </table></div>
+      <ProductTable
+        products={products}
+        loading={loading}
+        total={total}
+        page={page}
+        totalPages={totalPages}
+        onPageChange={setPage}
+        onEdit={(p) => setEditing(p)}
+        onDelete={(p) => setDeleteTarget(p.id)}
+        dimmed={false}
+      />
 
-        {totalPages > 1 && (
-          <div className={styles.pagination}>
-            <button
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              disabled={page <= 1}
-              className={styles.pageBtn}
-            >
-              <ChevronLeft size={16} />
-            </button>
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((n) => (
-              <button
-                key={n}
-                onClick={() => setPage(n)}
-                className={`${styles.pageBtn} ${n === page ? styles.pageActive : ""}`}
-              >
-                {n}
-              </button>
-            ))}
-            <button
-              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-              disabled={page >= totalPages}
-              className={styles.pageBtn}
-            >
-              <ChevronRight size={16} />
-            </button>
-          </div>
-        )}
-      </div>
-
-      {isOpen && (
-        <div className={styles.overlay} onClick={close}>
+      {editing && (
+        <div className={styles.overlay} onClick={() => setEditing(null)}>
           <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
             <div className={styles.modalHeader}>
-              <h2 className={styles.modalTitle}>
-                {editing === "new" ? "Nuevo producto" : "Editar producto"}
-              </h2>
-              <button onClick={close} className={styles.modalClose}>
+              <h2 className={styles.modalTitle}>{isNew ? "Nuevo producto" : "Editar producto"}</h2>
+              <button onClick={() => setEditing(null)} className={styles.modalClose}>
                 <X size={18} />
               </button>
             </div>
 
-            <form
-              onSubmit={(e) => { e.preventDefault(); save(); }}
-              className={styles.modalForm}
-            >
+            <form onSubmit={handleSave} className={styles.modalForm}>
               <div className={styles.field}>
-                <label className={styles.fieldLabel}>Nombre <span className={styles.required}>*</span></label>
-                <input
-                  value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })}
-                  className={styles.input} required
-                />
+                <label className={styles.fieldLabel}>Nombre *</label>
+                <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className={styles.input} required />
               </div>
               <div className={styles.field}>
                 <label className={styles.fieldLabel}>Código de barras</label>
-                <input
-                  value={form.barcode} onChange={(e) => setForm({ ...form, barcode: e.target.value })}
-                  className={styles.input}
-                />
+                <input value={form.barcode} onChange={(e) => setForm({ ...form, barcode: e.target.value })} className={styles.input} />
               </div>
-              <div className={styles.fieldGrid}>
+              <div className={styles["form-grid"]}>
                 <div className={styles.field}>
                   <label className={styles.fieldLabel}>Tipo de empaque</label>
-                  <select
-                    value={form.unit_type} onChange={(e) => setForm({ ...form, unit_type: e.target.value })}
-                    className={styles.input}
-                  >
+                  <select value={form.unit_type} onChange={(e) => setForm({ ...form, unit_type: e.target.value })} className={styles.select}>
                     <option value="">Sin empaque</option>
                     {Object.entries(UNIT_TYPE_LABELS).map(([value, label]) => (
                       <option key={value} value={value}>{label}</option>
@@ -347,20 +208,12 @@ export default function Products() {
                   </select>
                 </div>
                 <div className={styles.field}>
-                  <label className={styles.fieldLabel}>Cantidad x empaque</label>
-                  <input type="number" min="0" value={form.unit_quantity}
-                    onChange={(e) => setForm({ ...form, unit_quantity: Number(e.target.value) })}
-                    className={styles.input} placeholder="Ej: 12, 24, 100"
-                  />
+                  <label className={styles.fieldLabel}>Cant. x empaque</label>
+                  <input type="number" min="0" value={form.unit_quantity} onChange={(e) => setForm({ ...form, unit_quantity: Number(e.target.value) })} className={styles.input} />
                 </div>
-              </div>
-              <div className={styles.field}>
+                <div className={styles.field}>
                   <label className={styles.fieldLabel}>Categoría</label>
-                  <select
-                    value={form.category_id}
-                    onChange={(e) => setForm({ ...form, category_id: e.target.value })}
-                    className={styles.input}
-                  >
+                  <select value={form.category_id} onChange={(e) => setForm({ ...form, category_id: e.target.value })} className={styles.select}>
                     <option value="">Sin categoría</option>
                     {categories.map((c) => (
                       <option key={c.id} value={c.id}>{c.name}</option>
@@ -369,60 +222,43 @@ export default function Products() {
                 </div>
                 <div className={styles.field}>
                   <label className={styles.fieldLabel}>Proveedor</label>
-                  <select
-                    value={form.supplier_id}
-                    onChange={(e) => setForm({ ...form, supplier_id: e.target.value })}
-                    className={styles.input}
-                  >
+                  <select value={form.supplier_id} onChange={(e) => setForm({ ...form, supplier_id: e.target.value })} className={styles.select}>
                     <option value="">Sin proveedor</option>
                     {suppliers.map((s) => (
                       <option key={s.id} value={s.id}>{s.name}</option>
                     ))}
                   </select>
                 </div>
-                <div className={styles.fieldGrid}>
+              </div>
+              <div className={styles["form-grid"]}>
                 <div className={styles.field}>
                   <label className={styles.fieldLabel}>Precio venta</label>
-                  <input type="number" step="0.01" value={form.price}
-                    onChange={(e) => setForm({ ...form, price: Number(e.target.value) })}
-                    className={styles.input}
-                  />
+                  <input type="number" step="0.01" value={form.price} onChange={(e) => setForm({ ...form, price: Number(e.target.value) })} className={styles.input} />
                 </div>
                 <div className={styles.field}>
                   <label className={styles.fieldLabel}>Costo</label>
-                  <input type="number" step="0.01" value={form.cost}
-                    onChange={(e) => setForm({ ...form, cost: Number(e.target.value) })}
-                    className={styles.input}
-                  />
+                  <input type="number" step="0.01" value={form.cost} onChange={(e) => setForm({ ...form, cost: Number(e.target.value) })} className={styles.input} />
                 </div>
                 <div className={styles.field}>
                   <label className={styles.fieldLabel}>IVA %</label>
-                  <input type="number" step="0.01" value={form.tax_rate}
-                    onChange={(e) => setForm({ ...form, tax_rate: Number(e.target.value) })}
-                    className={styles.input}
-                  />
+                  <input type="number" step="0.01" value={form.tax_rate} onChange={(e) => setForm({ ...form, tax_rate: Number(e.target.value) })} className={styles.input} />
                 </div>
                 <div className={styles.field}>
                   <label className={styles.fieldLabel}>Stock</label>
-                  <input type="number" value={form.stock}
-                    onChange={(e) => setForm({ ...form, stock: Number(e.target.value) })}
-                    className={styles.input}
-                  />
+                  <input type="number" value={form.stock} onChange={(e) => setForm({ ...form, stock: Number(e.target.value) })} className={styles.input} />
                 </div>
                 <div className={styles.field}>
                   <label className={styles.fieldLabel}>Alerta stock bajo</label>
-                  <input type="number" value={form.low_stock_threshold}
-                    onChange={(e) => setForm({ ...form, low_stock_threshold: Number(e.target.value) })}
-                    className={styles.input}
-                  />
+                  <input type="number" value={form.low_stock_threshold} onChange={(e) => setForm({ ...form, low_stock_threshold: Number(e.target.value) })} className={styles.input} />
                 </div>
               </div>
-
-              <div className={styles.modalActions}>
-                <button type="submit" className={styles.primaryBtn} disabled={submitting}>
+              <div className={styles["form-actions"]}>
+                <button type="submit" className={`${styles.primaryBtn} ${styles["btn-fit"]}`} disabled={submitting}>
                   {submitting ? "Guardando…" : "Guardar"}
                 </button>
-                <button type="button" onClick={close} className={styles.secondaryBtn}>Cancelar</button>
+                <button type="button" onClick={() => setEditing(null)} className={styles.secondaryBtn}>
+                  Cancelar
+                </button>
               </div>
             </form>
           </div>
@@ -435,10 +271,7 @@ export default function Products() {
         message="¿Estás seguro de que querés eliminar este producto? Esta acción no se puede deshacer."
         confirmLabel="Sí, eliminar"
         cancelLabel="Cancelar"
-        onConfirm={() => {
-          if (deleteTarget) remove(deleteTarget);
-          setDeleteTarget(null);
-        }}
+        onConfirm={() => { if (deleteTarget) remove(deleteTarget); setDeleteTarget(null); }}
         onCancel={() => setDeleteTarget(null)}
       />
     </div>
