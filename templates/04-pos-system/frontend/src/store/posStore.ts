@@ -2,6 +2,7 @@ import { create } from "zustand";
 import type { Product } from "@/api/products";
 import type { ServiceProduct } from "@/api/services";
 import type { CurrencyCode } from "@/lib/constants";
+import { getStoredCurrency } from "@/lib/format";
 
 // ---------------------------------------------------------------------------
 // Tipos de items del carrito
@@ -69,7 +70,7 @@ export const usePosStore = create<PosState>()((set) => ({
   received: "",
   manualAmount: false,
   checkingOut: false,
-  currency: "NIO",
+  currency: getStoredCurrency() as CurrencyCode,
 
   addToCart: (item) =>
     set((s) => {

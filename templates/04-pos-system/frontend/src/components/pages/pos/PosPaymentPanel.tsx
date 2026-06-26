@@ -1,7 +1,7 @@
 import { X } from "lucide-react";
 import { money } from "@/lib/format";
-import { PAYMENT_METHODS, CURRENCIES } from "@/lib/constants";
-import type { CurrencyCode } from "@/lib/constants";
+import { PAYMENT_METHODS } from "@/lib/constants";
+import { usePosStore } from "@/store/posStore";
 import styles from "../../../pages/Pos.module.css";
 
 
@@ -25,20 +25,19 @@ interface PosPaymentPanelProps {
   received: string;
   manualAmount: boolean;
   checkingOut: boolean;
-  currency: CurrencyCode;
   onDiscountPct: (v: number) => void;
   onPayment: (v: string) => void;
   onReceived: (v: string) => void;
   onManualAmount: (v: boolean) => void;
-  onSetCurrency: (c: CurrencyCode) => void;
   onCheckout: () => void;
   onClearCart: () => void;
 }
 
 export function PosPaymentPanel({
-  totals, cartLength, discountPct, payment, received, manualAmount, checkingOut, currency,
-  onDiscountPct, onPayment, onReceived, onManualAmount, onSetCurrency, onCheckout, onClearCart,
+  totals, cartLength, discountPct, payment, received, manualAmount, checkingOut,
+  onDiscountPct, onPayment, onReceived, onManualAmount, onCheckout, onClearCart,
 }: PosPaymentPanelProps) {
+  const currency = usePosStore((s) => s.currency);
   return (
     <>
       <div className={styles.totalsSection}>
@@ -63,18 +62,6 @@ export function PosPaymentPanel({
       </div>
 
       <div className={styles.paymentSection}>
-        <div className={styles.field}>
-          <label className={styles.fieldLabel}>Moneda</label>
-          <select
-            value={currency}
-            onChange={(e) => onSetCurrency(e.target.value as CurrencyCode)}
-            className={styles.select}
-          >
-            {CURRENCIES.map((c) => (
-              <option key={c.code} value={c.code}>{c.label}</option>
-            ))}
-          </select>
-        </div>
         <div className={styles.field}>
           <label className={styles.fieldLabel}>Método de pago</label>
           <select

@@ -2,6 +2,10 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { settingsApi, type UpdateSettingsPayload } from "@/api/settings";
 import { useAuth } from "@/context/AuthContext";
+import { CURRENCIES } from "@/lib/constants";
+import type { CurrencyCode } from "@/lib/constants";
+import { setStoredCurrency } from "@/lib/format";
+import { usePosStore } from "@/store/posStore";
 import styles from "./Settings.module.css";
 
 export default function Settings() {
@@ -14,6 +18,9 @@ export default function Settings() {
     }
   }, [user, navigate]);
 
+  const posCurrency = usePosStore((s) => s.currency);
+  const setCurrency = usePosStore((s) => s.setCurrency);
+  const [currency, setLocalCurrency] = useState<CurrencyCode>(posCurrency);
   const [form, setForm] = useState<UpdateSettingsPayload>({
     name: "",
     address: "",
@@ -48,6 +55,8 @@ export default function Settings() {
     setMessage("");
 
     try {
+      setStoredCurrency(currency);
+      setCurrency(currency);
       await settingsApi.update({
         name: form.name,
         address: form.address || null,
@@ -132,6 +141,19 @@ export default function Settings() {
               className={styles.input}
             />
           </div>
+        </div>
+
+        <div className={styles.field}>
+          <label className={styles.label}>Moneda predeterminada</label>
+          <select
+            value={currency}
+            onChange={(e) => setLocalCurrency(e.target.value as CurrencyCode)}
+            className={styles.select}
+          >
+            {CURRENCIES.map((c) => (
+              <option key={c.code} value={c.code}>{c.label}</option>
+            ))}
+          </select>
         </div>
 
         <div className={styles.field}>

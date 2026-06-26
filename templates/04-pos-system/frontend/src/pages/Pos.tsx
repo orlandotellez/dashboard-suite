@@ -61,7 +61,6 @@ export default function Pos() {
   const setReceived = usePosStore((s) => s.setReceived);
   const setManualAmount = usePosStore((s) => s.setManualAmount);
   const setCheckingOut = usePosStore((s) => s.setCheckingOut);
-  const setCurrency = usePosStore((s) => s.setCurrency);
   const addServiceProduct = usePosStore((s) => s.addServiceProduct);
 
   
@@ -215,7 +214,7 @@ export default function Pos() {
     if (!cart.length || checkingOut) return;
 
     if ((payment === "efectivo" || manualAmount) && Number(received || 0) < totals.total) {
-      showAlert(`El monto recibido (${money(Number(received || 0))}) es menor al total (${money(totals.total)}).`);
+      showAlert(`El monto recibido (${money(Number(received || 0), currency)}) es menor al total (${money(totals.total, currency)}).`);
       setCheckingOut(false);
       return;
     }
@@ -346,12 +345,10 @@ export default function Pos() {
           received={received}
           manualAmount={manualAmount}
           checkingOut={checkingOut}
-          currency={currency}
           onDiscountPct={setDiscountPct}
           onPayment={setPayment}
           onReceived={setReceived}
           onManualAmount={setManualAmount}
-          onSetCurrency={setCurrency}
           onCheckout={checkout}
           onClearCart={clearCart}
         />
