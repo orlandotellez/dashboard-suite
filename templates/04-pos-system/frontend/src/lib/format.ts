@@ -5,7 +5,7 @@ const CURRENCY_SYMBOLS: Record<string, string> = {
   MXN: "$",
 };
 
-export const money = (n: number | string | null | undefined, currency: string = "NIO") => {
+export const money = (n: number | string | null | undefined, currency: string = getStoredCurrency()) => {
   const v = Number(n ?? 0);
   const symbol = CURRENCY_SYMBOLS[currency] ?? currency;
   const formatted = v.toLocaleString("es-MX", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
