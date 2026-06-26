@@ -1,4 +1,4 @@
-import { Route, Routes } from "react-router-dom";
+import { Navigate, Route, Routes } from "react-router-dom";
 import App from "@/App";
 import Auth from "@/pages/Auth";
 import Pos from "@/pages/Pos";
@@ -17,7 +17,7 @@ export function AppRoutes() {
     <Routes>
       <Route path="/auth" element={<Auth />} />
       <Route element={<App />}>
-        <Route path="/" element={<Pos />} />
+        <Route path="/" element={<Navigate to="/pos" replace />} />
         <Route path="/pos" element={<Pos />} />
         <Route path="/products" element={<Products />} />
         <Route path="/services" element={<Services />} />
