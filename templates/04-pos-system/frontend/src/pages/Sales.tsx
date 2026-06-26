@@ -1,8 +1,11 @@
 import { Fragment, useEffect, useState } from "react";
-import { Search, Eye, X, ChevronLeft, ChevronRight, Printer } from "lucide-react";
-import { salesApi, type Sale, type SaleServiceItem } from "@/api/sales";
+import { Search, X, Printer } from "lucide-react";
+import { salesApi, type Sale } from "@/api/sales";
 import { settingsApi } from "@/api/settings";
 import { money } from "@/lib/format";
+import { printHtml, buildTicketHtml, buildTicketProductRow, buildTicketServiceRows } from "@/lib/print-ticket";
+import { PAYMENT_METHODS } from "@/lib/constants";
+import { SaleTable } from "@/components/pages/sales/SaleTable";
 import styles from "./Sales.module.css";
 
 export default function Sales() {
@@ -28,41 +31,31 @@ export default function Sales() {
       if (res.address) setStoreAddress(res.address);
       if (res.phone) setStorePhone(res.phone);
       if (res.ticket_footer) setStoreFooter(res.ticket_footer);
-    }).catch(() => {});
+    }).catch((err) => console.warn("Error al cargar config:", err));
   }, []);
 
   const fetchSales = async (p: number) => {
     setLoading(true);
     try {
       const res = await salesApi.list({
-        page: p,
-        limit: LIMIT,
+        page: p, limit: LIMIT,
         start_date: startDate || undefined,
         end_date: endDate || undefined,
         payment_method: paymentFilter || undefined,
       });
       setSales(res.sales);
       setTotal(res.total);
-    } catch {
-      // silent
-    } finally {
-      setLoading(false);
-    }
+    } catch (err) { console.warn("Error al cargar ventas:", err); }
+    finally { setLoading(false); }
   };
 
-  useEffect(() => {
-    fetchSales(page);
-  }, [page, paymentFilter]);
+  useEffect(() => { fetchSales(page); }, [page, paymentFilter]);
 
-  function handleSearch() {
-    setPage(1);
-    fetchSales(1);
-  }
+  function handleSearch() { setPage(1); fetchSales(1); }
 
   function openDetails(sale: Sale) {
-    // If items are not loaded, fetch full sale
     if (!sale.items || sale.items.length === 0) {
-      salesApi.getById(sale.id).then(setSelected).catch(() => {});
+      salesApi.getById(sale.id).then(setSelected).catch((err) => console.warn("Error al cargar venta:", err));
     } else {
       setSelected(sale);
     }
@@ -77,38 +70,23 @@ export default function Sales() {
         </div>
       </header>
 
-      {/* ─── Filters ─── */}
+      {}
       <div className={styles.filters}>
         <div className={styles.filterGroup}>
           <label className={styles.filterLabel}>Desde</label>
-          <input
-            type="date"
-            value={startDate}
-            onChange={(e) => setStartDate(e.target.value)}
-            className={styles.filterInput}
-          />
+          <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className={styles.filterInput} />
         </div>
         <div className={styles.filterGroup}>
           <label className={styles.filterLabel}>Hasta</label>
-          <input
-            type="date"
-            value={endDate}
-            onChange={(e) => setEndDate(e.target.value)}
-            className={styles.filterInput}
-          />
+          <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className={styles.filterInput} />
         </div>
         <div className={styles.filterGroup}>
           <label className={styles.filterLabel}>Pago</label>
-          <select
-            value={paymentFilter}
-            onChange={(e) => setPaymentFilter(e.target.value)}
-            className={styles.filterSelect}
-          >
+          <select value={paymentFilter} onChange={(e) => setPaymentFilter(e.target.value)} className={styles.filterSelect}>
             <option value="">Todos</option>
-            <option value="efectivo">Efectivo</option>
-            <option value="tarjeta">Tarjeta</option>
-            <option value="transferencia">Transferencia</option>
-            <option value="credito">Crédito</option>
+            {PAYMENT_METHODS.map((pm) => (
+              <option key={pm.value} value={pm.value}>{pm.label}</option>
+            ))}
           </select>
         </div>
         <button onClick={handleSearch} className={styles.searchBtn}>
@@ -116,79 +94,25 @@ export default function Sales() {
         </button>
       </div>
 
-      {/* ─── Table ─── */}
-      <div className={styles.tableCard}>
-        <div className={styles.tableWrapper}><table className={styles.table}>
-          <thead>
-            <tr>
-              <th className={styles.thLeft}>Fecha</th>
-              <th className={styles.thRight}>Artículos</th>
-              <th className={styles.thRight}>Total</th>
-              <th className={styles.thLeft}>Pago</th>
-              <th className={styles.thAction}></th>
-            </tr>
-          </thead>
-          <tbody>
-            {sales.length > 0 ? (
-              sales.map((s) => (
-                <tr key={s.id} className={`${styles.tr} ${loading ? styles.trDim : ""}`} onClick={() => openDetails(s)}>
-                  <td className={styles.tdLeft}>
-                    <div className={styles.dateCell}>
-                      {new Date(s.created_at).toLocaleDateString()}
-                      <span className={styles.timeCell}>
-                        {new Date(s.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                      </span>
-                    </div>
-                  </td>
-                  <td className={styles.tdRight}>{s.items?.length ?? "—"}</td>
-                  <td className={styles.tdRight}>
-                    <span className={styles.totalCell}>{money(s.total)}</span>
-                  </td>
-                  <td className={styles.tdLeft}>
-                    <span className={`${styles.paymentBadge} ${styles[`payment_${s.payment_method}`] ?? ""}`}>
-                      {s.payment_method}
-                    </span>
-                  </td>
-                  <td className={styles.tdActions}>
-                    <button onClick={() => openDetails(s)} className={styles.iconBtn} title="Ver detalle">
-                      <Eye size={14} />
-                    </button>
-                  </td>
-                </tr>
-              ))
-            ) : loading ? (
-              <tr><td colSpan={5} className={styles.empty}>Cargando…</td></tr>
-            ) : (
-              <tr><td colSpan={5} className={styles.empty}>Sin ventas</td></tr>
-            )}
-          </tbody>
-        </table></div>
+      <SaleTable
+        sales={sales}
+        loading={loading}
+        total={total}
+        page={page}
+        totalPages={totalPages}
+        onPageChange={setPage}
+        onView={openDetails}
+        dimmed={false}
+      />
 
-        {totalPages > 1 && (
-          <div className={styles.pagination}>
-            <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page <= 1} className={styles.pageBtn}>
-              <ChevronLeft size={16} />
-            </button>
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((n) => (
-              <button key={n} onClick={() => setPage(n)} className={`${styles.pageBtn} ${n === page ? styles.pageActive : ""}`}>
-                {n}
-              </button>
-            ))}
-            <button onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page >= totalPages} className={styles.pageBtn}>
-              <ChevronRight size={16} />
-            </button>
-          </div>
-        )}
-      </div>
-
-      {/* ─── Detail Modal (ticket style) ─── */}
+      {}
       {selected && (
         <div className={styles.overlay} onClick={() => setSelected(null)}>
           <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
             <div className={styles.modalHeader}>
               <h2 className={styles.modalTitle}>Ticket de venta</h2>
               <div className={styles.modalHeaderActions}>
-                <button onClick={() => printSaleTicket(selected, storeName, storeAddress, storePhone, storeFooter)} className={styles.printBtn} title="Reimprimir">
+                <button onClick={() => printSaleTicket(selected, storeName, storeAddress, storePhone, storeFooter)} className={styles.printBtn}>
                   <Printer size={16} /> Reimprimir
                 </button>
                 <button onClick={() => setSelected(null)} className={styles.modalClose}>
@@ -211,47 +135,29 @@ export default function Sales() {
 
               <table className={styles.ticketTable}>
                 <tbody>
-                  {/* Product items */}
                   {(selected.items ?? []).map((item) => (
                     <tr key={item.id}>
-                      <td className={styles.ticketTdLeft}>
-                        {item.quantity}× {item.product_name}
-                      </td>
+                      <td className={styles.ticketTdLeft}>{item.quantity}× {item.product_name}</td>
                       <td className={styles.ticketTdRight}>{money(item.line_total)}</td>
                     </tr>
                   ))}
-                  {/* Service items */}
                   {(selected.service_items ?? []).map((svc) => (
                     <Fragment key={svc.id}>
                       <tr>
-                        <td className={styles.ticketTdLeft}>
-                          {svc.products.some((sp) => sp.affects_price)
-                            ? `${svc.products.reduce((s, sp) => s + (sp.affects_price ? sp.unit_price * sp.quantity : 0), 0) > 0 ? "1× " : ""}`
-                            : ""}
-                          {svc.service_name}
-                        </td>
+                        <td className={styles.ticketTdLeft}>{svc.service_name}</td>
                         <td className={styles.ticketTdRight}>{money(svc.base_price)}</td>
                       </tr>
-                      {/* Included products (no price) */}
-                      {svc.products
-                        .filter((sp) => sp.quantity > 0 && !sp.affects_price)
-                        .map((sp) => (
-                          <tr key={`${svc.id}-inc-${sp.id}`}>
-                            <td className={styles.ticketTdSub} colSpan={2}>
-                              Incluye: {sp.product_name} × {sp.quantity}
-                            </td>
-                          </tr>
-                        ))}
-                      {/* Additive products (with price) */}
-                      {svc.products
-                        .filter((sp) => sp.quantity > 0 && sp.affects_price)
-                        .map((sp) => (
-                          <tr key={`${svc.id}-add-${sp.id}`}>
-                            <td className={styles.ticketTdSub}>+ {sp.product_name} × {sp.quantity}</td>
-                            <td className={styles.ticketTdRightSub}>{money(sp.unit_price * sp.quantity)}</td>
-                          </tr>
-                        ))}
-                      {/* Service total line */}
+                      {svc.products.filter((sp) => sp.quantity > 0 && !sp.affects_price).map((sp) => (
+                        <tr key={`${svc.id}-inc-${sp.id}`}>
+                          <td className={styles.ticketTdSub} colSpan={2}>Incluye: {sp.product_name} × {sp.quantity}</td>
+                        </tr>
+                      ))}
+                      {svc.products.filter((sp) => sp.quantity > 0 && sp.affects_price).map((sp) => (
+                        <tr key={`${svc.id}-add-${sp.id}`}>
+                          <td className={styles.ticketTdSub}>+ {sp.product_name} × {sp.quantity}</td>
+                          <td className={styles.ticketTdRightSub}>{money(sp.unit_price * sp.quantity)}</td>
+                        </tr>
+                      ))}
                       {svc.products.some((sp) => sp.affects_price) && (
                         <tr>
                           <td className={styles.ticketTdTotalLine}>Total servicio</td>
@@ -266,41 +172,16 @@ export default function Sales() {
               <div className={styles.ticketDivider}></div>
 
               <div className={styles.ticketRows}>
-                <div className={styles.ticketRow}>
-                  <span>Subtotal</span>
-                  <span>{money(selected.subtotal)}</span>
-                </div>
-                {selected.tax_total > 0 && (
-                  <div className={styles.ticketRow}>
-                    <span>Impuestos</span>
-                    <span>{money(selected.tax_total)}</span>
-                  </div>
-                )}
-                {selected.discount > 0 && (
-                  <div className={styles.ticketRow}>
-                    <span>Descuento</span>
-                    <span>−{money(selected.discount)}</span>
-                  </div>
-                )}
-                <div className={`${styles.ticketRow} ${styles.ticketRowTotal}`}>
-                  <span>TOTAL</span>
-                  <span>{money(selected.total)}</span>
-                </div>
-                <div className={styles.ticketRow}>
-                  <span>Pago ({selected.payment_method})</span>
-                  <span>{money(selected.amount_received ?? selected.total)}</span>
-                </div>
+                <div className={styles.ticketRow}><span>Subtotal</span><span>{money(selected.subtotal)}</span></div>
+                {selected.tax_total > 0 && <div className={styles.ticketRow}><span>Impuestos</span><span>{money(selected.tax_total)}</span></div>}
+                {selected.discount > 0 && <div className={styles.ticketRow}><span>Descuento</span><span>−{money(selected.discount)}</span></div>}
+                <div className={`${styles.ticketRow} ${styles.ticketRowTotal}`}><span>TOTAL</span><span>{money(selected.total)}</span></div>
+                <div className={styles.ticketRow}><span>Pago ({selected.payment_method})</span><span>{money(selected.amount_received ?? selected.total)}</span></div>
                 {selected.change_given != null && selected.change_given > 0 && (
-                  <div className={styles.ticketRow}>
-                    <span>Cambio</span>
-                    <span>{money(selected.change_given)}</span>
-                  </div>
+                  <div className={styles.ticketRow}><span>Cambio</span><span>{money(selected.change_given)}</span></div>
                 )}
               </div>
-
-              <div className={styles.ticketFooter}>
-                {storeFooter}
-              </div>
+              <div className={styles.ticketFooter}>{storeFooter}</div>
             </div>
           </div>
         </div>
@@ -312,64 +193,40 @@ export default function Sales() {
 function printSaleTicket(sale: Sale, storeName: string, storeAddress?: string, storePhone?: string, storeFooter?: string) {
   const date = new Date(sale.created_at).toLocaleString("es-MX");
 
-  function renderServiceItem(svc: SaleServiceItem): string {
-    const additiveTotal = svc.products
-      .filter((sp) => sp.affects_price)
-      .reduce((s, sp) => s + sp.unit_price * sp.quantity, 0);
-    const baseRow = `<tr><td>${svc.service_name}</td><td style="text-align:right">${money(svc.base_price)}</td></tr>`;
-    const includedRows = svc.products
-      .filter((sp) => sp.quantity > 0 && !sp.affects_price)
-      .map((sp) => `<tr><td style="padding-left:8px;font-size:10px" colspan="2">Incluye: ${sp.product_name} × ${sp.quantity}</td></tr>`)
-      .join("");
-    const additiveRows = svc.products
-      .filter((sp) => sp.quantity > 0 && sp.affects_price)
-      .map((sp) => `<tr><td style="padding-left:8px;font-size:10px">+ ${sp.product_name} × ${sp.quantity}</td><td style="text-align:right;font-size:10px">${money(sp.unit_price * sp.quantity)}</td></tr>`)
-      .join("");
-    const totalRow = additiveTotal > 0
-      ? `<tr><td style="padding-left:8px;font-size:10px;border-top:1px dashed #ccc">Total servicio</td><td style="text-align:right;font-size:10px;border-top:1px dashed #ccc">${money(svc.line_total)}</td></tr>`
-      : "";
-    return baseRow + includedRows + additiveRows + totalRow;
-  }
-
   const productRows = (sale.items ?? []).map((item) =>
-    `<tr><td>${item.quantity}× ${item.product_name}</td><td style="text-align:right">${money(item.line_total)}</td></tr>`
+    buildTicketProductRow({ name: item.product_name, quantity: item.quantity, lineTotal: item.line_total })
   ).join("");
-  const serviceRows = (sale.service_items ?? []).map(renderServiceItem).join("");
+  const serviceRows = (sale.service_items ?? []).map((svc) =>
+    buildTicketServiceRows({
+      displayName: svc.service_name,
+      basePrice: svc.base_price,
+      lineTotal: svc.line_total,
+      products: svc.products.map((sp) => ({
+        name: sp.product_name,
+        quantity: sp.quantity,
+        unitPrice: sp.unit_price,
+        affectsPrice: sp.affects_price ?? false,
+      })),
+    })
+  ).join("");
   const rows = productRows + serviceRows;
 
-  const html = `
-    <html><head><title>Ticket</title>
-    <style>body{font-family:ui-monospace,monospace;font-size:12px;padding:12px;max-width:300px}strong{font-size:14px;display:block;text-align:center;margin-bottom:4px}.m{color:#666;text-align:center;font-size:11px;margin-bottom:2px}table{width:100%;margin:12px 0;border-collapse:collapse}td{padding:2px 0;vertical-align:top}.line{border-top:1px dashed #999;margin:8px 0}.tot{display:flex;justify-content:space-between}.big{font-size:16px;font-weight:bold;margin:8px 0}.f{color:#666;text-align:center;font-size:11px;margin-top:12px}</style></head><body>
-    <strong>${storeName}</strong>
-    ${storeAddress ? `<div class="m">${storeAddress}</div>` : ""}
-    ${storePhone ? `<div class="m">${storePhone}</div>` : ""}
-    <div class="m">${date}</div>
-    <div class="m">Ticket: ${sale.id.slice(0, 8)}</div>
-    <div class="line"></div>
-    <table>${rows}</table>
-    <div class="line"></div>
-    <div class="tot"><span>Subtotal</span><span>${money(sale.subtotal)}</span></div>
-    ${sale.tax_total > 0 ? `<div class="tot"><span>Impuestos</span><span>${money(sale.tax_total)}</span></div>` : ""}
-    ${sale.discount > 0 ? `<div class="tot"><span>Descuento</span><span>−${money(sale.discount)}</span></div>` : ""}
-    <div class="big tot"><span>TOTAL</span><span>${money(sale.total)}</span></div>
-    <div class="tot"><span>Pago (${sale.payment_method})</span><span>${money(sale.amount_received ?? sale.total)}</span></div>
-    ${sale.change_given != null && sale.change_given > 0 ? `<div class="tot"><span>Cambio</span><span>${money(sale.change_given)}</span></div>` : ""}
-    <div class="line"></div>
-    <div class="f">${storeFooter || "¡Gracias por su compra!"}</div>
-    </body></html>
-  `;
+  const html = buildTicketHtml({
+    storeName: storeName || "Tienda",
+    storeAddress,
+    storePhone,
+    storeFooter,
+    saleId: sale.id,
+    date,
+    rows,
+    subtotal: sale.subtotal,
+    taxTotal: sale.tax_total,
+    discount: sale.discount,
+    total: sale.total,
+    paymentMethod: sale.payment_method,
+    amountReceived: sale.amount_received ?? sale.total,
+    changeGiven: sale.change_given ?? 0,
+  });
 
-  const iframe = document.createElement("iframe");
-  iframe.style.position = "fixed";
-  iframe.style.top = "-9999px";
-  iframe.style.left = "-9999px";
-  iframe.style.width = "1px";
-  iframe.style.height = "1px";
-  document.body.appendChild(iframe);
-  iframe.contentDocument?.write(html);
-  iframe.contentDocument?.close();
-  setTimeout(() => {
-    iframe.contentWindow?.print();
-    setTimeout(() => document.body.removeChild(iframe), 1000);
-  }, 500);
+  printHtml(html);
 }
