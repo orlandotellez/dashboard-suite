@@ -22,8 +22,8 @@ export default function Auth() {
 
     try {
       await login(email, password);
-    } catch (err: any) {
-      setError(err?.message ?? "Error al conectar con el servidor");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Error al conectar con el servidor");
     } finally {
       setSubmitting(false);
     }
@@ -31,7 +31,7 @@ export default function Auth() {
 
   return (
     <div className={styles.container}>
-      {/* ─── Left panel: branding ─── */}
+      {}
       <div className={styles.brand}>
         <div className={styles.brandInner}>
           <h1 className={styles.brandTitle}>Caja</h1>
@@ -58,7 +58,7 @@ export default function Auth() {
         </div>
       </div>
 
-      {/* ─── Right panel: form ─── */}
+      {}
       <div className={styles.formPanel}>
         <div className={styles.formCard}>
           <div className={styles.formIcon}>

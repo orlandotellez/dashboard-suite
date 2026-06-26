@@ -38,7 +38,7 @@ export default function Settings() {
           ticket_footer: res.ticket_footer ?? "",
         });
       })
-      .catch(() => {})
+      .catch((err) => console.warn("Error al cargar config:", err))
       .finally(() => setLoading(false));
   }, []);
 
