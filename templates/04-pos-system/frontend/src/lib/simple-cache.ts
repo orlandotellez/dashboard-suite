@@ -1,17 +1,45 @@
-const _store = new Map<string, { data: unknown }>();
 
-/** Obtener del cache. Devuelve null si nunca se pidió esta key. */
+
+
+
+const MAX_ENTRIES = 100;
+
+interface CacheEntry {
+  data: unknown;
+  key: string;
+}
+
+const _store = new Map<string, CacheEntry>();
+
+function touch(key: string): void {
+  const entry = _store.get(key);
+  if (entry) {
+    
+    _store.delete(key);
+    _store.set(key, entry);
+  }
+}
+
+function evict(): void {
+  if (_store.size <= MAX_ENTRIES) return;
+  const oldest = _store.keys().next().value;
+  if (oldest != null) _store.delete(oldest);
+}
+
+
 export function cacheGet<T>(key: string): T | null {
+  touch(key);
   const entry = _store.get(key);
   return entry ? (entry.data as T) : null;
 }
 
-/** Guardar en cache. */
+
 export function cacheSet(key: string, data: unknown): void {
-  _store.set(key, { data });
+  _store.set(key, { data, key });
+  evict();
 }
 
-/** Invalidar cache completo o por prefijo (ej: "products."). */
+
 export function cacheClear(prefix?: string): void {
   if (!prefix) {
     _store.clear();
@@ -22,7 +50,7 @@ export function cacheClear(prefix?: string): void {
   }
 }
 
-/** Generar key consistente a partir de partes. */
+
 export function cacheKey(...parts: (string | number | undefined | null)[]): string {
   return parts.filter((p) => p != null && p !== "").join(":");
 }
