@@ -1,5 +1,4 @@
 import { api } from "./client";
-import type { Product } from "./products";
 
 export interface InventoryMovement {
   id: string;
