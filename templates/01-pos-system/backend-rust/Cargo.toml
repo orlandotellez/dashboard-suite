@@ -46,3 +46,11 @@ validator = { version = "0.19", features = ["derive"] }
 # Logging
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+[[bin]]
+name = "server"
+path = "src/main.rs"
+
+[[bin]]
+name = "seed"
+path = "src/scripts/seed.rs"

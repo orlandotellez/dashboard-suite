@@ -378,6 +378,11 @@ Y permite compilar sin acceso a DB.
 
 # 16. Comandos importantes de SQLx CLI
 
+Crear base de datos:
+```bash
+cargo sqlx database create
+```
+
 Crear migración:
 
 ```bash
