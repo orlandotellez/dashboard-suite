@@ -1,7 +1,6 @@
 .page {
   max-width: 1152px;
   margin: 0 auto;
-  padding: 24px 24px;
 }
 
 @media (min-width: 768px) {
@@ -17,6 +16,29 @@
   gap: 16px;
   margin-bottom: 32px;
   flex-wrap: wrap;
+}
+
+@media (max-width: 768px) {
+  .header {
+    padding: 0px 24px 0px 24px;
+  }
+
+  .statsGrid {
+    padding-inline: 24px;
+    margin-inline: 24px;
+  }
+
+  .chartsGrid {
+    padding-inline: 24px;
+  }
+
+  .twoCol {
+    margin-inline: 24px;
+  }
+
+  .recentCard {
+    margin-inline: 24px;
+  }
 }
 
 .h1 {
@@ -298,8 +320,15 @@
 
 
 @keyframes pulse {
-  0%, 100% { opacity: 0.25; }
-  50% { opacity: 0.6; }
+
+  0%,
+  100% {
+    opacity: 0.25;
+  }
+
+  50% {
+    opacity: 0.6;
+  }
 }
 
 .skeletonBar {

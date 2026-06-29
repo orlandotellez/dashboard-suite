@@ -1,7 +1,6 @@
 .page {
   max-width: 1152px;
   margin: 0 auto;
-  padding: 24px 24px;
 }
 
 @media (min-width: 768px) {
@@ -16,6 +15,18 @@
   justify-content: space-between;
   margin-bottom: 32px;
 }
+
+@media (max-width: 768px) {
+  .header {
+    padding: 0px 24px 0px 24px;
+  }
+
+  .toolbar {
+    margin-inline: 24px;
+    padding-bottom: 10px;
+  }
+}
+
 
 .h1 {
   font-size: 24px;
@@ -106,8 +117,13 @@
 }
 
 @keyframes slideIn {
-  from { transform: translateX(100%); }
-  to { transform: translateX(0); }
+  from {
+    transform: translateX(100%);
+  }
+
+  to {
+    transform: translateX(0);
+  }
 }
 
 .modalHeader {

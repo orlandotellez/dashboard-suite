@@ -5,6 +5,12 @@
   overflow: hidden;
 }
 
+@media (max-width: 768px) {
+  .tableCard {
+    border-radius: 0px;
+  }
+}
+
 .tableWrapper {
   overflow-x: auto;
 }

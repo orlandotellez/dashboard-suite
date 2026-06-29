@@ -1,7 +1,6 @@
 .page {
   max-width: 1152px;
   margin: 0 auto;
-  padding: 24px 24px;
 }
 
 @media (min-width: 768px) {
@@ -12,6 +11,26 @@
 
 .header {
   margin-bottom: 32px;
+}
+
+@media (max-width: 768px) {
+  .header {
+    padding: 0px 24px 0px 24px;
+  }
+
+  .toolbar {
+    padding: 0px 24px 10px 24px;
+  }
+
+  .alert {
+    margin-inline: 24px;
+  }
+
+  .movementSectionTitle {
+    margin-inline: 24px;
+  }
+
+
 }
 
 .h1 {
@@ -173,7 +192,6 @@
 
 .tableCard {
   border: 1px solid var(--border);
-  border-radius: 8px;
   background: var(--card);
   overflow: hidden;
 }
@@ -498,6 +516,7 @@
   font-weight: 600;
   color: var(--foreground);
   margin-bottom: 16px;
+  margin-inline: 24px;
 }
 
 .tdLeft {

@@ -1,7 +1,6 @@
 .page {
-  max-width: 576px;
+  max-width: 600px;
   margin: 0 auto;
-  padding: 24px 24px;
 }
 
 @media (min-width: 768px) {
@@ -12,6 +11,16 @@
 
 .header {
   margin-bottom: 32px;
+}
+
+@media (max-width: 768px) {
+  .header {
+    padding: 24px 24px;
+  }
+
+  .form {
+    padding-inline: 24px;
+  }
 }
 
 .h1 {

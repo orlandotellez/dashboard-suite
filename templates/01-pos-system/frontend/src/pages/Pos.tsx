@@ -14,8 +14,6 @@ import { PosCompletedSaleModal } from "@/components/pages/pos/PosCompletedSaleMo
 import { PosDialog } from "@/components/pages/pos/PosDialog";
 import styles from "./Pos.module.css";
 
-
-
 export default function Pos() {
   const scanRef = useRef<HTMLInputElement>(null);
   const searchWrapperRef = useRef<HTMLDivElement>(null);
@@ -63,8 +61,6 @@ export default function Pos() {
   const setCheckingOut = usePosStore((s) => s.setCheckingOut);
   const addServiceProduct = usePosStore((s) => s.addServiceProduct);
 
-  
-
   useEffect(() => {
     productsApi.list({ active: true, limit: 100 })
       .then((res) => setProducts(res.products))
@@ -95,8 +91,6 @@ export default function Pos() {
     document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
   }, []);
-
-  
 
   const searchResults = useMemo(() => {
     const term = scan.trim().toLowerCase();
@@ -190,8 +184,6 @@ export default function Pos() {
     }
   }
 
-  
-
   const totals = useMemo(() => {
     const subtotal = cart.reduce((s, x) => {
       if (x._type === "product") return s + x.price * x.quantity;
@@ -207,8 +199,6 @@ export default function Pos() {
     const change = (payment === "efectivo" || manualAmount) && received ? Math.max(0, Number(received) - total) : 0;
     return { subtotal, tax, discount, total, change };
   }, [cart, discountPct, payment, received]);
-
-  
 
   async function checkout() {
     if (!cart.length || checkingOut) return;
@@ -300,11 +290,10 @@ export default function Pos() {
     scanRef.current?.focus();
   }
 
-  
+
 
   return (
     <div className={styles.grid}>
-      {}
       <div className={styles.leftPanel}>
         <PosSearchBar
           searchTerm={scan}
@@ -335,7 +324,6 @@ export default function Pos() {
         </div>
       </div>
 
-      {}
       <div className={styles.rightPanel}>
         <PosPaymentPanel
           totals={totals}

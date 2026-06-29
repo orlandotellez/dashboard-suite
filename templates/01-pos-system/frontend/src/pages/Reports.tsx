@@ -122,8 +122,8 @@ export default function Reports() {
             ))}
           </div>
         </div>
-          <div className={styles.recentCard}>
-            <div className={`${styles.skeletonBar} ${styles["skeleton-recent-title"]}`} />
+        <div className={styles.recentCard}>
+          <div className={`${styles.skeletonBar} ${styles["skeleton-recent-title"]}`} />
           <div className={styles.tableWrapper}><table className={styles.table}>
             <thead><tr><th>Fecha</th><th>Método</th><th>Total</th></tr></thead>
             <tbody><TableSkeleton cols={SKELETON_COLS} rows={5} /></tbody>

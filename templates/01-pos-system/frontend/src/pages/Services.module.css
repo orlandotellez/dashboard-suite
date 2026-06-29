@@ -1,7 +1,6 @@
 .page {
   max-width: 1152px;
   margin: 0 auto;
-  padding: 24px 24px;
 }
 
 @media (min-width: 768px) {
@@ -15,6 +14,16 @@
   align-items: center;
   justify-content: space-between;
   margin-bottom: 32px;
+}
+
+@media (max-width: 768px) {
+  .header {
+    padding: 0px 24px 0px 24px;
+  }
+
+  .toolbar {
+    padding: 0px 24px 10px 24px;
+  }
 }
 
 .h1 {
