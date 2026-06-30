@@ -47,6 +47,27 @@ fn extract_cookie_token(req: &Request<Body>) -> Option<String> {
     extract_access_token(cookie_header)
 }
 
+/// Middleware para rutas que requieren usuario autenticado (cualquier rol).
+/// Lee el token del header Authorization: Bearer o de la cookie accessToken.
+pub async fn require_auth_middleware(
+    mut req: Request<Body>,
+    next: Next,
+) -> Result<Response, Response> {
+    let token = extract_bearer_token(&req)
+        .or_else(|| extract_cookie_token(&req))
+        .ok_or_else(|| {
+            AppErrorJson::unauthorized("Authentication required").into_response()
+        })?;
+
+    let claims = jwt::verify_access_token(&token).map_err(|_| {
+        AppErrorJson::unauthorized("Invalid or expired token").into_response()
+    })?;
+
+    req.extensions_mut().insert(claims);
+
+    Ok(next.run(req).await)
+}
+
 /// Helper para devolver errores JSON con el mismo formato que Fastify: `{"message": "..."}`
 struct AppErrorJson {
     status: axum::http::StatusCode,
