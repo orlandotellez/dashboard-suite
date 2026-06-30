@@ -6,6 +6,7 @@ use crate::{
             contracts::{
                 session_repository::SessionRepository,
                 user_repository::UserRepository,
+                verification_repository::VerificationRepository,
             },
             entities::User,
         },
@@ -17,7 +18,7 @@ use crate::{
         },
         presentation::dto::{
             request::RegisterRequest,
-            response::{RegisterResponse, UserResponse},
+            response::{MessageResponse, RegisterResponse, UserResponse},
         },
     },
     shared::{
@@ -116,6 +117,8 @@ impl RegistrationService {
                 user.id,
                 &token_pair.refresh_token,
                 Utc::now() + chrono::Duration::days(7),
+                None,
+                None,
             )
             .await?;
 
@@ -126,5 +129,46 @@ impl RegistrationService {
             access_token: token_pair.access_token,
             refresh_token: token_pair.refresh_token,
         })
+    }
+
+    // ─── Resend Verification Code ───
+
+    pub async fn resend_verification(
+        state: &AppState,
+        email: &str,
+    ) -> Result<MessageResponse, AppError> {
+        let user_repo = SqlxUserRepository::new(state.db.clone());
+        let verification_repo = SqlxVerificationRepository::new(state.db.clone());
+
+        // Buscar usuario
+        let user = user_repo.find_by_email(email).await?;
+
+        match user {
+            Some(user) if user.email_verified => {
+                return Err(AppError::Conflict("Email already verified".to_string()));
+            }
+            Some(_) => {
+                // Eliminar código anterior y crear nuevo
+                verification_repo.delete_by_identifier(email).await?;
+
+                let code = generate_verification_code();
+                let expires_at = Utc::now() + chrono::Duration::minutes(15);
+
+                verification_repo.create(email, &code, expires_at).await?;
+
+                tracing::info!("New verification code for {}: {}", email, code);
+
+                Ok(MessageResponse {
+                    message: "New verification code sent".to_string(),
+                })
+            }
+            None => {
+                // Mismo mensaje para prevenir email enumeration
+                Ok(MessageResponse {
+                    message: "If the email exists, a new verification code has been sent"
+                        .to_string(),
+                })
+            }
+        }
     }
 }
