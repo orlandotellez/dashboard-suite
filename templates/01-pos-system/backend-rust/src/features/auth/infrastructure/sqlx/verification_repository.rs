@@ -4,7 +4,9 @@ use sqlx::{PgPool, Postgres, Transaction};
 use uuid::Uuid;
 
 use crate::{
-    features::auth::domain::contracts::verification_repository::VerificationRepository,
+    features::auth::{
+        domain::{contracts::verification_repository::VerificationRepository, entities::Verification},
+    },
     shared::errors::app_error::AppError,
 };
 
@@ -43,6 +45,35 @@ impl VerificationRepository for SqlxVerificationRepository {
         )
         .execute(&self.pool)
         .await?;
+
+        Ok(())
+    }
+
+    async fn find_by_identifier_and_value(
+        &self,
+        identifier: &str,
+        value: &str,
+    ) -> Result<Option<Verification>, AppError> {
+        let record = sqlx::query_as!(
+            Verification,
+            r#"
+            SELECT id, identifier, value, expires_at, created_at, updated_at
+            FROM verification
+            WHERE identifier = $1 AND value = $2
+            "#,
+            identifier,
+            value,
+        )
+        .fetch_optional(&self.pool)
+        .await?;
+
+        Ok(record)
+    }
+
+    async fn delete_by_identifier(&self, identifier: &str) -> Result<(), AppError> {
+        sqlx::query!(r#"DELETE FROM verification WHERE identifier = $1"#, identifier)
+            .execute(&self.pool)
+            .await?;
 
         Ok(())
     }

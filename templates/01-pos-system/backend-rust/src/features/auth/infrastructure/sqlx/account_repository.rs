@@ -55,6 +55,28 @@ impl AccountRepository for SqlxAccountRepository {
 
         Ok(result)
     }
+
+    async fn update_password_by_email(
+        &self,
+        email: &str,
+        hashed_password: &str,
+    ) -> Result<(), AppError> {
+        sqlx::query!(
+            r#"
+            UPDATE account
+            SET password = $1, updated_at = $2
+            WHERE provider_id = 'credentials'
+              AND account_id = $3
+            "#,
+            hashed_password,
+            Utc::now(),
+            email,
+        )
+        .execute(&self.pool)
+        .await?;
+
+        Ok(())
+    }
 }
 
 // ─── Operaciones transaccionales (fuera del trait) ───

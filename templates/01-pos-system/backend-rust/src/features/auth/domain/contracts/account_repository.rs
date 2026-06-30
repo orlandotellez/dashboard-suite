@@ -11,4 +11,10 @@ pub trait AccountRepository: Send + Sync + 'static {
         &self,
         email: &str,
     ) -> Result<Option<CredentialsAccount>, AppError>;
+
+    async fn update_password_by_email(
+        &self,
+        email: &str,
+        hashed_password: &str,
+    ) -> Result<(), AppError>;
 }
