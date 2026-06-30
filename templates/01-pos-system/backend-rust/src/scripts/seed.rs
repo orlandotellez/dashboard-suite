@@ -1040,7 +1040,7 @@ async fn seed_categories(pool: &PgPool) -> Result<HashMap<String, Uuid>, sqlx::E
 
     for (name, desc) in CATEGORIES {
         let id = Uuid::new_v4();
-        sqlx::query("INSERT INTO categories (id, name, description) VALUES ($1, $2, $3)")
+        sqlx::query("INSERT INTO categories (id, name, description, updated_at) VALUES ($1, $2, $3, NOW())")
             .bind(id)
             .bind(name)
             .bind(desc)
@@ -1060,8 +1060,8 @@ async fn seed_suppliers(pool: &PgPool) -> Result<HashMap<String, Uuid>, sqlx::Er
     for (name, contact, email, phone, address, notes) in SUPPLIERS {
         let id = Uuid::new_v4();
         sqlx::query(
-            r#"INSERT INTO suppliers (id, name, contact_name, email, phone, address, notes, is_active)
-               VALUES ($1, $2, $3, $4, $5, $6, $7, true)"#,
+            r#"INSERT INTO suppliers (id, name, contact_name, email, phone, address, notes, is_active, updated_at)
+               VALUES ($1, $2, $3, $4, $5, $6, $7, true, NOW())"#,
         )
         .bind(id)
         .bind(name)
@@ -1095,9 +1095,9 @@ async fn seed_products(
         sqlx::query(
             r#"INSERT INTO products
                (id, name, unit_type, unit_quantity, category_id, supplier_id,
-                price, cost, tax_rate, stock, low_stock_threshold, active)
-               VALUES ($1, $2, $3::unit_type, $4, $5, $6,
-                       $7, $8, $9, $10, $11, true)"#,
+                 price, cost, tax_rate, stock, low_stock_threshold, active, updated_at)
+               VALUES ($1, $2, $3::"UNIT_TYPE", $4, $5, $6,
+                        $7, $8, $9, $10, $11, true, NOW())"#,
         )
         .bind(id)
         .bind(p.name)
@@ -1126,8 +1126,8 @@ async fn seed_services(pool: &PgPool, prod_map: &HashMap<String, Uuid>) -> Resul
     for svc in SERVICES {
         let service_id = Uuid::new_v4();
         sqlx::query(
-            r#"INSERT INTO services (id, name, description, base_price, is_active)
-               VALUES ($1, $2, $3, $4, true)"#,
+            r#"INSERT INTO services (id, name, description, base_price, is_active, updated_at)
+               VALUES ($1, $2, $3, $4, true, NOW())"#,
         )
         .bind(service_id)
         .bind(svc.name)
@@ -1164,8 +1164,8 @@ async fn seed_users(pool: &PgPool) -> Result<(), sqlx::Error> {
         let user_id = Uuid::new_v4();
 
         sqlx::query(
-            r#"INSERT INTO users (id, name, email, email_verified, role)
-               VALUES ($1, $2, $3, true, $4::role)"#,
+            r#"INSERT INTO users (id, name, email, email_verified, role, updated_at)
+               VALUES ($1, $2, $3, true, $4::"ROLE", NOW())"#,
         )
         .bind(user_id)
         .bind(u.name)
@@ -1177,8 +1177,8 @@ async fn seed_users(pool: &PgPool) -> Result<(), sqlx::Error> {
         let hashed = bcrypt::hash(u.password, DEFAULT_COST).expect("Error hashing password");
 
         sqlx::query(
-            r#"INSERT INTO account (id, account_id, provider_id, user_id, password)
-               VALUES ($1, $2, 'credentials', $3, $4)"#,
+            r#"INSERT INTO account (id, account_id, provider_id, user_id, password, updated_at)
+               VALUES ($1, $2, 'credentials', $3, $4, NOW())"#,
         )
         .bind(Uuid::new_v4())
         .bind(user_id)

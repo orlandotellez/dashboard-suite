@@ -9,7 +9,7 @@ home = "=0.5.11"
 # Framework Web
 axum = { version = "0.8.8", features = ["macros"] }
 axum-extra = { version = "0.10", features = ["typed-header", "cookie"] }
-tower-http = { version = "0.6.6", features = ["cors"] }
+tower-http = { version = "0.6.6", features = ["cors", "trace"] }
 tokio = { version = "1", features = ["full"] }
 
 # Base de datos
@@ -33,6 +33,7 @@ serde_json = "1.0"
 jsonwebtoken = { version = "10", default-features = false, features = ["rust_crypto"] }
 bcrypt = "0.15"
 time = "0.3"
+cookie = "0.18"
 
 # Utilidades
 uuid = { version = "1", features = ["v4", "v5", "serde"] }
@@ -42,6 +43,9 @@ dotenvy = "0.15"
 
 # Validación
 validator = { version = "0.19", features = ["derive"] }
+
+# Async traits
+async-trait = "0.1"
 
 # Logging
 tracing = "0.1"
