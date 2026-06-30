@@ -4,6 +4,7 @@ use axum::{
     response::{IntoResponse, Response},
 };
 use serde_json::json;
+use validator::ValidationErrors;
 
 #[derive(Debug)]
 #[allow(dead_code)]
@@ -13,6 +14,7 @@ pub enum AppError {
     InternalServerError(String),
     Unauthorized(String),
     Forbidden(String),
+    Conflict(String),
 }
 
 impl IntoResponse for AppError {
@@ -38,6 +40,10 @@ impl IntoResponse for AppError {
                 StatusCode::BAD_REQUEST,
                 json!({"error": "bad_request", "message": message}),
             ),
+            AppError::Conflict(message) => (
+                StatusCode::CONFLICT,
+                json!({"error": "conflict", "message": message}),
+            ),
         };
         (status, Json(message_error)).into_response()
     }
@@ -52,5 +58,33 @@ impl From<serde_json::Error> for AppError {
 impl From<sqlx::Error> for AppError {
     fn from(err: sqlx::Error) -> Self {
         AppError::InternalServerError(format!("Database error: {}", err))
+    }
+}
+
+impl From<ValidationErrors> for AppError {
+    fn from(err: ValidationErrors) -> Self {
+        let message = err
+            .field_errors()
+            .iter()
+            .flat_map(|(field, errors)| {
+                errors.iter().map(move |e| {
+                    let msg = e
+                        .message
+                        .as_ref()
+                        .map(|m| m.to_string())
+                        .unwrap_or_else(|| format!("{} is invalid", field));
+                    format!("{}: {}", field, msg)
+                })
+            })
+            .collect::<Vec<_>>()
+            .join("; ");
+
+        AppError::BadRequest(message)
+    }
+}
+
+impl From<jsonwebtoken::errors::Error> for AppError {
+    fn from(err: jsonwebtoken::errors::Error) -> Self {
+        AppError::InternalServerError(format!("JWT error: {}", err))
     }
 }

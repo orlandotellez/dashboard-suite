@@ -7,3 +7,9 @@ pub static DATABASE_URL: Lazy<String> =
 
 pub static FRONTEND_URL: Lazy<String> =
     Lazy::new(|| env::var("FRONTEND_URL").expect("FRONTEND_URL not be defined"));
+
+pub static JWT_SECRET: Lazy<String> =
+    Lazy::new(|| env::var("JWT_SECRET").expect("JWT_SECRET not be defined"));
+
+pub static JWT_REFRESH_SECRET: Lazy<String> =
+    Lazy::new(|| env::var("JWT_REFRESH_SECRET").expect("JWT_REFRESH_SECRET not be defined"));
