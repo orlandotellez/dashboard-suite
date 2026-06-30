@@ -15,10 +15,15 @@ use crate::{
 pub async fn refresh_token(
     State(state): State<AppState>,
     jar: CookieJar,
-    Json(payload): Json<RefreshRequest>,
+    payload: Option<Json<RefreshRequest>>,
 ) -> Result<(StatusCode, CookieJar, Json<RegisterResponse>), AppError> {
-    let refresh_token: String = payload
-        .refresh_token
+    // Primero intentar desde cookie httpOnly, luego body como fallback
+    let refresh_token: String = jar
+        .get("refreshToken")
+        .map(|c| c.value().to_string())
+        .or_else(|| {
+            payload.and_then(|p| p.refresh_token.clone())
+        })
         .ok_or_else(|| AppError::BadRequest("Refresh token required".to_string()))?;
 
     let response: RegisterResponse = AuthenticationService::refresh(&state, &refresh_token).await?;
