@@ -4,6 +4,7 @@ use uuid::Uuid;
 use crate::features::auth::domain::entities::User;
 
 #[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct RegisterResponse {
     pub message: String,
     pub user: UserResponse,
@@ -12,6 +13,7 @@ pub struct RegisterResponse {
 }
 
 #[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct UserResponse {
     pub id: Uuid,
     pub name: String,
