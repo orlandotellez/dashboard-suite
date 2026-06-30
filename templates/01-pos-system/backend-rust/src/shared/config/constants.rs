@@ -13,3 +13,6 @@ pub static JWT_SECRET: Lazy<String> =
 
 pub static JWT_REFRESH_SECRET: Lazy<String> =
     Lazy::new(|| env::var("JWT_REFRESH_SECRET").expect("JWT_REFRESH_SECRET not be defined"));
+
+pub static NODE_ENV: Lazy<String> =
+    Lazy::new(|| env::var("NODE_ENV").unwrap_or_else(|_| "development".to_string()));
