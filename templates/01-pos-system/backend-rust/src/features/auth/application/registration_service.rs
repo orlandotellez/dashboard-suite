@@ -50,11 +50,15 @@ fn generate_verification_code() -> String {
     code
 }
 
-fn map_role(request_role: Option<String>) -> &'static str {
+fn map_role(request_role: Option<String>) -> Result<&'static str, AppError> {
     match request_role.as_deref() {
-        Some("admin") => "admin",
-        Some("gerente") => "gerente",
-        _ => "cajero",
+        Some("admin") => Ok("admin"),
+        Some("cajero") => Ok("cajero"),
+        Some(other) => Err(AppError::BadRequest(format!(
+            "Rol inválido '{}'. Solo se permite 'admin' o 'cajero'",
+            other
+        ))),
+        None => Ok("cajero"),
     }
 }
 
@@ -77,7 +81,7 @@ impl RegistrationService {
         let mut tx = state.db.begin().await?;
 
         // 2. Crear user (transaccional)
-        let role = map_role(payload.role);
+        let role = map_role(payload.role)?;
         let user: User = SqlxUserRepository::create(&mut tx, &payload.name, &payload.email, role)
             .await?;
 
