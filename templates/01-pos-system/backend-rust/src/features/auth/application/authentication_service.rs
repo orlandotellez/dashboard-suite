@@ -3,14 +3,11 @@ use chrono::Utc;
 use crate::{
     features::auth::{
         domain::contracts::{
-            account_repository::AccountRepository,
-            session_repository::SessionRepository,
-            user_repository::UserRepository,
-            verification_repository::VerificationRepository,
+            account_repository::AccountRepository, session_repository::SessionRepository,
+            user_repository::UserRepository, verification_repository::VerificationRepository,
         },
         infrastructure::sqlx::{
-            account_repository::SqlxAccountRepository,
-            session_repository::SqlxSessionRepository,
+            account_repository::SqlxAccountRepository, session_repository::SqlxSessionRepository,
             user_respository::SqlxUserRepository,
             verification_repository::SqlxVerificationRepository,
         },
@@ -20,7 +17,11 @@ use crate::{
     },
     shared::{
         errors::app_error::AppError,
-        security::{jwt, password::hash_password, password::verify_password},
+        helpers::generate::generate_code,
+        security::{
+            jwt,
+            password::{hash_password, verify_password},
+        },
         state::app_state::AppState,
     },
 };
@@ -186,7 +187,9 @@ impl AuthenticationService {
         // 2. Verificar expiración
         if verification.expires_at < Utc::now() {
             verification_repo.delete_by_identifier(identifier).await?;
-            return Err(AppError::Unauthorized("Verification code expired".to_string()));
+            return Err(AppError::Unauthorized(
+                "Verification code expired".to_string(),
+            ));
         }
 
         // 3. Buscar usuario
@@ -253,7 +256,9 @@ impl AuthenticationService {
             let expires_at = Utc::now() + chrono::Duration::minutes(15);
 
             // Eliminar códigos previos y crear nuevo
-            verification_repo.delete_by_identifier(&format!("reset:{email}")).await?;
+            verification_repo
+                .delete_by_identifier(&format!("reset:{email}"))
+                .await?;
             verification_repo
                 .create(&format!("reset:{email}"), &reset_code, expires_at)
                 .await?;
@@ -359,27 +364,4 @@ impl AuthenticationService {
             message: "Session revoked successfully".to_string(),
         })
     }
-}
-
-fn generate_code() -> String {
-    use std::collections::hash_map::DefaultHasher;
-    use std::hash::{Hash, Hasher};
-    use std::time::{SystemTime, UNIX_EPOCH};
-
-    let seed = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .unwrap()
-        .as_nanos();
-    let mut hasher = DefaultHasher::new();
-    seed.hash(&mut hasher);
-    let hash = hasher.finish();
-
-    const CHARS: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-    let mut code = String::with_capacity(6);
-    let mut h = hash;
-    for _ in 0..6 {
-        code.push(CHARS[(h as usize) % CHARS.len()] as char);
-        h /= CHARS.len() as u64;
-    }
-    code
 }
