@@ -3,18 +3,24 @@ use chrono::Utc;
 use crate::{
     features::auth::{
         domain::contracts::{
-            account_repository::AccountRepository, session_repository::SessionRepository,
+            account_repository::AccountRepository,
+            session_repository::SessionRepository,
             user_repository::UserRepository,
+            verification_repository::VerificationRepository,
         },
         infrastructure::sqlx::{
-            account_repository::SqlxAccountRepository, session_repository::SqlxSessionRepository,
+            account_repository::SqlxAccountRepository,
+            session_repository::SqlxSessionRepository,
             user_respository::SqlxUserRepository,
+            verification_repository::SqlxVerificationRepository,
         },
-        presentation::dto::{RegisterResponse, UserResponse},
+        presentation::dto::{
+            MessageResponse, RegisterResponse, SessionListResponse, SessionResponse, UserResponse,
+        },
     },
     shared::{
         errors::app_error::AppError,
-        security::{jwt, password::verify_password},
+        security::{jwt, password::hash_password, password::verify_password},
         state::app_state::AppState,
     },
 };
@@ -59,6 +65,8 @@ impl AuthenticationService {
                 account.user_id,
                 &token_pair.refresh_token,
                 Utc::now() + chrono::Duration::days(7),
+                None,
+                None,
             )
             .await?;
 
@@ -129,6 +137,8 @@ impl AuthenticationService {
                 user.id,
                 &token_pair.refresh_token,
                 Utc::now() + chrono::Duration::days(7),
+                None,
+                None,
             )
             .await?;
 
@@ -140,4 +150,236 @@ impl AuthenticationService {
             refresh_token: token_pair.refresh_token,
         })
     }
+
+    // ─── Logout ───
+
+    pub async fn logout(
+        state: &AppState,
+        refresh_token: &str,
+    ) -> Result<MessageResponse, AppError> {
+        let session_repo = SqlxSessionRepository::new(state.db.clone());
+        // Eliminar la sesión — no importa si existe o no
+        session_repo.delete_by_token(refresh_token).await?;
+
+        Ok(MessageResponse {
+            message: "Logged out successfully".to_string(),
+        })
+    }
+
+    // ─── Verify Email ───
+
+    pub async fn verify_email(
+        state: &AppState,
+        identifier: &str,
+        code: &str,
+    ) -> Result<RegisterResponse, AppError> {
+        let verification_repo = SqlxVerificationRepository::new(state.db.clone());
+        let user_repo = SqlxUserRepository::new(state.db.clone());
+        let session_repo = SqlxSessionRepository::new(state.db.clone());
+
+        // 1. Buscar verification code
+        let verification = verification_repo
+            .find_by_identifier_and_value(identifier, code)
+            .await?
+            .ok_or_else(|| AppError::Unauthorized("Invalid verification code".to_string()))?;
+
+        // 2. Verificar expiración
+        if verification.expires_at < Utc::now() {
+            verification_repo.delete_by_identifier(identifier).await?;
+            return Err(AppError::Unauthorized("Verification code expired".to_string()));
+        }
+
+        // 3. Buscar usuario
+        let user = user_repo
+            .find_by_email(identifier)
+            .await?
+            .ok_or_else(|| AppError::NotFound("User not found".to_string()))?;
+
+        // 4. Actualizar email_verified (directo con sqlx por simplicidad)
+        sqlx::query!(
+            "UPDATE users SET email_verified = true, updated_at = $1 WHERE id = $2",
+            Utc::now(),
+            user.id,
+        )
+        .execute(&state.db)
+        .await?;
+
+        // 5. Eliminar verification code
+        verification_repo.delete_by_identifier(identifier).await?;
+
+        // 6. Generar nuevos tokens
+        let token_pair = jwt::generate_tokens(
+            &user.id.to_string(),
+            &user.email,
+            user.role.as_deref().unwrap_or("cajero"),
+        )?;
+
+        // 7. Crear nueva sesión
+        session_repo
+            .create(
+                user.id,
+                &token_pair.refresh_token,
+                Utc::now() + chrono::Duration::days(7),
+                None,
+                None,
+            )
+            .await?;
+
+        // 8. Armar response
+        Ok(RegisterResponse {
+            message: "Email verified successfully".to_string(),
+            user: UserResponse::from(user),
+            access_token: token_pair.access_token,
+            refresh_token: token_pair.refresh_token,
+        })
+    }
+
+    // ─── Forgot Password ───
+
+    pub async fn forgot_password(
+        state: &AppState,
+        email: &str,
+    ) -> Result<MessageResponse, AppError> {
+        let verification_repo = SqlxVerificationRepository::new(state.db.clone());
+        let user_repo = SqlxUserRepository::new(state.db.clone());
+
+        // Verificar si el usuario existe (pero mismo mensaje para anti-enumeration)
+        let _user_exists = user_repo.find_by_email(email).await?.is_some();
+
+        // El mensaje es el mismo exista o no
+        if _user_exists {
+            // Generar reset code
+            let reset_code = generate_code();
+            let expires_at = Utc::now() + chrono::Duration::minutes(15);
+
+            // Eliminar códigos previos y crear nuevo
+            verification_repo.delete_by_identifier(&format!("reset:{email}")).await?;
+            verification_repo
+                .create(&format!("reset:{email}"), &reset_code, expires_at)
+                .await?;
+
+            tracing::info!("Reset code for {}: {}", email, reset_code);
+        }
+
+        Ok(MessageResponse {
+            message: "If the email exists, a reset code has been sent".to_string(),
+        })
+    }
+
+    // ─── Reset Password ───
+
+    pub async fn reset_password(
+        state: &AppState,
+        email: &str,
+        code: &str,
+        new_password: &str,
+    ) -> Result<MessageResponse, AppError> {
+        let verification_repo = SqlxVerificationRepository::new(state.db.clone());
+        let user_repo = SqlxUserRepository::new(state.db.clone());
+        let account_repo = SqlxAccountRepository::new(state.db.clone());
+        let session_repo = SqlxSessionRepository::new(state.db.clone());
+
+        // 1. Buscar verification code con prefix reset:
+        let identifier = format!("reset:{email}");
+        let verification = verification_repo
+            .find_by_identifier_and_value(&identifier, code)
+            .await?
+            .ok_or_else(|| AppError::Unauthorized("Invalid reset code".to_string()))?;
+
+        // 2. Verificar expiración
+        if verification.expires_at < Utc::now() {
+            verification_repo.delete_by_identifier(&identifier).await?;
+            return Err(AppError::Unauthorized("Reset code expired".to_string()));
+        }
+
+        // 3. Buscar usuario
+        let user = user_repo
+            .find_by_email(email)
+            .await?
+            .ok_or_else(|| AppError::NotFound("User not found".to_string()))?;
+
+        // 4. Hashear nueva password
+        let hashed = hash_password(new_password)?;
+
+        // 5. Actualizar password en account
+        account_repo
+            .update_password_by_email(email, &hashed)
+            .await?;
+
+        // 6. Eliminar TODAS las sesiones del usuario (fuerza re-login)
+        session_repo.delete_by_user_id(user.id).await?;
+
+        // 7. Eliminar verification code
+        verification_repo.delete_by_identifier(&identifier).await?;
+
+        Ok(MessageResponse {
+            message: "Password reset successfully. Please login with your new password."
+                .to_string(),
+        })
+    }
+
+    // ─── List Sessions ───
+
+    pub async fn get_user_sessions(
+        state: &AppState,
+        user_id: uuid::Uuid,
+    ) -> Result<SessionListResponse, AppError> {
+        let session_repo = SqlxSessionRepository::new(state.db.clone());
+
+        let sessions = session_repo
+            .find_by_user_id(user_id)
+            .await?
+            .into_iter()
+            .map(SessionResponse::from_session)
+            .collect();
+
+        Ok(SessionListResponse { sessions })
+    }
+
+    // ─── Revoke Session ───
+
+    pub async fn revoke_session(
+        state: &AppState,
+        user_id: uuid::Uuid,
+        session_id: uuid::Uuid,
+    ) -> Result<MessageResponse, AppError> {
+        let session_repo = SqlxSessionRepository::new(state.db.clone());
+
+        // Buscar todas las sesiones del usuario y verificar que la session_id le pertenece
+        let sessions = session_repo.find_by_user_id(user_id).await?;
+        let found = sessions.iter().any(|s| s.id == session_id);
+
+        if !found {
+            return Err(AppError::NotFound("Session not found".to_string()));
+        }
+
+        session_repo.delete_by_id(session_id).await?;
+
+        Ok(MessageResponse {
+            message: "Session revoked successfully".to_string(),
+        })
+    }
+}
+
+fn generate_code() -> String {
+    use std::collections::hash_map::DefaultHasher;
+    use std::hash::{Hash, Hasher};
+    use std::time::{SystemTime, UNIX_EPOCH};
+
+    let seed = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap()
+        .as_nanos();
+    let mut hasher = DefaultHasher::new();
+    seed.hash(&mut hasher);
+    let hash = hasher.finish();
+
+    const CHARS: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    let mut code = String::with_capacity(6);
+    let mut h = hash;
+    for _ in 0..6 {
+        code.push(CHARS[(h as usize) % CHARS.len()] as char);
+        h /= CHARS.len() as u64;
+    }
+    code
 }
