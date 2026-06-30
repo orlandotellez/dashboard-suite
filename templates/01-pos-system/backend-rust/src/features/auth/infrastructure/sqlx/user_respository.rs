@@ -37,7 +37,7 @@ impl UserRepository for SqlxUserRepository {
                 created_at as "created_at?",
                 updated_at as "updated_at?"
             FROM users
-            WHERE email = $1
+            WHERE email = $1 AND deleted_at IS NULL
             "#,
             email
         )
